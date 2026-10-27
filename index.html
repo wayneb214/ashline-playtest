@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#06080d">
+  <meta name="format-detection" content="telephone=no">
+  <title>ASHLINE — Deep Water</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="vignette" class="vignette" aria-hidden="true"></div>
+
+  <!-- TITLE -->
+  <section id="screen-title" class="screen title-screen">
+    <canvas id="title-bg" class="title-bg" aria-hidden="true"></canvas>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="title-inner">
+      <div class="title-emblem" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="64" height="64"><defs><linearGradient id="emb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fd1ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+          <path d="M32 4 L58 18 V34 C58 48 46 58 32 61 C18 58 6 48 6 34 V18 Z" fill="none" stroke="url(#emb)" stroke-width="2.5"/>
+          <path class="emb-wave" d="M14 36 C20 30 26 30 32 36 S44 42 50 36" fill="none" stroke="url(#emb)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="32" cy="24" r="4" fill="url(#emb)"/></svg>
+      </div>
+      <h1 class="wordmark" aria-label="ASHLINE"><span>A</span><span>S</span><span>H</span><span>L</span><span>I</span><span>N</span><span>E</span></h1>
+      <p class="title-act">Act I · Deep Water</p>
+      <p class="title-tag">Someone is listening to the seabed.</p>
+      <div class="title-menu">
+        <button id="btn-continue" class="btn primary xl" type="button"></button>
+        <button id="btn-new" class="btn glass xl" type="button"></button>
+        <button id="btn-settings-title" class="btn glass xl" type="button"></button>
+      </div>
+      <p class="title-foot">A work of fiction. All networks, people and places are invented.</p>
+    </div>
+  </section>
+
+  <!-- HUB -->
+  <section id="screen-hub" class="screen hub-screen hidden">
+    <header class="app-bar">
+      <div class="brand"><span class="brand-mark"></span>ASHLINE</div>
+      <div class="app-bar-right">
+        <span class="credits-pill"><span class="cr-dot"></span><span id="hub-credits">0</span> c</span>
+        <button id="btn-settings-hub" class="btn icon glass" type="button" aria-label="Settings"></button>
+      </div>
+    </header>
+    <div class="ticker" aria-label="Breaking news"><span class="ticker-tag">LIVE</span><div class="ticker-track"><div id="ticker-text" class="ticker-text"></div></div></div>
+    <div class="hub-scroll">
+      <section class="greet glass-card">
+        <div id="greet-portrait" class="greet-portrait"></div>
+        <div class="greet-body">
+          <div class="eyebrow">Kite · Ashline handler</div>
+          <p id="greet-text" class="greet-text"></p>
+          <div class="act-progress"><div class="act-label"><span>Act I · Deep Water</span><span id="act-count">0/3</span></div><div class="bar"><div id="act-fill" class="bar-fill"></div></div></div>
+        </div>
+      </section>
+      <section class="hub-section">
+        <h2 class="section-title">Contracts</h2>
+        <div id="contract-list" class="contract-list"></div>
+      </section>
+      <section class="hub-section">
+        <h2 class="section-title">Rig upgrades</h2>
+        <div id="upgrade-list" class="upgrade-list"></div>
+      </section>
+      <section class="hub-section">
+        <h2 class="section-title">Headlines</h2>
+        <div id="news-list" class="news-list"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- MISSION -->
+  <section id="screen-mission" class="screen mission-screen hidden">
+    <header class="app-bar mission-bar">
+      <button id="btn-abort" class="btn icon glass" type="button" aria-label="Back to hub"></button>
+      <div class="mission-title">
+        <div id="stat-op" class="op-name">Op</div>
+        <div class="trace-inline" id="trace-wrap">
+          <div class="trace-row"><span class="trace-lbl">TRACE</span><span id="trace-text">Idle</span></div>
+          <div class="trace-bar"><div id="trace-fill"></div></div>
+        </div>
+      </div>
+      <span id="stat-conn" class="pill off">OFFLINE</span>
+    </header>
+
+    <nav class="tab-bar" role="tablist">
+      <button class="tab active" data-tab="chat" type="button" role="tab"><span class="tab-ic" data-ic="chat"></span>Kite</button>
+      <button class="tab" data-tab="map" type="button" role="tab"><span class="tab-ic" data-ic="map"></span>Map</button>
+      <button class="tab" data-tab="term" type="button" role="tab"><span class="tab-ic" data-ic="term"></span>Terminal</button>
+    </nav>
+
+    <div id="tutor" class="tutor hidden" role="status">
+      <span id="tutor-text"></span>
+      <button id="tutor-skip" class="tutor-skip" type="button">Skip tips</button>
+    </div>
+
+    <div class="mission-body" id="mission-body">
+      <section class="panel chat active" data-panel="chat">
+        <div class="panel-head">
+          <div id="kite-portrait" class="head-portrait"></div>
+          <div class="head-text"><h2>Kite</h2><span class="presence"><span class="dot-live"></span>secure channel</span></div>
+        </div>
+        <div id="dossier" class="dossier"></div>
+        <div id="chat-log" class="chat-log"></div>
+        <div class="chat-compose">
+          <button id="btn-accept" class="btn primary" type="button" disabled>Accept</button>
+        </div>
+      </section>
+
+      <section class="panel map" data-panel="map">
+        <div class="panel-head">
+          <h2>Bounce map</h2>
+          <span class="hint" id="map-hint">Tap relays to chain hops</span>
+        </div>
+        <div class="map-wrap">
+          <svg id="world" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div id="hop-ladder" class="hop-ladder" aria-label="Bounce route"></div>
+        <div class="route-bar">
+          <div id="route-text" class="route-text"></div>
+          <div class="route-actions">
+            <span id="route-eta" class="eta"></span>
+            <button id="btn-clear-route" class="btn glass sm" type="button">Clear</button>
+            <button id="btn-map-connect" class="btn primary sm" type="button">Connect</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel terminal" data-panel="term">
+        <div class="panel-head">
+          <h2>Terminal</h2>
+          <span class="hint" id="tiles-count"></span>
+        </div>
+        <div id="term-out" class="term-out"></div>
+        <div id="cmd-chips" class="cmd-chips"></div>
+        <form id="term-form" class="term-in" autocomplete="off">
+          <span id="prompt">you@ashline:~$</span>
+          <input id="term-input" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" enterkeyhint="go" aria-label="Command">
+        </form>
+      </section>
+    </div>
+  </section>
+
+  <!-- CRACK MINIGAME -->
+  <div id="crack" class="sheet-wrap hidden" role="dialog" aria-modal="true" aria-label="Crack the gate">
+    <div class="sheet crack-sheet">
+      <div class="crack-head">
+        <div id="crack-lock" class="crack-lock"></div>
+        <div>
+          <div class="eyebrow">Gate challenge</div>
+          <h2 id="crack-title">Assemble the passphrase</h2>
+        </div>
+        <button id="crack-close" class="btn icon glass" type="button" aria-label="Close"></button>
+      </div>
+      <p id="crack-hint" class="crack-hint"></p>
+      <div id="crack-slot" class="crack-slot" aria-live="polite"></div>
+      <div class="crack-tools">
+        <button id="crack-back" class="btn glass sm" type="button"></button>
+        <button id="crack-clear" class="btn glass sm" type="button">Clear</button>
+        <span id="crack-penalty" class="crack-penalty">Wrong guess: −4s</span>
+      </div>
+      <div class="eyebrow">Clue fragments</div>
+      <div id="crack-tiles" class="crack-tiles"></div>
+      <form id="crack-form" class="crack-type" autocomplete="off">
+        <input id="crack-input" placeholder="…or type it" spellcheck="false" autocapitalize="off" autocorrect="off" aria-label="Type passphrase">
+      </form>
+      <button id="crack-submit" class="btn primary xl" type="button">Breach gate</button>
+    </div>
+  </div>
+
+  <!-- GENERIC MODAL -->
+  <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal glass-card">
+      <div id="modal-kicker" class="kicker"></div>
+      <h1 id="modal-title"></h1>
+      <div id="modal-body" class="modal-body"></div>
+      <div id="modal-actions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/crack.js"></script>
+  <script src="js/mission.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
