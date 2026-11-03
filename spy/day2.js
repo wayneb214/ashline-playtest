@@ -137,7 +137,7 @@
       " The subject was <b>" + kind + "</b>: " + { proud: "Friendly worked", scared: "Hard worked", clever: "a Bluff worked" }[st.temper] + ". " + clueNote(found);
     const img = sub.art && res !== "loss" ? sub.art : "v-" + res;
     A.finishCase(id, res, null, "Interview \u00b7 " + st.got + " of 2 answers", sub.head[res], ch, { win: "TALKED", mixed: "PARTIAL", loss: "SILENT" }[res], body,
-      '<img class="vignette" src="' + A.pic(img) + '" alt="">', found.length ? "New clue on the evidence board." : "No new clues.");
+      '<div class="kbwrap"><img class="vignette" src="' + A.pic(img) + '" alt=""></div>', found.length ? "New clue on the evidence board." : "No new clues.");
   }
 
   // ---------- the Day 2 cliffhanger ----------

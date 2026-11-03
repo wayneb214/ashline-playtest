@@ -333,3 +333,114 @@ p strong { color: inherit; }
 .flash-card .bar .time { white-space: nowrap; }
 .d2fig img { max-height: 240px; width: 100%; object-fit: cover; }
 .pin.below .lab { top: 26px; left: -30px; }
+
+/* ================= v5 look: film, rain, paper, brass, ink ================= */
+@font-face { font-family: "Cormorant Garamond"; font-weight: 600; font-style: normal; font-display: swap; src: url(fonts/cormorant-600.woff2) format("woff2"); }
+@font-face { font-family: "Courier Prime"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/courierprime-400.woff2) format("woff2"); }
+@font-face { font-family: "Courier Prime"; font-weight: 700; font-style: normal; font-display: swap; src: url(fonts/courierprime-700.woff2) format("woff2"); }
+@font-face { font-family: "IM Fell English SC"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/imfell-sc.woff2) format("woff2"); }
+:root {
+  --display: "Cormorant Garamond", "Iowan Old Style", Palatino, Georgia, serif;
+  --type: "Courier Prime", "American Typewriter", "Courier New", Courier, monospace;
+  --stampf: "IM Fell English SC", "Iowan Old Style", Georgia, serif;
+  --night: 0;
+}
+h1, h2, .sit .t, .title h1, .headline div, .grade { font-family: var(--display); font-weight: 600; }
+h2 { font-size: 25px; letter-spacing: .005em; } .sit .t { font-size: 19px; line-height: 1.1; }
+.title h1 { font-size: 50px; letter-spacing: .08em; }
+
+/* 1. film grain + vignette */
+#grain { position: fixed; inset: -60px; z-index: 50; pointer-events: none; opacity: .14; mix-blend-mode: overlay; background-size: 128px 128px; animation: grain .5s steps(4) infinite; }
+#grain::after { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse 85% 70% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%); }
+body::after { content: ""; position: fixed; inset: 0; z-index: 49; pointer-events: none; background: radial-gradient(ellipse 90% 75% at 50% 45%, transparent 60%, rgba(5,6,6,.5) 100%); }
+@keyframes grain { 0% { transform: translate(0,0) } 25% { transform: translate(-31px,17px) } 50% { transform: translate(22px,-29px) } 75% { transform: translate(-13px,-41px) } }
+
+/* 2. rain on glass */
+#rain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; display: none; }
+#rain.on { display: block; }
+body:not(.on-title) #rain { opacity: .55; }
+
+/* 7. dusk to night */
+#night { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(4,8,26,.85), rgba(2,4,14,.9)); opacity: calc(var(--night) * .75); transition: opacity 1.6s ease; }
+body.on-title #night { opacity: 0; }
+body.is-night .clock { box-shadow: 0 0 14px rgba(232,200,116,.35); }
+
+/* 8. fade through black + Ken Burns */
+#fade { position: fixed; inset: 0; z-index: 60; background: #000; opacity: 0; pointer-events: none; }
+#fade.go { animation: fadeblack .45s ease-out; }
+@keyframes fadeblack { 0% { opacity: .9 } 100% { opacity: 0 } }
+.kbwrap { overflow: hidden; width: calc(100% + 28px); margin: -14px -14px 10px; height: 150px; border-bottom: 1px solid rgba(0,0,0,.25); }
+.kbwrap .vignette { width: 100%; height: 100%; margin: 0; border: 0; animation: kb 22s ease-in-out infinite alternate; transform-origin: 40% 50%; }
+@keyframes kb { from { transform: scale(1.02) translate(0,0) } to { transform: scale(1.14) translate(-3%,-2%) } }
+
+/* 4. painted case headers */
+.chead { overflow: hidden; height: 132px; margin: -2px -16px 12px; border-top: 1px solid rgba(0,0,0,.3); border-bottom: 1px solid rgba(0,0,0,.3); box-shadow: 0 4px 10px rgba(0,0,0,.25) inset; }
+.chead img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(.2) contrast(1.05); animation: kb 24s ease-in-out infinite alternate; }
+.sit { flex-wrap: wrap; }
+.sithead { flex-basis: calc(100% + 32px); height: 70px; margin: -14px -14px 2px -18px; background: center / cover no-repeat; border-radius: 3px 3px 0 0; filter: sepia(.25) contrast(1.05); box-shadow: 0 -18px 18px -14px rgba(0,0,0,.6) inset; animation: kbbg 26s ease-in-out infinite alternate; }
+.sit.done .sithead { filter: grayscale(1) brightness(.8); }
+@keyframes kbbg { from { background-position: 30% 50%; background-size: 108% } to { background-position: 70% 40%; background-size: 122% } }
+
+/* 3. case files: worn edges, coffee rings */
+.card.dossier { background:
+    radial-gradient(circle at 86% 88%, transparent 25px, rgba(122,78,36,.22) 26px, rgba(122,78,36,.08) 29px, transparent 31px),
+    radial-gradient(circle at 91% 84%, transparent 22px, rgba(122,78,36,.12) 23px, transparent 25px),
+    linear-gradient(225deg, rgba(0,0,0,.06) 0 14px, transparent 15px),
+    linear-gradient(180deg, var(--paper), var(--paper-2));
+  box-shadow: 0 0 22px rgba(110,80,40,.38) inset, 0 0 2px rgba(80,60,30,.6) inset, 0 12px 28px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.4); border-radius: 2px 5px 3px 6px / 5px 2px 6px 3px; }
+.card.dossier.sit { background: linear-gradient(180deg, var(--paper), var(--paper-2)); }
+.lh { font-family: var(--stampf); font-size: 11px; letter-spacing: .1em; }
+
+/* 10. inked rubber stamps + wax seals */
+.stamp { font-family: var(--stampf); font-weight: 400; font-size: 14px; letter-spacing: .14em; border-width: 3px; border-style: double; padding: 2px 9px 1px; filter: url(#ink); text-shadow: .6px .4px 0 rgba(179,38,30,.45), -1px 0 1.5px rgba(179,38,30,.25); opacity: .82; }
+.outcome .stamp { font-size: 19px; }
+.flash-card .bar .stamp { filter: none; }
+.seal { position: absolute; right: 18px; bottom: -14px; width: 54px; height: 54px; display: grid; place-items: center; transform: rotate(-12deg); z-index: 2;
+  border-radius: 48% 52% 50% 47% / 52% 46% 54% 48%;
+  background: radial-gradient(circle at 38% 32%, #d4524a 0, #a3221c 30%, #7a1410 62%, #4e0b08 100%);
+  box-shadow: 0 3px 6px rgba(0,0,0,.5), 0 0 0 3px rgba(122,20,16,.55), inset 0 -3px 5px rgba(0,0,0,.4), inset 0 2px 3px rgba(255,180,160,.35); pointer-events: none; }
+.seal::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; border: 1.5px solid rgba(60,6,4,.55); box-shadow: 0 1px 0 rgba(255,170,150,.35), inset 0 1px 0 rgba(255,170,150,.25); }
+.seal b { font-family: var(--stampf); font-weight: 400; font-size: 17px; color: #5a0d0a; letter-spacing: .02em; text-shadow: 0 1px 0 rgba(255,170,150,.45), 0 -1px 0 rgba(0,0,0,.45); }
+.card.dossier.sealed { margin-bottom: 26px; }
+
+/* 5. brass + leather buttons */
+.btn { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: .03em; border-radius: 7px; transition: transform .08s ease, box-shadow .08s ease, filter .08s ease; }
+.btn.primary { position: relative; color: #f6e9cc; text-shadow: 0 -1px 0 rgba(0,0,0,.6);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.14), transparent 60%), repeating-linear-gradient(115deg, rgba(0,0,0,.04) 0 2px, transparent 2px 5px), linear-gradient(180deg, #8e2a23, #6a1915 60%, #561310);
+  border: 2px solid #b8923f; box-shadow: 0 0 0 1px #3a2a0e, inset 0 1px 0 rgba(255,220,180,.25), inset 0 -2px 4px rgba(0,0,0,.45), 0 6px 0 #2a1d08, 0 10px 18px rgba(0,0,0,.55); }
+.btn.primary::after { content: ""; position: absolute; inset: 4px; border: 1px dashed rgba(232,200,116,.45); border-radius: 4px; pointer-events: none; }
+.btn.primary:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 0 0 1px #3a2a0e, inset 0 3px 8px rgba(0,0,0,.6), 0 1px 0 #2a1d08, 0 3px 6px rgba(0,0,0,.5); filter: brightness(.92); }
+.btn.primary:disabled::after { border-color: rgba(255,255,255,.12); }
+.btn.ghost { color: #2a1f0c; text-shadow: 0 1px 0 rgba(255,240,200,.5); border: 1px solid #5c4515;
+  background: linear-gradient(180deg, #f0d48a 0%, #c9a24a 45%, #a07a2e 55%, #c49a45 100%);
+  box-shadow: inset 0 1px 0 rgba(255,250,220,.7), inset 0 -1px 2px rgba(60,40,10,.5), 0 4px 0 #4a3510, 0 7px 12px rgba(0,0,0,.45); }
+.btn.ghost:active { transform: translateY(3px); box-shadow: inset 0 2px 5px rgba(60,40,10,.6), 0 1px 0 #4a3510, 0 2px 4px rgba(0,0,0,.4); filter: brightness(.94); }
+
+
+/* 9. living title: Big Ben's hands, a bus, fog */
+.living { position: fixed; z-index: 0; pointer-events: none; overflow: hidden; }
+.title { position: relative; z-index: 1; }
+.living .bb { position: absolute; left: 68.6%; top: 39.05%; width: 2.6%; aspect-ratio: 1; transform: translate(-50%,-50%); }
+.living .bb i { position: absolute; left: 50%; bottom: 50%; width: 1.4px; margin-left: -.7px; background: #2a1d0a; border-radius: 1px; transform-origin: 50% 100%; }
+.living .hh { height: 30%; transform: rotate(240deg); animation: spin 720s linear infinite; }
+.living .mh { height: 44%; animation: spin 60s linear infinite; }
+@keyframes spin { from { transform: rotate(var(--a0,0deg)) } to { transform: rotate(calc(var(--a0,0deg) + 360deg)) } }
+.living .hh { --a0: 240deg; }
+.living .bus { position: absolute; top: 50.6%; left: 0; width: 4.2%; height: 2.6%; animation: bus 34s linear infinite; }
+.living .bus i { display: block; width: 100%; height: 100%; border-radius: 2px 2px 1px 1px; background: linear-gradient(180deg, #b52a20 0 44%, rgba(255,214,140,.9) 44% 52%, #b52a20 52% 86%, #1a1a1a 86%); box-shadow: 0 0 6px rgba(255,190,110,.4); }
+@keyframes bus { 0% { transform: translateX(2400%); opacity: 0 } 4% { opacity: 1 } 70% { opacity: 1 } 76%, 100% { transform: translateX(1000%); opacity: 0 } }
+.living .fog { position: absolute; left: -50%; width: 200%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse at 50% 50%, rgba(200,205,200,.22), transparent 70%); filter: blur(6px); }
+.living .f1 { top: 52%; animation: fog 60s ease-in-out infinite alternate; }
+.living .f2 { top: 62%; opacity: .7; animation: fog 85s ease-in-out infinite alternate-reverse; }
+@keyframes fog { from { transform: translateX(-12%) } to { transform: translateX(12%) } }
+
+@media (prefers-reduced-motion: reduce) { #rain { display: none !important; } #grain { animation: none !important; } }
+body.still #rain { display: none !important; }
+body.still *, body.still *::before, body.still *::after { animation: none !important; transition: none !important; }
+.chead { margin: -16px -16px 12px; border-top: 0; border-radius: 2px 5px 0 0; }
+.card.dossier:has(> .chead) > .stamp.corner { top: 176px; }
+.card.dossier:has(> .chead)::after { z-index: 2; }
+.lh { white-space: normal; overflow: visible; text-overflow: clip; font-size: 10px; letter-spacing: .05em; }
+.card.dossier:has(> .stamp.corner) > .lh + .kicker { padding-right: 112px; }
+.card.dossier.sealed { padding-bottom: 46px; }
+.seal { bottom: -24px; } .card.dossier.sealed { margin-bottom: 34px; }
