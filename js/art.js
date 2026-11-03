@@ -45,29 +45,47 @@ window.ASHLINE_ART = (function () {
     return "";
   }
 
+  const IRIS = { kite: "#8b5cf6", lena: "#2563eb", mira: "#065f46", ren: "#7c2d12" };
   function portrait(who, expr, size) {
     const p = PEOPLE[who] || PEOPLE.kite;
-    const id = "pg" + (++uid);
+    const n = ++uid, bg = "pg" + n, sk = "ps" + n, jk = "pj" + n, hr = "ph" + n, rim = "pr" + n;
     const e = expr || "neutral";
-    const eyeY = e === "worried" ? 57 : 56;
+    const eyeY = e === "worried" ? 57 : 56, lid = e === "smirk" ? 1.9 : 3.1;
+    const iris = IRIS[who] || "#334155";
+    function eye(cx) {
+      return '<ellipse cx="' + cx + '" cy="' + eyeY + '" rx="4.6" ry="' + lid + '" fill="#f8fafc"/>' +
+        '<circle cx="' + (cx + 0.6) + '" cy="' + eyeY + '" r="' + Math.min(2.7, lid) + '" fill="' + iris + '"/>' +
+        '<circle cx="' + (cx + 0.6) + '" cy="' + eyeY + '" r="1.2" fill="#0b0b12"/>' +
+        '<circle cx="' + (cx + 1.6) + '" cy="' + (eyeY - 1) + '" r=".9" fill="#fff"/>' +
+        '<path d="M' + (cx - 5) + " " + (eyeY - lid + 0.4) + " Q" + cx + " " + (eyeY - lid - 1.6) + " " + (cx + 5) + " " + (eyeY - lid + 0.4) + '" stroke="#1a1020" stroke-width="1.4" fill="none" stroke-linecap="round"/>';
+    }
     return '<svg class="portrait" viewBox="0 0 100 100" width="' + (size || 40) + '" height="' + (size || 40) + '" aria-hidden="true">' +
-      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + p.bg1 + '"/><stop offset="1" stop-color="' + p.bg2 + '"/></linearGradient></defs>' +
-      '<rect width="100" height="100" rx="22" fill="url(#' + id + ')"/>' +
-      '<circle cx="78" cy="20" r="26" fill="#fff" opacity=".06"/>' +
-      hairBack(p) +
-      '<path d="M18 100 Q22 82 50 80 Q78 82 82 100 Z" fill="' + p.jacket + '"/>' +
-      '<path d="M18 100 Q22 82 50 80 Q78 82 82 100" fill="none" stroke="' + p.trim + '" stroke-width="1.5" opacity=".7"/>' +
-      '<rect x="44" y="70" width="12" height="14" rx="5" fill="' + p.skinShade + '"/>' +
-      '<ellipse cx="50" cy="55" rx="21" ry="24" fill="' + p.skin + '"/>' +
-      '<path d="M50 58 Q48 66 51 67" stroke="' + p.skinShade + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-      '<ellipse cx="40" cy="' + eyeY + '" rx="2.6" ry="' + (e === "smirk" ? 2 : 3) + '" fill="#1a1a24"/>' +
-      '<ellipse cx="60" cy="' + eyeY + '" rx="2.6" ry="3" fill="#1a1a24"/>' +
-      '<circle cx="41" cy="' + (eyeY - 1) + '" r=".9" fill="#fff"/><circle cx="61" cy="' + (eyeY - 1) + '" r=".9" fill="#fff"/>' +
+      "<defs>" +
+      '<linearGradient id="' + bg + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + p.bg1 + '"/><stop offset="1" stop-color="' + p.bg2 + '"/></linearGradient>' +
+      '<radialGradient id="' + sk + '" cx="42%" cy="40%" r="70%"><stop offset="0" stop-color="' + p.skin + '"/><stop offset=".75" stop-color="' + p.skin + '"/><stop offset="1" stop-color="' + p.skinShade + '"/></radialGradient>' +
+      '<linearGradient id="' + jk + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + p.jacket + '"/><stop offset="1" stop-color="#05070c"/></linearGradient>' +
+      '<linearGradient id="' + hr + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + p.hairHi + '"/><stop offset=".45" stop-color="' + p.hair + '"/></linearGradient>' +
+      '<radialGradient id="' + rim + '" cx="80%" cy="15%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+      "</defs>" +
+      '<rect width="100" height="100" rx="22" fill="url(#' + bg + ')"/>' +
+      '<path d="M0 30 H100 M0 50 H100 M0 70 H100 M30 0 V100 M70 0 V100" stroke="#fff" stroke-opacity=".05" stroke-width=".6"/>' +
+      '<rect width="100" height="100" rx="22" fill="url(#' + rim + ')"/>' +
+      hairBack(p).replace('fill="' + p.hair + '"', 'fill="url(#' + hr + ')"') +
+      '<path d="M14 100 Q18 80 50 78 Q82 80 86 100 Z" fill="url(#' + jk + ')"/>' +
+      '<path d="M14 100 Q18 80 50 78 Q82 80 86 100" fill="none" stroke="' + p.trim + '" stroke-width="1.6" opacity=".85"/>' +
+      '<path d="M40 79 L50 92 L60 79" fill="none" stroke="' + p.trim + '" stroke-width="1.2" opacity=".5"/>' +
+      '<path d="M43 68 h14 v14 q-7 5 -14 0 Z" fill="' + p.skinShade + '"/>' +
+      '<ellipse cx="29" cy="58" rx="3.6" ry="5.5" fill="' + p.skinShade + '"/><ellipse cx="71" cy="58" rx="3.6" ry="5.5" fill="' + p.skinShade + '"/>' +
+      '<path d="M29 52 Q29 30 50 30 Q71 30 71 52 Q71 70 58 78 Q50 82 42 78 Q29 70 29 52 Z" fill="url(#' + sk + ')"/>' +
+      '<path d="M70.5 46 Q72 60 63 75" stroke="' + p.bg1 + '" stroke-width="1.4" fill="none" opacity=".4" stroke-linecap="round"/>' +
+      eye(40) + eye(60) +
+      '<path d="M50 58 Q47.5 66 50.5 67.5" stroke="' + p.skinShade + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
       brows(e, p.hair === "#151515" ? "#222" : p.hair) +
       mouth(e) +
-      '<ellipse cx="34" cy="66" rx="4" ry="2.4" fill="#f87171" opacity=".18"/><ellipse cx="66" cy="66" rx="4" ry="2.4" fill="#f87171" opacity=".18"/>' +
-      hairFront(p) +
+      '<ellipse cx="35" cy="66" rx="4" ry="2.2" fill="#f87171" opacity=".2"/><ellipse cx="65" cy="66" rx="4" ry="2.2" fill="#f87171" opacity=".2"/>' +
+      hairFront(p).replace('fill="' + p.hair + '"', 'fill="url(#' + hr + ')"') +
       accessory(p) +
+      '<rect x=".5" y=".5" width="99" height="99" rx="21.5" fill="none" stroke="#fff" stroke-opacity=".14"/>' +
       "</svg>";
   }
 

@@ -438,3 +438,96 @@ body.reduce-motion .title-bg { display: none; }
   .relay-pick.locked { border-color: var(--stroke); background: transparent; color: var(--text-3); }
   .hop-ladder { -webkit-mask-image: none; }
 }
+
+/* =====================================================================
+   v4 THEME LAYER — every colour/effect a new art style needs lives here.
+   To reskin: override these tokens (e.g. body.theme-xyz { ... }).
+   ===================================================================== */
+:root {
+  --accent-1: #4fd1ff;                 /* primary accent (links, route, buttons) */
+  --accent-2: #a78bfa;                 /* secondary accent (story, targets) */
+  --grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+  --glow-1: rgba(79, 209, 255, .45);
+  --glow-2: rgba(167, 139, 250, .35);
+  --font-display: var(--sans);
+  --fs-display: clamp(44px, 13vw, 72px);
+  --elev-1: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  --elev-2: 0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+  --panel-bg: linear-gradient(180deg, rgba(18,25,42,.78) 0%, rgba(9,13,22,.78) 100%);
+  --map-sea-0: #0c1730; --map-sea-1: #03060c;
+  --map-land: #121c30; --map-land-edge: #24365a; --map-coast: rgba(79,209,255,.16);
+  --map-label: 19px;                   /* phone label size in map units (scaled 1.65x) */
+  --flash-good: rgba(52,211,153,.28); --flash-bad: rgba(251,113,133,.32); --flash-win: rgba(167,139,250,.3);
+}
+
+/* depth: panels and cards share one lighting model (top-lit glass, no blur) */
+.glass-card { box-shadow: var(--elev-1); background-image: linear-gradient(180deg, rgba(255,255,255,.035), transparent 40%); }
+.panel { background: var(--panel-bg); }
+.panel-head { background: linear-gradient(180deg, rgba(255,255,255,.03), transparent); }
+.modal, .sheet { box-shadow: var(--elev-2); }
+.btn.primary { box-shadow: 0 8px 24px var(--glow-1), inset 0 1px 0 rgba(255,255,255,.4); }
+.app-bar { background: linear-gradient(180deg, rgba(12,16,28,.95), rgba(8,11,18,.85)); }
+
+/* ----- Title: logo lockup + seabed horizon ----- */
+.title-emblem { position: relative; width: 120px; height: 120px; margin: 0 auto var(--s4); }
+.title-emblem svg { position: relative; filter: drop-shadow(0 0 18px var(--glow-1)); }
+.emb-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--glow-1); animation: embRing 3.2s var(--ease) infinite; }
+@keyframes embRing { 0% { transform: scale(.7); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
+.wordmark { font-family: var(--font-display); font-size: var(--fs-display); font-weight: 900; letter-spacing: .22em; padding-left: .22em; filter: drop-shadow(0 4px 24px var(--glow-2)); }
+.wordmark-rule { height: 2px; width: 70%; margin: var(--s2) auto 0; background: linear-gradient(90deg, transparent, var(--accent-1), var(--accent-2), transparent); box-shadow: 0 0 12px var(--glow-1); animation: ruleIn 1s .55s var(--ease) both; transform-origin: center; }
+@keyframes ruleIn { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
+.title-act { margin-top: var(--s4); }
+.title-seabed { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 28%; pointer-events: none; }
+.sb-far { fill: #0b1222; } .sb-near { fill: #070b15; }
+.sb-cable { fill: none; stroke: var(--accent-2); stroke-opacity: .35; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.sb-pulse { fill: none; stroke: var(--accent-1); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 18 400; vector-effect: non-scaling-stroke; animation: sbPulse 4.5s linear infinite; filter: drop-shadow(0 0 4px var(--accent-1)); }
+@keyframes sbPulse { from { stroke-dashoffset: 420; } to { stroke-dashoffset: 0; } }
+.title-screen { background: radial-gradient(80% 50% at 50% 38%, rgba(124,58,237,.22), transparent 70%), radial-gradient(120% 60% at 50% 120%, rgba(79,209,255,.14), transparent 60%), var(--bg-0); }
+
+/* ----- Map: lit sea, glowing coast, readable labels, packet pulses ----- */
+#world { background: radial-gradient(ellipse at 50% 40%, var(--map-sea-0) 0%, var(--map-sea-1) 75%); }
+.land { fill: var(--map-land); stroke: var(--map-land-edge); }
+.coast { fill: none; stroke: var(--map-coast); stroke-width: 7; stroke-linejoin: round; }
+.route-pulse { fill: #fff; stroke: var(--accent-1); stroke-width: 3; stroke-opacity: .6; }
+.node.target .ring { stroke-width: 2.6; }
+@media (max-width: 899px) {
+  #world .node .lbl { font-size: var(--map-label); stroke-width: 6px; font-weight: 750; }
+  #world .node.relay:not(.in-route) .lbl { opacity: .75; }
+}
+
+/* ----- Desktop: give the Kite column presence instead of dead space ----- */
+@media (min-width: 900px) {
+  .mission-body { grid-template-columns: 400px 1fr; }
+  .panel.chat { position: relative; }
+  .panel.chat::after { content: ""; position: absolute; left: 50%; bottom: 120px; width: 220px; height: 220px; transform: translateX(-50%); background: url(assets/icon.svg) center / contain no-repeat; opacity: .06; pointer-events: none; border-radius: 40px; }
+  .panel.chat .head-portrait .portrait { width: 56px; height: 56px; border-radius: 16px; box-shadow: 0 0 0 1px var(--stroke-hi), 0 8px 24px var(--glow-2); }
+  .panel.chat .panel-head { min-height: 76px; }
+  .panel.chat .panel-head h2 { font-size: var(--fs-lg); color: var(--text); letter-spacing: .04em; text-transform: none; }
+  .chat-log { position: relative; z-index: 1; }
+}
+
+/* ----- Feedback: flashes, trace tension, win burst ----- */
+.flash { position: fixed; inset: 0; z-index: 45; pointer-events: none; opacity: 0; }
+.flash.good { background: radial-gradient(circle at 50% 50%, var(--flash-good), transparent 70%); animation: flashIn .6s ease-out both; }
+.flash.bad { background: radial-gradient(circle at 50% 50%, transparent 30%, var(--flash-bad)); animation: flashIn .45s ease-out both; }
+.flash.win { background: radial-gradient(circle at 50% 40%, var(--flash-win), transparent 65%); animation: flashIn 1s ease-out both; }
+@keyframes flashIn { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+.flash.bad ~ #screen-mission { animation: shake .32s linear; }
+.trace-inline.crit .trace-bar { box-shadow: 0 0 10px rgba(251,113,133,.6); }
+.trace-inline.crit #trace-text { animation: heartbeat .9s ease-in-out infinite; display: inline-block; }
+@keyframes heartbeat { 0%, 100% { transform: none; } 15% { transform: scale(1.15); } 30% { transform: none; } 45% { transform: scale(1.08); } }
+.overlay.win .stars { position: relative; }
+.overlay.win .stars::before { content: ""; position: absolute; left: 50%; top: 50%; width: 220px; height: 120px; transform: translate(-50%, -50%); background: radial-gradient(ellipse, rgba(251,191,36,.28), transparent 70%); z-index: -1; animation: fadeIn .8s .2s both; }
+.overlay.win .stars .on .ic { filter: drop-shadow(0 0 8px rgba(251,191,36,.6)); }
+.overlay.win .roll { text-shadow: 0 0 18px rgba(52,211,153,.5); }
+
+/* ----- Portraits everywhere get the same frame ----- */
+.portrait { display: block; }
+.c-art svg, .greet-portrait .portrait { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .emb-ring, .sb-pulse, .route-pulse, .trace-inline.crit #trace-text { animation: none !important; }
+  .route-pulse { display: none; }
+}
+body.reduce-motion .emb-ring, body.reduce-motion .sb-pulse { animation: none !important; opacity: 0; }
+@media (max-width: 899px) { #world .node.locked .lbl { display: none; } }

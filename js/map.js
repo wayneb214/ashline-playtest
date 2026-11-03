@@ -35,7 +35,7 @@
       '<radialGradient id="sea" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#0b1426"/><stop offset="1" stop-color="#04070d"/></radialGradient>';
     svg("rect", { x: 0, y: 0, width: 1000, height: 440, fill: "url(#sea)" }, world);
     const gLand = svg("g", {}, world);
-    AL.DATA.LAND.forEach(function (d) { svg("path", { d: d, class: "land" }, gLand); svg("path", { d: d, class: "land-dots" }, gLand); });
+    AL.DATA.LAND.forEach(function (d) { svg("path", { d: d, class: "coast" }, gLand); svg("path", { d: d, class: "land" }, gLand); svg("path", { d: d, class: "land-dots" }, gLand); });
     const gCab = svg("g", {}, world);
     AL.DATA.CABLES.forEach(function (c) {
       const sp = c.id === "spine" ? " spine" : "";
@@ -109,6 +109,13 @@
       svg("circle", { r: 6, class: "trace-head", id: "trace-dot", cx: NODES.target.x, cy: NODES.target.y, opacity: 0 }, layer);
     } else {
       svg("path", { d: d, class: "route-preview", id: "route-path" }, layer);
+    }
+    // Packet pulses travelling along the route (decorative)
+    if (!AL.reduceMotion()) {
+      [0, 0.5].forEach(function (k) {
+        const c = svg("circle", { r: m.connected ? 4.5 : 3.5, class: "route-pulse" }, layer);
+        svg("animateMotion", { dur: m.connected ? "1.4s" : "2.4s", begin: (k * (m.connected ? 1.4 : 2.4)) + "s", repeatCount: "indefinite", path: d }, c);
+      });
     }
     Object.keys(NODES).forEach(function (id) {
       const g = world.querySelector('.node[data-id="' + id + '"]');

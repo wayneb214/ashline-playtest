@@ -375,14 +375,14 @@
     print("Submitting passphrase\u2026", "dim");
     if (String(word).toLowerCase().replace(/\s+/g, "") === job().password) {
       m.cracked = true;
-      AL.sfx("unlock");
+      AL.sfx("unlock"); AL.flash("good");
       print("GATE OPEN \u2014 root shell granted.", "ok");
       AL.chat.say(job().kite.crack_ok, "smirk");
       AL.updateChrome();
       return true;
     }
     m.wrongGuesses++;
-    AL.sfx("err");
+    AL.sfx("err"); AL.flash("bad");
     print("Incorrect. Trace accelerated.", "err");
     AL.chat.say(job().kite.crack_fail, "worried");
     penalise(AL.WRONG_PENALTY_MS);
@@ -411,7 +411,7 @@
     if (j.tutorial) s.tutorialDone = true;
     AL.persist();
     AL.updateChrome();
-    AL.sfx("win");
+    AL.sfx("win"); AL.flash("win");
     let starHtml = "";
     for (let i = 1; i <= 3; i++) starHtml += '<span class="' + (i <= st ? "on" : "") + '">' + ART.icon("star", 40) + "</span>";
     AL.showModal("win", "MISSION COMPLETE", j.title,

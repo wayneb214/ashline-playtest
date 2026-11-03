@@ -9,23 +9,35 @@
   <meta name="theme-color" content="#06080d">
   <meta name="format-detection" content="telephone=no">
   <title>ASHLINE — Deep Water</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="vignette" class="vignette" aria-hidden="true"></div>
+  <div id="flash" class="flash" aria-hidden="true"></div>
 
   <!-- TITLE -->
   <section id="screen-title" class="screen title-screen">
     <canvas id="title-bg" class="title-bg" aria-hidden="true"></canvas>
     <div class="scanlines" aria-hidden="true"></div>
+    <svg class="title-seabed" viewBox="0 0 400 160" preserveAspectRatio="none" aria-hidden="true">
+      <path class="sb-far" d="M0 120 C80 100 140 130 220 112 S340 96 400 110 V160 H0 Z"/>
+      <path class="sb-near" d="M0 140 C90 128 160 150 250 136 S360 126 400 134 V160 H0 Z"/>
+      <path class="sb-cable" d="M-10 128 C70 112 150 140 230 120 S350 104 410 118"/>
+      <path class="sb-pulse" d="M-10 128 C70 112 150 140 230 120 S350 104 410 118"/>
+    </svg>
     <div class="title-inner">
       <div class="title-emblem" aria-hidden="true">
-        <svg viewBox="0 0 64 64" width="64" height="64"><defs><linearGradient id="emb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fd1ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
-          <path d="M32 4 L58 18 V34 C58 48 46 58 32 61 C18 58 6 48 6 34 V18 Z" fill="none" stroke="url(#emb)" stroke-width="2.5"/>
+        <span class="emb-ring"></span>
+        <svg viewBox="0 0 64 64" width="88" height="88"><defs><linearGradient id="emb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fd1ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+          <path d="M32 4 L58 18 V34 C58 48 46 58 32 61 C18 58 6 48 6 34 V18 Z" fill="rgba(10,14,30,.6)" stroke="url(#emb)" stroke-width="2.5"/>
           <path class="emb-wave" d="M14 36 C20 30 26 30 32 36 S44 42 50 36" fill="none" stroke="url(#emb)" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="32" cy="24" r="4" fill="url(#emb)"/></svg>
+          <path d="M14 44 C20 38 26 38 32 44 S44 50 50 44" fill="none" stroke="url(#emb)" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+          <circle cx="32" cy="23" r="4" fill="url(#emb)"/></svg>
       </div>
       <h1 class="wordmark" aria-label="ASHLINE"><span>A</span><span>S</span><span>H</span><span>L</span><span>I</span><span>N</span><span>E</span></h1>
+      <div class="wordmark-rule" aria-hidden="true"></div>
       <p class="title-act">Act I · Deep Water</p>
       <p class="title-tag">Someone is listening to the seabed.</p>
       <div class="title-menu">

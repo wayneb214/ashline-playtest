@@ -69,6 +69,13 @@ window.AL = (function () {
       el.modalActions.appendChild(b);
     });
   };
+  // Full-screen colour flash + screen shake for success/failure beats
+  AL.flash = function (kind) {
+    const f = $("flash");
+    if (!f) return;
+    f.className = "flash"; void f.offsetWidth; f.className = "flash " + kind;
+    if (kind === "bad" && !AL.reduceMotion() && navigator.vibrate) navigator.vibrate(40);
+  };
   let toastTimer = 0;
   AL.toast = function (msg) {
     el.toast.textContent = msg;
@@ -163,6 +170,7 @@ window.AL = (function () {
     }).join("");
     AL.showModal("settings", "SETTINGS", "Tune your rig",
       sw("sound", "Sound effects", "sound") + sw("music", "Ambient music", "music") +
+      '<div class="set-row">' + ART.icon("sound", 20) + '<label for="set-sfx">Effects volume</label><input id="set-sfx" type="range" min="0" max="100" value="' + Math.round(s.sfxVol * 100) + '"></div>' +
       '<div class="set-row">' + ART.icon("wave", 20) + '<label for="set-vol">Music volume</label><input id="set-vol" type="range" min="0" max="100" value="' + Math.round(s.musicVol * 100) + '"></div>' +
       '<div class="set-row">' + ART.icon("text", 20) + '<label>Text speed</label><div class="seg" id="set-speed">' + speeds + "</div></div>" +
       sw("reduceMotion", "Reduce motion", "motion") +
@@ -177,6 +185,8 @@ window.AL = (function () {
       });
     });
     $("set-vol").addEventListener("input", function (e) { AL.save.settings.musicVol = Number(e.target.value) / 100; AL.persist(); Audio.configure(AL.save.settings); });
+    $("set-sfx").addEventListener("input", function (e) { AL.save.settings.sfxVol = Number(e.target.value) / 100; AL.persist(); Audio.configure(AL.save.settings); });
+    $("set-sfx").addEventListener("change", function () { AL.sfx("tap"); });
     $("set-speed").querySelectorAll("button").forEach(function (b) {
       b.addEventListener("click", function () {
         AL.save.settings.textSpeed = b.getAttribute("data-v"); AL.persist(); AL.sfx("tap");
