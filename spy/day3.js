@@ -187,6 +187,7 @@
   function briefingIntro() {
     const s = S(); A.chrome(true); A.meters(); A.ticker();
     if (s.seenIntro) return A.briefing();
+    if (CINE.maybe("day3", briefingIntro)) return;
     A.render('<figure class="no10 d2fig"><img src="' + pic("h-york") + '" alt="A narrow timbered street in York at dawn, a grey car parked"><figcaption>York \u00b7 Friday 06:40</figcaption></figure>' +
       '<div class="card dossier">' + A.LH + '<span class="stamp corner">GREEN COAT</span><div class="kicker">Day 3 \u00b7 For C only</div><h2 style="margin-top:10px;padding-right:110px">The Green Coat</h2>' +
       "<p>Kite closes the door. \u201cThe woman in green isn\u2019t one of theirs, C. <strong>She\u2019s ours.</strong> Code name <strong>LINDEN</strong>. Eleven years inside the Grey House.\u201d</p>" +
@@ -368,7 +369,7 @@
       document.querySelectorAll("[data-car]").forEach(function (b) { b.onclick = function () { draw(sel, b.getAttribute("data-car")); }; });
       if ($("back")) $("back").onclick = A.briefing;
       $("go").onclick = function () {
-        if (st.car) { X.driver = sel === "kite" ? null : sel; X.car = sel2; if (X.driver) s.used[X.driver] = true; X.picks[X.stage] = "ok"; X.notes.push((X.driver ? A.first(X.driver) : "Kite") + " drives the " + (sel2 === "dip" ? "diplomatic car" : "hired estate") + "."); X.stage++; return draw(null, null); }
+        if (st.car) { X.driver = sel === "kite" ? null : sel; X.car = sel2; if (X.driver) s.used[X.driver] = true; X.picks[X.stage] = "ok"; X.notes.push((X.driver ? A.first(X.driver) : "Kite") + " drives the " + (sel2 === "dip" ? "diplomatic car" : "hired estate") + "."); X.stage++; if (STAGES[X.stage].key === "dog" && CINE.maybe("border", function () { draw(null, null); })) return; return draw(null, null); }
         const o = st.opts[sel], p = odds(o, st);
         s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[o.risk]++;
         if (o.swap) A.apply({ capital: -6 });

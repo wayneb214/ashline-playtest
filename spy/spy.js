@@ -142,11 +142,14 @@
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "Start a new game" : "Take the chair") + "</button>" +
       (day2 ? '<button class="btn ghost" id="days">Choose a day</button>' : "") +
+      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Cutscenes</button></div>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     LOOK.place(); LOOK.rain(true); LOOK.night(8);
     $("go").onclick = difficulty;
     if (saved) $("continue").onclick = function () { restore(saved); resume(); };
     if (day2) $("days").onclick = daySelect;
+    $("opening").onclick = function () { CINE.play("open", title); };
+    $("cinema").onclick = function () { CINE.settings(title); };
   }
   function resume() { chrome(true); meters(); ticker(); S.screen === "summary" ? summary() : briefing(); }
   function daySelect() {
@@ -170,7 +173,7 @@
         '<div class="sticky-go"><button class="btn primary" id="go">Begin \u00b7 ' + D.DIFFICULTY[pick].name + '</button></div><button class="btn ghost" id="back">Back</button>', "You can change this next time you start a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
-      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); intro(); };
+      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); if (!CINE.maybe("day1", intro)) intro(); };
       $("back").onclick = title;
     };
     draw();
@@ -511,6 +514,7 @@
       "<span class=\"hdr\">TO: C &nbsp;\u00b7&nbsp; FROM: KITE, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 Avon Police report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + moleLine() + "<br><br>" + extra + "<br><br>\u2014 Kite</div></div>";
   }
   function summary() {
+    if (!S.ended && CINE.maybe({ 1: "bath", 2: "ferry", 3: "end3" }[S.day], summary)) return;
     if (!S.ended) {
       remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id]); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk" }); });
       S.hour = 24; S.ended = true;
@@ -640,6 +644,8 @@
     render: render, kite: kite, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
     briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome };
 
-  fresh(); title();
+  fresh();
+  if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
+  else if (!CINE.maybe("open", title, { gate: true })) title();
   window.__SPY__ = { state: function () { return S; }, fresh: function () { fresh(); title(); }, paperDataURL: function () { return drawPaper().toDataURL("image/png"); } };
 })();

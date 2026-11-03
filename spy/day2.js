@@ -11,6 +11,7 @@
   function briefingIntro() {
     const s = S(); A.chrome(true); A.meters(); A.ticker();
     if (s.seenIntro) return A.briefing();
+    if (CINE.maybe("day2", briefingIntro)) return;
     A.render('<figure class="no10 d2fig"><img src="' + A.pic("briefing-room") + '" alt="The briefing room at Albion House, rain on the windows"><figcaption>Albion House \u00b7 the briefing room, Thursday 07:30</figcaption></figure>' +
       '<div class="card dossier">' + A.LH + '<span class="stamp corner">PALE HOUR</span><div class="kicker">Day 2 \u00b7 For C only</div><h2 style="margin-top:10px;padding-right:110px">Pale Hour</h2>' +
       "<p>Pieter Vass is alive, just, in a Bath hospital under a police guard. The Prime Minister wants the people who did it, and she wants them <strong>before they leave Britain</strong>.</p>" +
