@@ -52,7 +52,7 @@
     if (f.exit === "win") out.push({ g: 1, t: "Day 2 \u00b7 We hold the tall man. Kesk wants him back: a swap at the border is possible, if No.10 signs off (trust 50)." });
     else if (f.exit === "mixed") out.push({ g: 1, t: "Day 2 \u00b7 We hold the driver. He\u2019s told us the border routine: +5% at the checkpoint." });
     else if (f.exit) out.push({ g: 0, t: "Day 2 \u00b7 The Bath team got home. They know our faces: the watchers start a step closer." });
-    return out;
+    return out.concat(window.DESK.follows());
   }
   function followList() { return '<ul class="follows">' + follows().map(function (x) { return '<li class="' + (x.g ? "good" : "bad") + '">' + esc(x.t) + "</li>"; }).join("") + "</ul>"; }
   function followStrip() {
@@ -99,9 +99,10 @@
     const L = letterText(n);
     if (window.SFX) SFX.tele();
     A.render('<div class="kletter card" id="kletter"><div class="kl-top"><img class="portrait" src="' + pic("kesk") + '" alt="Colonel Kesk"><div><div class="kl-from">From the desk of</div><div class="kl-name">' + KESK + '</div><div class="kl-role">Director \u00b7 the Grey House</div></div></div>' +
-      '<div class="kl-body"><p>My dear C,</p><p>' + esc(L.body) + '</p><p class="kl-sig">K.</p></div>' +
+      '<div class="kl-body"><p>My dear C,</p><p>' + esc(L.body) + "</p>" + (n === 1 ? window.DESK.inkHTML("kesk") : "") + '<p class="kl-sig">K.</p></div>' +
       (L.st ? '<div class="chips"><span class="chip kesk">Kesk now counters ' + STYLE[L.st] + " plans \u00b7 \u2212" + keskHit() + "% on them today</span></div>" : "") +
-      '<p class="kl-note">Hand-delivered to the front desk. No fingerprints. The paper smells of pine.</p></div><button class="btn primary" id="go">Into the burn bag</button>', "Your most-used style is the one Kesk will be ready for.");
+      '<p class="kl-note">Hand-delivered to the front desk. No fingerprints. The paper smells of ' + (n === 1 ? "pine, and faintly of lemons." : "pine.") + "</p></div>" + (n === 1 ? window.DESK.lampHTML("kesk") : "") + '<button class="btn primary" id="go">Into the burn bag</button>', n === 1 ? "Some ink only shows when the paper is warm." : "Your most-used style is the one Kesk will be ready for.");
+    if (n === 1) window.DESK.ink($("kletter"), "kesk");
     $("go").onclick = function () { FEEL.tearThen($("kletter"), then || A.briefing); };
   }
 
@@ -135,37 +136,30 @@
   // ---------- the moral call from No.10 ----------
   function dealCall() {
     const s = S(); s.deal = "pending"; A.save("briefing");
-    if (window.SFX) SFX.ring(); FEEL.buzz("ring");
-    A.render('<div class="phone card" id="phone"><div class="lh">NO.10 SWITCHBOARD \u00b7 SECURE LINE</div><div class="pm"><img src="' + pic("pm-phone") + '" alt="Prime Minister Eleanor Hale on the telephone"></div><div class="ringing">\u260e The Prime Minister again, C.</div><button class="btn primary" id="answer">Answer</button></div>', "The red phone is ringing.");
-    $("answer").onclick = function () {
-      if (window.SFX) SFX.stopRing();
-      let sel = null;
-      const draw = function () {
-        A.render('<div class="phone card call" id="phone"><div class="lh">NO.10 SWITCHBOARD \u00b7 ' + A.hh(s.hour) + '</div><div class="pm"><img src="' + pic("pm-phone") + '" alt="Prime Minister Eleanor Hale"></div>' +
-          '<div class="note"><div class="who">Eleanor Hale \u00b7 Prime Minister</div><span class="tx">C. An offer, through the back door. Colonel Kesk will release <b>Tom Archer</b>, the lorry driver they\u2019ve held for six weeks, if we \u201cforget a woman in a green coat\u201d. I don\u2019t know who she is, and I don\u2019t want to. Do we have a deal?</span></div></div>' +
-          '<button class="card appr' + (sel === "deal" ? " sel" : "") + '" data-c="deal"><div class="t">Take the deal. Leave her there.</div><div class="chips"><span class="chip">+14 No.10 trust</span><span class="chip risk-high">The Green Coat is called off</span><span class="chip risk-high">Every officer loyalty \u22121</span></div></button>' +
-          '<button class="card appr' + (sel === "refuse" ? " sel" : "") + '" data-c="refuse"><div class="t">Refuse. We bring our people home.</div><div class="chips"><span class="chip risk-high">\u221212 No.10 trust</span><span class="chip risk-low">Every officer loyalty +1</span></div></button>' +
-          '<button class="card appr' + (sel === "lie" ? " sel" : "") + '" data-c="lie"><div class="t">Say yes. Go and get her anyway.</div><div class="chips"><span class="chip">+6 No.10 trust now</span><span class="chip risk-high">If she gets out, Hale finds out</span></div></button>' +
-          '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Tell her" : "What do you tell her?") + "</button></div>", "No.10 trust opens and closes options tonight.");
-        document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); draw(); }; });
-        $("go").onclick = function () {
-          let ch, head, txt;
-          s.deal = sel; A.advance(1);
-          if (sel === "deal") {
-            ch = A.apply({ capital: 14, trust: 4 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] - 1); });
-            s.done.exfil = "loss"; s.log.push({ id: "exfil", k: null, res: "loss", appr: "Traded for Tom Archer" });
-            head = "Briton freed by Varenia \u2018on humanitarian grounds\u2019"; txt = "Hale is warm for the first time all week. Kite closes the Green Coat file without a word, and doesn\u2019t look at you.";
-          } else if (sel === "refuse") {
-            ch = A.apply({ capital: -12 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] + 1); });
-            head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "\u201cOn your head, C. Again.\u201d The line goes dead. Downstairs, word gets round, and somebody starts making tea for everyone.";
-          } else { ch = A.apply({ capital: 6 }); head = "Hopes rise for Briton held in Varenia"; txt = "\u201cGood. Sensible.\u201d Hale rings off. Kite raises one eyebrow and says nothing."; }
-          s.heads.push(head); A.meters(ch); A.ticker(); A.save("briefing");
-          A.render('<div class="card outcome ' + (sel === "deal" ? "loss" : sel === "refuse" ? "win" : "mixed") + '"><span class="stamp thud">' + { deal: "TRADED", refuse: "REFUSED", lie: "AGREED?" }[sel] + '</span><h2>The offer from Kesk</h2><p>' + txt + "</p>" + A.deltas(ch) + A.headline(head) + '</div><button class="btn primary" id="go">Back to the desk</button>', "That will echo.");
-          $("go").onclick = A.briefing;
-        };
-      };
-      draw();
+    const settle = function (sel, t, missed) {
+      let ch, head, txt;
+      s.deal = sel; A.advance(1);
+      if (sel === "deal") {
+        ch = A.apply({ capital: 14, trust: 4 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] - 1); });
+        s.done.exfil = "loss"; s.log.push({ id: "exfil", k: null, res: "loss", appr: "Traded for Tom Archer" });
+        head = "Briton freed by Varenia \u2018on humanitarian grounds\u2019"; txt = "Hale is warm for the first time all week. Kite closes the Green Coat file without a word, and doesn\u2019t look at you.";
+      } else if (sel === "refuse" && missed) {
+        ch = A.apply({ capital: -16 }); head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "Nobody answered. Hale tells Kesk\u2019s people no herself, and she is furious about it. <b>No.10 trust \u221216</b>, and the officers never hear you stood up for anyone.";
+      } else if (sel === "refuse") {
+        ch = A.apply({ capital: -12 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] + 1); });
+        head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "\u201cOn your head, C. Again.\u201d The line goes dead. Downstairs, word gets round, and somebody starts making tea for everyone.";
+      } else { ch = A.apply({ capital: 6 }); head = "Hopes rise for Briton held in Varenia"; txt = "\u201cGood. Sensible.\u201d Hale rings off. Kite raises one eyebrow and says nothing."; }
+      if (t) txt = "You say nothing for too long. Hale takes it as a no. " + txt;
+      s.heads.push(head);
+      window.DESK.after(missed ? "MISSED" : { deal: "TRADED", refuse: "REFUSED", lie: "AGREED?" }[sel], sel === "deal" || missed ? "loss" : sel === "refuse" ? "win" : "mixed", "The offer from Kesk", txt, ch, head);
     };
+    window.DESK.call({ id: "deal", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-phone", ring: "The Prime Minister again, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
+      text: "C. An offer, through the back door. Colonel Kesk will release <b>Tom Archer</b>, the lorry driver they\u2019ve held for six weeks, if we \u201cforget a woman in a green coat\u201d. I don\u2019t know who she is, and I don\u2019t want to. Do we have a deal?",
+      opts: [{ k: "deal", t: "Take the deal. Leave her there.", chips: '<span class="chip">+14 No.10 trust</span><span class="chip risk-high">The Green Coat is called off</span><span class="chip risk-high">Every officer loyalty \u22121</span>' },
+        { k: "refuse", t: "Refuse. We bring our people home.", chips: '<span class="chip risk-high">\u221212 No.10 trust</span><span class="chip risk-low">Every officer loyalty +1</span>' },
+        { k: "lie", t: "Say yes. Go and get her anyway.", chips: '<span class="chip">+6 No.10 trust now</span><span class="chip risk-high">If she gets out, Hale finds out</span>' }],
+      def: "refuse", replySecs: 25, hint: "No.10 trust opens and closes options tonight.",
+      answer: function (k, t) { settle(k, t, false); }, miss: function () { settle("refuse", false, true); } });
   }
 
   // interruptions before the brief, in order
@@ -338,11 +332,11 @@
     ];
     const swapOK = function () { return f.exit === "win" && s.meters.capital >= 50; };
     const driverMod = function (k) { if (!k) return 0; const a = A.AG(k); return a.skill * 4 - s.stress[k] * 4 + (s.loyal[k] - 3) * 3 + (f.call && f.call.choice === "stand" && f.call.k === k ? 10 : 0); };
-    const odds = function (o, st) { return clampP(44 + dodds() + o.mod + sum(common()) + sum(st.extra ? st.extra() : []) + keskMod(o.risk) + driverMod(X.driver) + (X.car === "dip" ? 8 : 0)); };
+    const odds = function (o, st) { return clampP(44 + dodds() + o.mod + sum(common()) + sum(st.extra ? st.extra() : []) + sum(window.DESK.stageHelps(st.key)) + keskMod(o.risk) + driverMod(X.driver) + (X.car === "dip" ? 8 : 0)); };
     const banned = function (k) { return f.call && f.call.choice === "deny" && f.call.k === k; };
     const draw = function (sel, sel2) {
       const st = STAGES[X.stage];
-      const helps = common().concat(st.extra ? st.extra() : []);
+      const helps = common().concat(st.extra ? st.extra() : []).concat(window.DESK.stageHelps(st.key));
       let body = "";
       if (st.car) {
         const free = s.roster.filter(function (k) { return !s.used[k]; });

@@ -212,6 +212,7 @@
     if (!remaining().length) return summary();
     if (S.day === 1 && S.log.filter(function (l) { return l.k; }).length >= 2 && !S.call) return phone();
     if (S.pendingRecruit > 0) return recruit();
+    if (window.DESK.interrupt()) return;
     if (S.day >= 2 && window.AH3.interrupt()) return;
     if (stuck()) return summary();
     meters(); ticker(); save("briefing");
@@ -311,6 +312,7 @@
     if (k === S.mole && S.accused !== S.mole) o -= 10; // quietly working against you
     const lt = late(id); if (lt > 0) o -= 10 + lt * 5;
     if (S.day === 3) o += window.AH3.oddsMod(id, k, a);
+    o += window.DESK.oddsMod(id);
     if (id === "sabotage") { if (S.belief === "split") o -= 12; else if (S.belief !== D.TRUTH) o = Math.min(o, 12); }
     return Math.max(5, Math.min(92, Math.round(o)));
   }
@@ -471,30 +473,23 @@
   function phone() {
     const last = S.log.filter(function (l) { return l.k && l.id !== "mole"; }).slice(-1)[0], k = last.k, where = CASES()[last.id].where.split(/,| or /)[0];
     S.call = { k: k, choice: null }; save("briefing");
-    if (window.SFX) SFX.ring(); FEEL.buzz("ring");
-    render('<div class="phone card" id="phone"><div class="lh">NO.10 SWITCHBOARD \u00b7 SECURE LINE</div><div class="pm"><img src="' + pic("pm-phone") + '" alt="Prime Minister Eleanor Hale on the telephone"></div><div class="ringing">\u260e The Prime Minister for you, C.</div><button class="btn primary" id="answer">Answer</button></div>', "The red phone on your desk is ringing.");
-    $("answer").onclick = function () {
-      if (window.SFX) SFX.stopRing();
-      let sel = null;
-      const draw = function () {
-        render('<div class="phone card call" id="phone"><div class="lh">NO.10 SWITCHBOARD \u00b7 SECURE LINE \u00b7 ' + hh(S.hour) + '</div><div class="pm"><img src="' + pic("pm-phone") + '" alt="Prime Minister Eleanor Hale"></div>' +
-          '<div class="note"><div class="who">Eleanor Hale \u00b7 Prime Minister</div><span class="tx">C. The Varenian ambassador is at the Foreign Office shouting about a British spy in ' + esc(where) + ". The Courier has a photograph of <b>" + AG(k).name + "</b>. I can tell the House we\u2019ve never heard of them, or stand by them and take the heat. Your call.</span></div></div>" +
-          '<button class="card appr' + (sel === "deny" ? " sel" : "") + '" data-c="deny"><div class="t">Deny them. Protect the government.</div><div class="chips"><span class="chip">+10 No.10 trust</span><span class="chip risk-high">\u221210 Officer safety</span><span class="chip risk-high">' + first(k) + " loyalty \u22122</span></div></button>" +
-          '<button class="card appr' + (sel === "stand" ? " sel" : "") + '" data-c="stand"><div class="t">Stand by them. Protect the officer.</div><div class="chips"><span class="chip risk-high">\u221212 No.10 trust</span><span class="chip risk-low">+8 Officer safety</span><span class="chip risk-low">' + first(k) + " loyalty +1</span></div></button>" +
-          '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Tell her" : "What do you tell her?") + "</button></div>", "There is no right answer. Only a choice.");
-        document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); draw(); }; });
-        $("go").onclick = function () {
-          let ch, head;
-          if (sel === "deny") { ch = apply({ capital: 10, trust: 4, safety: -10 }); S.loyal[k] = clamp5(S.loyal[k] - 2); S.stress[k] = clamp5(S.stress[k] + 1); head = "No.10: \u2018no knowledge\u2019 of Briton in " + where + " photograph"; }
-          else { ch = apply({ capital: -12, safety: 8 }); S.loyal[k] = clamp5(S.loyal[k] + 1); head = "PM refuses to discuss \u2018our people abroad\u2019; Varenians fume"; }
-          S.call.choice = sel; S.heads.push(head); advance(1); meters(ch); ticker(); save("briefing");
-          render('<div class="card outcome ' + (sel === "deny" ? "mixed" : "win") + '"><span class="stamp thud">' + (sel === "deny" ? "DENIED" : "STOOD BY") + '</span><div class="ohead">' + face(k, sel === "deny" ? "tense" : "") + "<h2>The call from No.10</h2></div><p>" + (sel === "deny" ? "Hale thanks you, briskly. " + first(k) + " hears the statement on the radio in a hotel room in " + esc(where) + "." : "Hale is silent for a long moment. \u201cOn your head, C.\u201d " + first(k) + " is on the next flight home.") + "</p>" +
-            deltas(ch) + headline(head) + '</div><button class="btn primary" id="go">Back to the desk</button>', "That will echo.");
-          $("go").onclick = briefing;
-        };
-      };
-      draw();
+    const settle = function (sel, t) {
+      let ch, head;
+      if (sel === "deny") { ch = apply({ capital: 10, trust: 4, safety: -10 }); S.loyal[k] = clamp5(S.loyal[k] - 2); S.stress[k] = clamp5(S.stress[k] + 1); head = "No.10: \u2018no knowledge\u2019 of Briton in " + where + " photograph"; }
+      else { ch = apply({ capital: -12, safety: 8 }); S.loyal[k] = clamp5(S.loyal[k] + 1); head = "PM refuses to discuss \u2018our people abroad\u2019; Varenians fume"; }
+      S.call.choice = sel; S.heads.push(head); advance(1);
+      window.DESK.after(sel === "deny" ? "DENIED" : "STOOD BY", sel === "deny" ? "mixed" : "win", "The call from No.10", (t ? "You hesitate. Hale decides for you. " : "") + (sel === "deny" ? "Hale thanks you, briskly. " + first(k) + " hears the statement on the radio in a hotel room in " + esc(where) + "." : "Hale is silent for a long moment. \u201cOn your head, C.\u201d " + first(k) + " is on the next flight home."), ch, head, k);
     };
+    window.DESK.call({ id: "pm1", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-phone", ring: "The Prime Minister for you, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
+      text: "C. The Varenian ambassador is at the Foreign Office shouting about a British spy in " + esc(where) + ". The Courier has a photograph of <b>" + AG(k).name + "</b>. I can tell the House we\u2019ve never heard of them, or stand by them and take the heat. Your call.",
+      opts: [{ k: "deny", t: "Deny them. Protect the government.", chips: '<span class="chip">+10 No.10 trust</span><span class="chip risk-high">\u221210 Officer safety</span><span class="chip risk-high">' + first(k) + " loyalty \u22122</span>" },
+        { k: "stand", t: "Stand by them. Protect the officer.", chips: '<span class="chip risk-high">\u221212 No.10 trust</span><span class="chip risk-low">+8 Officer safety</span><span class="chip risk-low">' + first(k) + " loyalty +1</span>" }],
+      def: "deny", answer: settle,
+      miss: function () {
+        S.call.choice = "deny"; S.call.missed = true; const ch = apply({ capital: -6, safety: -10 }); S.loyal[k] = clamp5(S.loyal[k] - 2);
+        const head = "No.10 denies Briton in " + where + "; spy chief \u2018unavailable\u2019"; S.heads.push(head);
+        window.DESK.after("MISSED", "loss", "No.10 rang", "Nobody picked up. Hale\u2019s office issues a denial anyway, and notes you didn\u2019t answer. " + first(k) + " hears it on the radio.", ch, head, k);
+      } });
   }
 
   // ---------- end of day ----------

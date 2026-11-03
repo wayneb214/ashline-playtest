@@ -30,11 +30,11 @@
       { img: "york", dur: 4.4, pan: [10, 60], cam: [1.05, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Friday. York."]], sfx: [[0.2, "engine", 3]] },
       { img: "green", dur: 4, cam: [1.12, 0, 3, 1.02, 0, 0], caps: [[0.3, "Kite", "The woman in green isn\u2019t one of theirs, C. She\u2019s ours."]], sfx: [[0.2, "stinger"]] }]; } },
     bath: { name: "Bath, 23:47", shots: function () { return [
-      { img: "bath", dur: 8, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."], [5.8, "", "He is one of ours."]], sfx: [[0.1, "rainUp", true], [5.6, "stinger"]] }]; } },
+      { img: "bath", dur: 9, ask: { id: "bath", at: 7 }, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."], [5.8, "", "He is one of ours."]], sfx: [[0.1, "rainUp", true], [5.6, "stinger"]] }]; } },
     ferry: { name: "Harwich, 23:10", shots: function () { const r = S().done && S().done.exit; return [
-      { img: "ferry", dur: 7.5, cam: [1.18, 0, 2, 1.0, 0, -3], caps: [[0.5, "", "Harwich. 23:10. The night ferry."], [3.4, "", r === "win" ? "Plain clothes at the gangway. Now." : r === "mixed" ? "One taken at the services. Two still aboard." : "The ferry clears the harbour wall."]], sfx: [[0.3, "horn"], [3.2, "engine", 4]] }]; } },
+      { img: "ferry", dur: 8.5, ask: { id: "ferry", at: 6 }, cam: [1.18, 0, 2, 1.0, 0, -3], caps: [[0.5, "", "Harwich. 23:10. The night ferry."], [3.4, "", r === "win" ? "Plain clothes at the gangway. Now." : r === "mixed" ? "One taken at the services. Two still aboard." : "The ferry clears the harbour wall."]], sfx: [[0.3, "horn"], [3.2, "engine", 4]] }]; } },
     border: { name: "The border", shots: function () { return [
-      { img: "border", dur: 8, pan: [70, 25], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "The Varenian border. A queue of cars in the dark."], [3.6, "", "She is in the boot, under a picnic blanket."], [6.2, "", "A guard. A dog."]], sfx: [[0.1, "engine", 6], [3.4, "heart", 5]] }]; } },
+      { img: "border", dur: 9, ask: { id: "border", at: 6.9 }, pan: [70, 25], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "The Varenian border. A queue of cars in the dark."], [3.6, "", "She is in the boot, under a picnic blanket."], [6.2, "", "A guard. A dog."]], sfx: [[0.1, "engine", 6], [3.4, "heart", 5]] }]; } },
     end3: { name: "The Green Coat ends", shots: function () { const s = S(), e = s.deal === "deal" ? "traded" : (s.done && s.done.exfil) || "loss"; return [
       { img: e === "win" || e === "mixed" ? "green" : "border", dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.16, 0, -4], caps: [[0.5, "", { win: "Pine forest. Our side of the line.", mixed: "She\u2019s out. One of ours isn\u2019t.", loss: "The barrier. A grey car. Gone.", traded: "A deal is a deal." }[e]], [4, "", { win: "She asks for a cup of tea.", mixed: "Kesk will want a trade.", loss: "Kesk wins this round.", traded: "Nobody mentions a woman in green." }[e]]], sfx: [[0.2, e === "win" ? "chime" : "stinger", 2]] }]; } },
     trailer: { name: "Trailer", shots: function () { return [
@@ -106,6 +106,8 @@
     });
     const s = r.shots[cur], local = e - s.t0; let cap = null;
     (s.caps || []).forEach(function (c) { if (local >= c[0]) cap = c; });
+    if (s.ask && !s.answered && local >= s.ask.at && !r.paused) askNow(r, s);
+    if (s.answered && s.resCap) cap = [0, "", s.resCap];
     const key = cap ? cur + ":" + cap[2] : "";
     if (key !== r.cap) {
       r.cap = key; const box = r.el.querySelector(".cine-cap");
@@ -113,19 +115,49 @@
       if (cap) { void box.offsetWidth; box.classList.add("show"); }
     }
     r.el.classList.toggle("bars", e > 0.05 && !s.card && !s.title);
-    if (e >= r.total) finish(false);
+    if (e >= r.total || (r.endAt && r.elapsed >= r.endAt)) finish(false);
   }
+  // a timed choice: the scene holds while you decide
+  function askNow(r, s) {
+    const q = window.DESK && DESK.askOf(s.ask.id); if (!q) { s.answered = true; return; }
+    r.paused = true; sfx("heart", 2);
+    const secs = r.opts.replay ? 0 : DESK.timer(q.secs);
+    const box = document.createElement("div"); box.className = "cine-ask"; box.setAttribute("role", "group"); box.setAttribute("aria-label", q.q);
+    box.innerHTML = '<div class="q">' + q.q + "</div>" + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + o.d + "</small></button>"; }).join("") +
+      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">If you say nothing: ' + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase() + "</div>" : "");
+    r.el.appendChild(box); r.el.classList.add("asking");
+    let tm = null;
+    const pickIt = function (k, late) {
+      if (s.answered) return; s.answered = true; if (tm) tm.stop();
+      s.resCap = r.opts.replay ? q.opts.filter(function (o) { return o.k === k; })[0].t : (late ? "Too late to choose. " : "") + DESK.choose(s.ask.id, k, late);
+      box.remove(); r.el.classList.remove("asking"); r.paused = false; r.last = 0;
+      if (window.FEEL) FEEL.buzz("stamp");
+      if (r.opts.askOnly) r.endAt = r.elapsed + 1800;
+      window.__CINE_ASKED__ = { id: s.ask.id, k: k, late: !!late };
+    };
+    box.querySelectorAll("[data-ask]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); pickIt(b.getAttribute("data-ask"), false); }); });
+    tm = DESK.countdown(secs, "askbar", function () { pickIt(q.def, true); });
+    r.ask = { stop: function () { if (tm) tm.stop(); } };
+  }
+  // the first unanswered choice still ahead, if any
+  function pendingAsk(r) { return r.shots.filter(function (s) { return s.ask && !s.answered; })[0]; }
   function loop(ts) {
     const r = run; if (!r) return;
     r.raf = requestAnimationFrame(loop);
     if (window.__CINE_CLOCK__ != null) return; // driven by the trailer recorder
     if (document.hidden) { r.last = 0; return; }
     if (r.last && ts - r.last < 33) return; // 30 fps cap
-    const dt = r.last ? Math.min(100, ts - r.last) : 0; r.last = ts; r.elapsed += dt; frame(r);
+    const dt = r.last ? Math.min(100, ts - r.last) : 0; r.last = ts; if (!r.paused) r.elapsed += dt; frame(r);
+  }
+  function skip(r) {
+    if (r.paused) return;
+    const pa = pendingAsk(r);
+    if (pa && !r.opts.replay) { r.elapsed = (pa.t0 + pa.ask.at) * 1000; r.last = 0; frame(r); return; }
+    finish(true);
   }
   function finish(skipped) {
     const r = run; if (!r) return; run = null;
-    cancelAnimationFrame(r.raf); sfx("stopRing"); sfx("rainUp", false);
+    cancelAnimationFrame(r.raf); if (r.ask) r.ask.stop(); sfx("stopRing"); sfx("rainUp", false);
     window.removeEventListener("deviceorientation", r.ori); document.removeEventListener("keydown", r.key); document.removeEventListener("visibilitychange", r.vis);
     document.body.classList.remove("in-cine");
     if (r.opts.trailer) { window.__TRAILER_DONE__ = true; return; }
@@ -135,7 +167,7 @@
   function start(r) {
     run = r; r.nodes = Array.prototype.slice.call(r.el.querySelectorAll(".shot"));
     r.t0 = clockNow(); r.elapsed = 0;
-    if (window.__CINE_CLOCK__ != null) r.elapsed = 0;
+    if (r.opts.askOnly) { const pa = pendingAsk(r); if (pa) r.elapsed = (pa.t0 + pa.ask.at - 0.6) * 1000; }
     frame(r); r.raf = requestAnimationFrame(loop);
   }
   function wire(r) {
@@ -148,10 +180,11 @@
     el.addEventListener("pointerup", function (e) {
       if (e.target.closest(".cine-tilt") || e.target.closest(".cine-gate")) { down = null; return; }
       const moved = down ? Math.hypot(e.clientX - down[0], e.clientY - down[1]) : 0; down = null;
-      if (moved < 12 && run === r) finish(true);
+      if (e.target.closest(".cine-ask")) { down = null; return; }
+      if (moved < 12 && run === r) skip(r);
     });
     r.ori = function (e) { if (e.gamma == null) return; r.aim = [clamp(e.gamma / 25, -1, 1), clamp((e.beta - 45) / 25, -1, 1)]; };
-    r.key = function (e) { if (["Escape", "Enter", " "].indexOf(e.key) >= 0 && run === r) { e.preventDefault(); finish(true); } };
+    r.key = function (e) { if (["Escape", "Enter", " "].indexOf(e.key) >= 0 && run === r && !r.paused) { e.preventDefault(); skip(r); } };
     r.vis = function () { if (!document.hidden && run === r) r.last = 0; };
     document.addEventListener("keydown", r.key); document.addEventListener("visibilitychange", r.vis);
     const tb = el.querySelector(".cine-tilt");
@@ -185,7 +218,12 @@
   }
   function enabled() { return store.get(OFF) !== "1"; }
   function auto() { return enabled() && (!FAST || FORCE); }
-  function maybe(id, done, opts) { if (!auto() || seen[id]) return false; play(id, done, opts); return true; }
+  function hasAsk(id) { return SCENES[id].shots().some(function (s) { return s.ask; }); }
+  function maybe(id, done, opts) {
+    const need = hasAsk(id) && window.DESK && !DESK.asked(id);
+    if (!auto() || seen[id]) { if (!need) return false; play(id, done, Object.assign({}, opts, { askOnly: true })); return true; }
+    play(id, done, opts); return true;
+  }
 
   // the trailer: plays once, frame-steppable by a recorder through window.__CINE_CLOCK__
   function trailer() {
@@ -206,7 +244,7 @@
         '<div class="cinelist">' + ORDER.map(function (k) { return '<button class="card appr" data-cine="' + k + '"' + (seen[k] ? "" : " disabled") + '><div class="t">' + (seen[k] ? "\u25b6 " : "\ud83d\udd12 ") + SCENES[k].name + '</div><p style="margin:0">' + (seen[k] ? "Watch again" : "Not seen yet") + "</p></button>"; }).join("") + "</div>" +
         '<button class="btn ghost" id="back">Back</button></div>', "Cutscenes you have seen can be replayed here.");
       A.$("cineon").onchange = function () { store.set(OFF, A.$("cineon").checked ? "0" : "1"); };
-      document.querySelectorAll("[data-cine]").forEach(function (b) { b.onclick = function () { play(b.getAttribute("data-cine"), draw); }; });
+      document.querySelectorAll("[data-cine]").forEach(function (b) { b.onclick = function () { play(b.getAttribute("data-cine"), draw, { replay: true }); }; });
       A.$("back").onclick = back;
     };
     draw();
