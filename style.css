@@ -616,3 +616,13 @@ img.portrait.photo { object-fit: cover; display: block; }
 .hint-btn { flex-shrink: 0; min-height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid rgba(255,95,210,.45); background: rgba(255,95,210,.1); color: var(--magenta); font-weight: 750; font-size: var(--fs-sm); cursor: pointer; }
 .hint-btn:active { transform: scale(.95); }
 body.reduce-motion .scene-img { transition: opacity .3s !important; }
+
+/* ===== v6: 3D globe (falls back to flat SVG) + toast below the objective bar ===== */
+.globe-gl, .globe-ov { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.globe-ov { touch-action: none; cursor: grab; }
+.globe-ov:active { cursor: grabbing; }
+body.globe-on #world { visibility: hidden; }
+@media (max-width: 899px) {
+  body.globe-on .panel.map .map-wrap { aspect-ratio: 1 / .78; }
+  .toast { top: auto; bottom: calc(var(--safe-b) + 150px); }
+}
