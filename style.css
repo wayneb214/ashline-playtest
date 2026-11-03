@@ -531,3 +531,61 @@ body.reduce-motion .title-bg { display: none; }
 }
 body.reduce-motion .emb-ring, body.reduce-motion .sb-pulse { animation: none !important; opacity: 0; }
 @media (max-width: 899px) { #world .node.locked .lbl { display: none; } }
+
+/* =====================================================================
+   GLASS OPS art direction (chosen style). Pure token + surface overrides.
+   Blur is limited to small chrome (app bar, tab bar, modal); big panels use
+   pre-lit gradients so iPhone scrolling stays smooth.
+   ===================================================================== */
+:root {
+  --bg-0: #070b18;
+  --accent-1: #5ff5ff; --accent-2: #b05cff; --magenta: #ff5fd2;
+  --cyan: #5ff5ff; --violet: #c77dff; --red: #ff5fd2;
+  --grad: linear-gradient(90deg, #29d8ff 0%, #b05cff 100%);
+  --glow-1: rgba(95,245,255,.45); --glow-2: rgba(255,95,210,.35);
+  --glass: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.03));
+  --glass-solid: rgba(16,24,46,.86);
+  --stroke: rgba(255,255,255,.14); --stroke-hi: rgba(255,255,255,.24);
+  --text: #e8f0ff; --text-2: #a9bbdc; --text-3: #7083a8;
+  --font-display: -apple-system, "SF Pro Display", "Helvetica Neue", Inter, sans-serif;
+  --panel-bg: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.02));
+  --map-sea-0: #0d1a33; --map-sea-1: #050a16; --map-land: #13223f; --map-land-edge: #2a4470; --map-coast: rgba(95,245,255,.14);
+  --flash-bad: rgba(255,95,210,.32);
+  --r-lg: 22px;
+}
+.screen { background: linear-gradient(180deg, rgba(7,11,24,.55), rgba(7,11,24,.88)), url(img/bg-ocean.jpg) center / cover no-repeat, var(--bg-0); }
+.title-screen { background: radial-gradient(80% 45% at 50% 38%, rgba(176,92,255,.25), transparent 70%), linear-gradient(180deg, rgba(7,11,24,.5), rgba(7,11,24,.9)), url(img/bg-ocean.jpg) center / cover no-repeat, var(--bg-0); }
+.glass-card, .btn.glass, .credits-pill, .chip, .fs-link { background: var(--glass); border-color: var(--stroke); }
+.glass-card { border-radius: var(--r-lg); }
+.app-bar, .tab-bar { background: rgba(10,16,32,.7); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-color: rgba(255,255,255,.1); }
+.sheet, .modal, .modal.glass-card { background: linear-gradient(160deg, rgba(34,46,80,.96), rgba(12,18,36,.97)); border: 1px solid var(--stroke-hi); }
+.brand { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .3em; }
+.brand-mark { display: none; }
+.credits-pill { border-color: rgba(95,245,255,.45); color: var(--cyan); font-family: var(--mono); box-shadow: 0 0 14px rgba(95,245,255,.15); }
+.eyebrow, .section-title, .panel-head h2 { font-family: var(--mono); letter-spacing: .18em; }
+.section-title { color: var(--magenta); }
+.btn.primary { color: #fff; text-transform: uppercase; letter-spacing: .04em; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.ticker { background: rgba(255,95,210,.08); border-color: rgba(255,95,210,.2); }
+.ticker-tag { background: var(--magenta); }
+/* Kite painted portrait */
+img.portrait.photo { object-fit: cover; display: block; }
+.greet-portrait .portrait { width: 112px; height: 136px; border-radius: 18px; box-shadow: 0 0 0 1px var(--stroke-hi), 0 10px 30px rgba(176,92,255,.35); }
+.greet-text { font-size: var(--fs-lg); }
+/* Trace: pink tension */
+#trace-fill { background: linear-gradient(90deg, var(--accent-2), var(--magenta)); box-shadow: 0 0 10px var(--magenta); }
+.trace-inline.hot #trace-text { color: var(--magenta); }
+.vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(255,95,210,.45) 100%); }
+/* Map: bright cyan route, glowing nodes, magenta target */
+.route-live, .route-preview { stroke: var(--cyan); }
+.route-glow { stroke: rgba(95,245,255,.28); }
+.route-trace { stroke: var(--magenta); } .trace-glow { stroke: rgba(255,95,210,.32); }
+.node .core { fill: #fff !important; stroke: none; }
+.node.relay .ring { stroke: rgba(95,245,255,.5); } .node.relay.in-route .ring { stroke: var(--cyan); }
+.node.relay.in-route .halo { fill: rgba(95,245,255,.25); }
+.node.target .ring { stroke: var(--magenta); } .node.target .halo { fill: rgba(255,95,210,.28); }
+.node.target .core { fill: #ffd6f3 !important; }
+.node.traced .core { fill: var(--magenta) !important; }
+.cable.spine { stroke: rgba(255,95,210,.4); } .cable-flow.spine { stroke: var(--magenta); }
+.cable-label { fill: rgba(255,95,210,.8); font-style: italic; font-weight: 700; }
+.hop.target .hop-n { background: rgba(255,95,210,.18); color: var(--magenta); }
+.hop-meta { color: var(--cyan); }

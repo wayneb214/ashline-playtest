@@ -47,6 +47,8 @@ window.ASHLINE_ART = (function () {
 
   const IRIS = { kite: "#8b5cf6", lena: "#2563eb", mira: "#065f46", ren: "#7c2d12" };
   function portrait(who, expr, size) {
+    // Glass Ops: Kite uses the painted portrait; other crew keep vector art until theirs are painted.
+    if ((who || "kite") === "kite") return '<img class="portrait photo" src="img/kite-glass.jpg" width="' + (size || 40) + '" height="' + (size || 40) + '" alt="" decoding="async">';
     const p = PEOPLE[who] || PEOPLE.kite;
     const n = ++uid, bg = "pg" + n, sk = "ps" + n, jk = "pj" + n, hr = "ph" + n, rim = "pr" + n;
     const e = expr || "neutral";
