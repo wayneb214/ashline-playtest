@@ -14,12 +14,13 @@
   const LH = '<div class="lh">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div>';
 
   // ---------- state, save and time ----------
-  const SAVE = "albion-save-v1", DAY2 = "albion-day2-start", TIPS_DONE = "albion-tips-done";
+  const SAVE = "albion-save-v1", DAY2 = "albion-day2-start", DAY3 = "albion-day3-start", TIPS_DONE = "albion-tips-done";
   const FAST = /[?&]fast=1/.test(location.search);
   const HRS = { low: 4, med: 3, high: 2 };
   const EXPIRE = 3; // hours after the deadline before a case is lost for good
   const PENALTY = { defector: { capital: -8, secrecy: -4 }, mole: { secrecy: -12 }, leak: { trust: -10, safety: -8 }, sabotage: { trust: -14, safety: -6 },
-    courier: { secrecy: -6 }, safehouse: { safety: -8 }, mole2: { secrecy: -8 }, exit: { trust: -14, capital: -10 } };
+    courier: { secrecy: -6 }, safehouse: { safety: -8 }, mole2: { secrecy: -8 }, exit: { trust: -14, capital: -10 },
+    bath: { secrecy: -6 }, york: { safety: -6 }, tail: { secrecy: -8 }, cable: { capital: -6 }, exfil: { trust: -12, capital: -10 } };
   const store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del: function (k) { try { localStorage.removeItem(k); } catch (e) {} } };
   let S;
 
@@ -37,7 +38,7 @@
   function loadJSON(key) { try { const d = JSON.parse(store.get(key) || "null"); return d && d.v === 1 && d.S ? d : null; } catch (e) { return null; } }
   function restore(d) { seed = d.seed; S = d.S; S.chimed = true; }
   const hh = function (h) { return (h < 10 ? "0" : "") + h + ":00"; };
-  const CASES = function () { return S.day === 2 ? D.SITS2 : D.SITS1; };
+  const CASES = function () { return S.day === 3 ? D.SITS3 : S.day === 2 ? D.SITS2 : D.SITS1; };
   const diff = function () { return D.DIFFICULTY[S.diff] || D.DIFFICULTY.standard; };
   const dueOf = function (id) { return CASES()[id].due + diff().due; };
   const AG = function (k) { return D.AGENTS[k] || D.RECRUITS[k]; };
@@ -50,7 +51,7 @@
   function meters(changes) {
     $("meters").innerHTML = D.METERS.map(function (m) {
       const v = S.meters[m.id], d = changes && changes[m.id];
-      return '<div class="meter' + (v < 35 ? " low" : "") + '"><div class="row"><span>' + m.name + "</span><span>" + (d ? '<span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span> " : "") + v + '</span></div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
+      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '"><div class="row"><span>' + (m.id === "capital" ? '<b class="pmb">10</b>' : "") + m.name + "</span><span>" + (d ? '<span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span> " : "") + v + '</span></div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
     $("clock").textContent = hh(S.hour); LOOK.night(S.hour);
     const open = remaining().map(function (id) { return dueOf(id) - S.hour; });
@@ -112,24 +113,24 @@
   const uk = function (p) { return [(p[0] * UKVIEW.k - (UKVIEW.k - 1) * UKVIEW.px) * 100, (p[1] * UKVIEW.k - (UKVIEW.k - 0.78) * UKVIEW.py) / 0.78 * 100]; };
   function pinXY(id) {
     const s = CASES()[id];
-    if (S.day === 2) return uk(D.UKPLACES[s.place]);
+    if (S.day >= 2) return uk(D.UKPLACES[s.place]);
     return id === "sabotage" && D.PLACES[S.belief] ? D.PLACES[S.belief] : [s.x, s.y];
   }
   function map() {
-    const home = S.day === 2 ? uk(D.UKPLACES.London) : [30, 52];
+    const home = S.day >= 2 ? uk(D.UKPLACES.London) : [30, 52];
     const pin = function (xy, cls, label) { return '<div class="pin ' + cls + '" style="left:' + xy[0].toFixed(1) + "%;top:" + xy[1].toFixed(1) + '%"><span class="head"></span><span class="needle"></span><span class="x">\u2715</span><span class="lab">' + esc(label) + "</span></div>"; };
     const homeLost = S.order.some(function (id) { return CASES()[id].home && S.done[id] === "loss"; });
     let pins = pin(home, "home" + (homeLost ? " loss" : ""), "London"), routes = "", n = 0;
     S.order.forEach(function (id) {
       const s = CASES()[id]; if (s.home) return;
       const xy = pinXY(id), r = S.done[id];
-      const label = id === "sabotage" ? (S.belief && S.belief !== "split" ? S.belief : "Bergen?") : S.day === 2 ? s.place === "Airport" ? "\u2708 Airport" : s.place : s.where;
+      const label = id === "sabotage" ? (S.belief && S.belief !== "split" ? S.belief : "Bergen?") : S.day >= 2 ? s.place === "Airport" ? "\u2708 Airport" : s.label || s.place : s.where;
       pins += pin(xy, (r ? "done " + r : "open") + (s.flash && !r ? " flash" : "") + (s.left ? " left" : "") + (s.below ? " below" : ""), label);
       const mx = (home[0] + xy[0]) / 2, my = Math.min(home[1], xy[1]) - 12;
       routes += '<path class="route ' + (r || "open") + '" style="animation-delay:' + (n++ * 0.25) + 's" pathLength="100" d="M' + home[0].toFixed(1) + " " + home[1].toFixed(1) + " Q" + mx.toFixed(1) + " " + my.toFixed(1) + " " + xy[0].toFixed(1) + " " + xy[1].toFixed(1) + '"/>';
     });
-    const style = S.day === 2 ? ' style="background-size:' + UKVIEW.k * 100 + "% auto;background-position:" + UKVIEW.px * 100 + "% " + UKVIEW.py * 100 + '%"' : "";
-    return '<div class="map' + (S.day === 2 ? " uk" : "") + '"' + style + ' role="img" aria-label="Paper map with today\u2019s cases pinned"><svg class="routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + routes + "</svg>" + pins + "</div>";
+    const style = S.day >= 2 ? ' style="background-size:' + UKVIEW.k * 100 + "% auto;background-position:" + UKVIEW.px * 100 + "% " + UKVIEW.py * 100 + '%"' : "";
+    return '<div class="map' + (S.day >= 2 ? " uk" : "") + '"' + style + ' role="img" aria-label="Paper map with today\u2019s cases pinned"><svg class="routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + routes + "</svg>" + pins + "</div>";
   }
 
   // ---------- title, day select, difficulty, intro ----------
@@ -149,12 +150,14 @@
   }
   function resume() { chrome(true); meters(); ticker(); S.screen === "summary" ? summary() : briefing(); }
   function daySelect() {
-    const day2 = loadJSON(DAY2);
+    const day2 = loadJSON(DAY2), day3 = loadJSON(DAY3);
     render('<div class="card dossier">' + LH + '<div class="kicker" style="margin-top:8px">Case files</div><h2>Choose a day</h2>' +
       '<button class="card dossier sit" id="d1"><span class="num">1</span><span><div class="t">The Long Day</div><div class="s">A defector, a mole, a leak, a cable. Ends in Bath.</div></span><span class="dl">NEW</span></button>' +
       '<button class="card dossier sit" id="d2"' + (day2 ? "" : " disabled") + '><span class="num">2</span><span><div class="t">Pale Hour</div><div class="s">' + (day2 ? "Hunt the Bath team before they leave Britain." : "Finish Day 1 first.") + '</div></span><span class="dl">' + (day2 ? "OPEN" : "LOCKED") + "</span></button>" +
+      '<button class="card dossier sit" id="d3"' + (day3 ? "" : " disabled") + '><span class="num">3</span><span><div class="t">The Green Coat</div><div class="s">' + (day3 ? "Bring the woman in green home before midnight." : "Finish Day 2 first.") + '</div></span><span class="dl">' + (day3 ? "OPEN" : "LOCKED") + "</span></button>" +
       '<button class="btn ghost" id="back">Back</button></div>');
     $("d1").onclick = difficulty;
+    if (day3) $("d3").onclick = function () { restore(day3); save("briefing"); chrome(true); meters(); ticker(); window.AH3.briefingIntro(); };
     if (day2) $("d2").onclick = function () { restore(day2); save("briefing"); chrome(true); meters(); ticker(); window.AH2.briefingIntro(); };
     $("back").onclick = title;
   }
@@ -167,7 +170,7 @@
         '<div class="sticky-go"><button class="btn primary" id="go">Begin \u00b7 ' + D.DIFFICULTY[pick].name + '</button></div><button class="btn ghost" id="back">Back</button>', "You can change this next time you start a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
-      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); fresh(pick, tips); intro(); };
+      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); intro(); };
       $("back").onclick = title;
     };
     draw();
@@ -179,7 +182,7 @@
       '<p>You are the Chief of <strong>Albion House</strong>, Britain\u2019s foreign intelligence service: the people who run Britain\u2019s spies abroad. (It\u2019s invented, but you\u2019ll know the type.) Your office looks across the Thames at Westminster. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, at Number 10, and to nobody else.</p>' +
       '<p>She has just handed you the morning file in her study. \u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +
       '<p>Your Chief of Staff, <strong>Kite</strong>, runs the building. You have <strong>three officers</strong>, and <strong>one of them is working for the other side</strong>. Watch for small slips.</p>' +
-      '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Each choice moves four gauges: public trust, No.10\u2019s favour, officer safety and secrecy.</p>' +
+      '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Each choice moves four gauges: public trust, No.10 trust, officer safety and secrecy.</p>' +
       '<button class="btn primary" id="go">Read the morning brief</button></div>');
     $("go").onclick = function () { chrome(true); meters(); ticker(); briefing(); };
   }
@@ -206,21 +209,22 @@
     if (!remaining().length) return summary();
     if (S.day === 1 && S.log.filter(function (l) { return l.k; }).length >= 2 && !S.call) return phone();
     if (S.pendingRecruit > 0) return recruit();
+    if (S.day >= 2 && window.AH3.interrupt()) return;
     if (stuck()) return summary();
     meters(); ticker(); save("briefing");
     if (!S.chimed) { S.chimed = true; if (window.SFX) SFX.chime(S.hour); }
-    const line = S.day === 2 ? window.AH2.line(gone) : day1Line(gone);
+    const line = S.day === 3 ? window.AH3.line(gone) : S.day === 2 ? window.AH2.line(gone) : day1Line(gone);
     let list = "", n = 0, warnTxt = "";
     S.order.forEach(function (id) {
       const s = CASES()[id], done = S.done[id], lt = late(id), due = dueOf(id), left = due - S.hour; n++;
       if (!done && left >= 0 && left <= 2 && !warnTxt) warnTxt = s.title + " is due by " + hh(due) + ": " + left + " hour" + (left === 1 ? "" : "s") + " left.";
       if (!done && lt > 0 && !warnTxt) warnTxt = s.title + " is overdue. Odds are dropping; it\u2019s lost at " + hh(due + EXPIRE) + ".";
       const off = !done && needsOfficer(id) && !freeAgents().length;
-      const sub = s.kind === "accuse" || s.kind === "interro" || s.kind === "mole2" ? " \u00b7 no officer needed" : "";
-      list += '<button class="card dossier sit' + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
+      const sub = s.kind === "accuse" || s.kind === "interro" || s.kind === "mole2" || s.kind === "tail" || s.kind === "cable" ? " \u00b7 no officer needed" : s.kind === "exfil" ? " \u00b7 needs a driver" : "";
+      list += '<button class="card dossier sit' + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : lt > 0 ? "LATE " + lt + "h" : "by " + hh(due)) + "</span></button>";
     });
-    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + kite(line.text, line.worried) + tip("briefing") + map() + list +
+    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + kite(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + map() + list +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<div class="kitline">Kit locker: ' + kitStock() + "</div>" +
       '<button class="btn ghost" id="endday">Call it a day</button>', warnTxt || "Tap a file to deal with it.");
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { openCase(b.getAttribute("data-sit")); }; });
@@ -229,13 +233,14 @@
     $("endday").onclick = function () { S.hour = 24; summary(); };
   }
   // painted header for each case file
-  const HEADS = { defector: "vienna", mole: "mole", leak: "fleet", sabotage: "rig", courier: "airport", safehouse: "bristol", mole2: "mole", exit: "harwich" };
+  const HEADS = { defector: "vienna", mole: "mole", leak: "fleet", sabotage: "rig", courier: "airport", safehouse: "bristol", mole2: "mole", exit: "harwich", bath: "bath", york: "york", tail: "fleet", cable: "cabletap", exfil: "signal" };
   function chead(id) { return HEADS[id] ? '<div class="chead"><img src="img/h-' + HEADS[id] + '.jpg" alt=""></div>' : ""; }
   function openCase(id) {
     const kind = CASES()[id].kind;
     if (kind === "accuse") return accuse();
     if (kind === "judge" && !S.belief) return judgement();
     if (kind === "interro" || kind === "mole2") return window.AH2.open(id);
+    if (kind === "tail" || kind === "cable" || kind === "exfil") return window.AH3.open(id);
     pickAgent(id);
   }
   function day1Line(gone) {
@@ -302,14 +307,19 @@
     if (kitId) o += D.KIT[kitId].odds || 0;
     if (k === S.mole && S.accused !== S.mole) o -= 10; // quietly working against you
     const lt = late(id); if (lt > 0) o -= 10 + lt * 5;
+    if (S.day === 3) o += window.AH3.oddsMod(id, k, a);
     if (id === "sabotage") { if (S.belief === "split") o -= 12; else if (S.belief !== D.TRUTH) o = Math.min(o, 12); }
     return Math.max(5, Math.min(92, Math.round(o)));
   }
+  // the officer's own pick: the approach they rate best. Choosing another overrules them.
+  function recIdx(id, k) { let best = -1, bo = -1; CASES()[id].approaches.forEach(function (a, i) { if (lockOf(a)) return; const o = oddsFor(id, k, a, null); if (o > bo) { bo = o; best = i; } }); return best; }
+  function lockOf(a) { if (a.needs && !(S.unlocked || {})[a.needs]) return "needs"; if (a.pm && S.meters.capital < a.pm) return "pm"; return ""; }
+  const morale = function (k) { const l = S.loyal[k]; return l >= 5 ? "Loyal" : l >= 3 ? "Steady" : l >= 2 ? "Wavering" : "Bitter"; };
   function hoursFor(k, a, kitId) { return Math.max(1, HRS[a.risk] - (AG(k).quirk === "quick" ? 1 : 0) + (kitId ? D.KIT[kitId].hours || 0 : 0)); }
 
   function agentCard(k, extra, sel, disabled, attr) {
     const a = AG(k), st = S.stress[k];
-    return '<button class="card agent' + (sel ? " sel" : "") + (disabled ? " used" : "") + '" ' + attr + '="' + k + '">' + face(k) + '<div style="flex:1;min-width:0"><div class="nm">' + a.name + (S.used[k] ? " \u00b7 in the field" : "") + (st >= 4 ? ' <span class="strain">Strained</span>' : "") + '</div><div class="role">' + a.role + '</div><div class="traits">' +
+    return '<button class="card agent' + (sel ? " sel" : "") + (disabled ? " used" : "") + '" ' + attr + '="' + k + '">' + face(k) + '<div style="flex:1;min-width:0"><div class="nm">' + a.name + (S.used[k] ? " \u00b7 in the field" : "") + (st >= 4 ? ' <span class="strain">Strained</span>' : "") + ' <span class="morale m-' + morale(k).toLowerCase() + '">' + morale(k) + "</span>" + '</div><div class="role">' + a.role + '</div><div class="traits">' +
       pips(a.skill, "", "Skill") + pips(S.loyal[k], "loyal" + (S.loyal[k] <= 2 ? " high" : ""), "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + "</div>" + (a.quirkTxt ? '<div class="quirk">\u2605 ' + a.quirkTxt + "</div>" : "") + '<div class="fnote">File note: ' + a.note + "</div>" + (extra || "") + "</div></button>";
   }
 
@@ -336,18 +346,19 @@
     let sel = null, kit = null;
     const fmt = function (o) { return Object.keys(o).map(function (m) { return (o[m] > 0 ? "+" : "") + o[m] + " " + mname(m); }).join(", "); };
     const draw = function () {
+      const rec = recIdx(id, k);
       const opts = s.approaches.map(function (a, i) {
-        const locked = a.needs && !(S.unlocked || {})[a.needs];
+        const lk = lockOf(a), locked = !!lk;
         const h = hoursFor(k, a, kit), ends = Math.min(24, S.hour + h);
         return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + "</p>" +
-          (locked ? '<div class="chips"><span class="chip risk-high">Locked \u00b7 link the ' + (a.needs === "ferry" ? "ferry booking" : "hire-car receipt") + " on the evidence board</span></div>" :
-            '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[a.risk] + '</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h \u00b7 done " + hh(ends) + '</span><span class="chip">If it works: ' + esc(fmt(a.win)) + "</span></div>") + "</button>";
+          (lk === "pm" ? '<div class="chips"><span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust ' + a.pm + " (now " + S.meters.capital + ")</span></div>" : locked ? '<div class="chips"><span class="chip risk-high">Locked \u00b7 link the ' + (a.needs === "ferry" ? "ferry booking" : "hire-car receipt") + " on the evidence board</span></div>" :
+            '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[a.risk] + '</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h \u00b7 done " + hh(ends) + '</span>' + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (i === rec ? '<span class="chip rec">\u2605 ' + first(k) + "\u2019s pick</span>" : sel === i ? '<span class="chip risk-high">Overrules ' + first(k) + " \u00b7 loyalty \u22121</span>" : "") + (S.day === 3 ? window.AH3.chips(id, k, a) : "") + '<span class="chip">If it works: ' + esc(fmt(a.win)) + "</span></div>") + "</button>";
       }).join("");
       const kits = Object.keys(D.KIT).map(function (key) {
         const n = S.kit[key] || 0, on = kit === key;
         return '<button class="kit' + (on ? " on" : "") + '" data-kit="' + key + '"' + (n ? "" : " disabled") + '><span class="ki">' + D.KIT[key].icon + '</span><span class="kn">' + D.KIT[key].name + '</span><span class="kt">' + D.KIT[key].txt + '</span><span class="ks">' + (on ? "Packed" : "\u00d7" + n) + "</span></button>";
       }).join("");
-      render('<div class="step"><i class="on"></i><i class="on"></i></div><div class="kicker">' + esc(s.title) + '</div><div class="kite card" style="align-items:center">' + face(k) + '<div class="note"><div class="who">' + AG(k).name + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just\u2026 not the loud way, if you can help it." : "Standing by, C. How do you want it played?") + "</span></div></div>" + tip("approach") +
+      render('<div class="step"><i class="on"></i><i class="on"></i></div><div class="kicker">' + esc(s.title) + '</div><div class="kite card" style="align-items:center">' + face(k) + '<div class="note"><div class="who">' + AG(k).name + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just\u2026 not the loud way, if you can help it. And I\u2019m running on empty." : rec >= 0 ? "Standing by, C. If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "Standing by, C. How do you want it played?") + "</span></div></div>" + tip("approach") +
         '<div class="kicker" style="margin:4px 0 6px">Kit locker \u00b7 take one item (optional)</div><div class="kits">' + kits + "</div>" + opts +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose an approach" : "Go \u2014 " + esc(s.approaches[sel].t)) + '</button></div><button class="btn ghost" id="back">Send someone else</button>',
         "Step 2 of 2 \u00b7 Careful plans take longer. Bold ones are quick, and can backfire.");
@@ -372,10 +383,11 @@
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (window.__SPY_FORCE__) res = window.__SPY_FORCE__;
     if (kitId) S.kit[kitId]--;
-    const st0 = S.stress[k], lo0 = S.loyal[k];
+    const st0 = S.stress[k], lo0 = S.loyal[k], over = recIdx(id, k) !== s.approaches.indexOf(a), worked = st0 >= 4;
+    S.styles = S.styles || { low: 0, med: 0, high: 0 }; S.styles[a.risk]++;
     const planStress = kitD.calm || (AG(k).quirk === "steady" && a.risk === "high") ? 0 : a.stress;
     S.stress[k] = clamp5(S.stress[k] + planStress + (res === "loss" && !kitD.soft ? 1 : res === "win" ? -1 : 0));
-    S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0));
+    S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
     let delta = a[res];
     if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
     const ch = apply(delta);
@@ -387,6 +399,7 @@
       else { note = "Bergen was bait. While we watched the north, Rotterdam went dark."; head = "Blackout at Rotterdam data hub; Bergen \u2018a decoy\u2019, say insiders"; }
     }
     if (S.day === 2) note = (note + " " + window.AH2.afterCase(id, res)).trim();
+    if (S.day === 3) note = (note + " " + window.AH3.afterCase(id, res)).trim();
     // the mole's slip: a small wrong detail in their debrief
     const slip = k === S.mole && S.accused !== S.mole && D.AGENTS[k] ? D.AGENTS[k].slip : "";
     S.heads.push(head); S.log.push({ id: id, k: k, res: res, appr: a.t + (kitId ? " + " + kitD.name.toLowerCase() : ""), slip: !!slip });
@@ -399,7 +412,7 @@
     const od = function (lab, a0, a1) { return a1 === a0 ? "" : '<span class="' + ((lab === "Stress") === (a1 > a0) ? "down" : "up") + '">' + lab + " " + a0 + "\u2192" + a1 + "</span>"; };
     render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
       (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + deltas(ch) +
-      '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + "</div>" + headline(head) + "</div>" +
+      '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
       '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
       "The gauges moved. The papers noticed. " + nm + " will remember this.");
     $("go").onclick = briefing;
@@ -463,8 +476,8 @@
       const draw = function () {
         render('<div class="phone card call" id="phone"><div class="lh">NO.10 SWITCHBOARD \u00b7 SECURE LINE \u00b7 ' + hh(S.hour) + '</div><div class="pm"><img src="' + pic("pm-phone") + '" alt="Prime Minister Eleanor Hale"></div>' +
           '<div class="note"><div class="who">Eleanor Hale \u00b7 Prime Minister</div><span class="tx">C. The Varenian ambassador is at the Foreign Office shouting about a British spy in ' + esc(where) + ". The Courier has a photograph of <b>" + AG(k).name + "</b>. I can tell the House we\u2019ve never heard of them, or stand by them and take the heat. Your call.</span></div></div>" +
-          '<button class="card appr' + (sel === "deny" ? " sel" : "") + '" data-c="deny"><div class="t">Deny them. Protect the government.</div><div class="chips"><span class="chip">+10 No.10\u2019s favour</span><span class="chip risk-high">\u221210 Officer safety</span><span class="chip risk-high">' + first(k) + " loyalty \u22122</span></div></button>" +
-          '<button class="card appr' + (sel === "stand" ? " sel" : "") + '" data-c="stand"><div class="t">Stand by them. Protect the officer.</div><div class="chips"><span class="chip risk-high">\u221212 No.10\u2019s favour</span><span class="chip risk-low">+8 Officer safety</span><span class="chip risk-low">' + first(k) + " loyalty +1</span></div></button>" +
+          '<button class="card appr' + (sel === "deny" ? " sel" : "") + '" data-c="deny"><div class="t">Deny them. Protect the government.</div><div class="chips"><span class="chip">+10 No.10 trust</span><span class="chip risk-high">\u221210 Officer safety</span><span class="chip risk-high">' + first(k) + " loyalty \u22122</span></div></button>" +
+          '<button class="card appr' + (sel === "stand" ? " sel" : "") + '" data-c="stand"><div class="t">Stand by them. Protect the officer.</div><div class="chips"><span class="chip risk-high">\u221212 No.10 trust</span><span class="chip risk-low">+8 Officer safety</span><span class="chip risk-low">' + first(k) + " loyalty +1</span></div></button>" +
           '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Tell her" : "What do you tell her?") + "</button></div>", "There is no right answer. Only a choice.");
         document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); draw(); }; });
         $("go").onclick = function () {
@@ -501,9 +514,10 @@
     if (!S.ended) {
       remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id]); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk" }); });
       S.hour = 24; S.ended = true;
-      S.heads.push(S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019");
+      S.heads.push(S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019");
       if (window.SFX) { SFX.chime(12); setTimeout(function () { SFX.tele(); }, 1500); }
       if (S.day === 1) { store.set(TIPS_DONE, "1"); store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: day2State() })); }
+      if (S.day === 2) store.set(DAY3, JSON.stringify({ v: 1, seed: seed, S: day3State() }));
     }
     meters(); ticker(); save("summary");
     const grade = gradeOf();
@@ -514,19 +528,20 @@
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +
           "<span><b>" + esc(s.title) + '</b><br><span class="how">' + esc(l.appr) + (l.k && s.kind !== "accuse" ? " \u00b7 " + first(l.k) : "") + '</span></span><span class="r ' + l.res + '">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[l.res] + "</span></li>";
       }).join("") + (S.call && S.day === 1 ? '<li><span class="portrait dash">\u260e</span><span><b>The call from No.10</b><br><span class="how">' + (S.call.choice === "deny" ? "Denied " : "Stood by ") + first(S.call.k) + "</span></span><span></span></li>" : "") + "</ul></div>" +
-      (S.day === 1 ? day1Flash() : window.AH2.flash()) +
-      (S.day === 1 ? '<button class="btn primary" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : "") +
-      '<button class="btn ' + (S.day === 1 ? "ghost" : "primary") + '" id="paperbtn">Read tomorrow\u2019s front page</button><button class="btn ghost" id="again">New game</button><a class="btn ghost" href="../index.html">Back to Ashline</a>',
-      S.day === 1 ? "To be continued. Day 2 starts at eight." : "To be continued. Day 3 is being written.");
+      (S.day === 1 ? day1Flash() : S.day === 3 ? window.AH3.flash() : window.AH2.flash()) +
+      (S.day === 1 ? '<button class="btn primary" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : S.day === 2 ? '<button class="btn primary" id="day3">Begin Day 3 \u00b7 The Green Coat</button>' : "") +
+      '<button class="btn ' + (S.day < 3 ? "ghost" : "primary") + '" id="paperbtn">Read tomorrow\u2019s front page</button><button class="btn ghost" id="again">New game</button><a class="btn ghost" href="../index.html">Back to Ashline</a>',
+      S.day === 1 ? "To be continued. Day 2 starts at eight." : S.day === 2 ? "To be continued. Day 3 starts at eight." : "The end of the Green Coat. Day 4 is being written.");
     $("again").onclick = function () { store.del(SAVE); difficulty(); };
     $("paperbtn").onclick = function () { FEEL.tearThen($("flash"), paper); };
     if ($("day2")) $("day2").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY2)); save("briefing"); window.AH2.briefingIntro(); }); };
+    if ($("day3")) $("day3").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY3)); save("briefing"); window.AH3.briefingIntro(); }); };
     S.finished = grade;
   }
   // Day 2 begins from the end of Day 1: same officers, meters and mole result; a fresh clock and kit
   function day2State() {
     const n = JSON.parse(JSON.stringify(S));
-    n.days = { 1: { grade: gradeOf(), mole: moleText(), defector: S.defector } };
+    n.days = { 1: { grade: gradeOf(), mole: moleText(), defector: S.defector, call: S.call, caught: moleCaught() } };
     n.day = 2; n.hour = 8; n.used = {}; n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false;
     n.order = ["courier", "safehouse", "mole2", "exit"]; n.kit = Object.assign({}, diff().kit); n.belief = null; n.call = null;
     n.clues = { cctv: true, hire: true }; n.links = {}; n.unlocked = {}; n.interro = {}; n.seenIntro = false;
@@ -535,19 +550,31 @@
     return n;
   }
 
+  // Day 3 begins from the end of Day 2, carrying the flags forward
+  function day3State() {
+    const n = JSON.parse(JSON.stringify(S));
+    n.days = n.days || {}; n.days[2] = { grade: gradeOf(), exit: S.done.exit || "loss", mole: moleText() };
+    n.day = 3; n.hour = 8; n.used = {}; n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false; n.finished = null;
+    n.order = ["bath", "york", "tail", "cable", "exfil"]; n.kit = Object.assign({}, diff().kit); n.seenIntro = false; n.letters = {}; n.riskSeen = {}; n.deal = null;
+    n.heads = S.heads.slice(-2).concat(["Mystery of the woman in green deepens"]);
+    n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - 1); });
+    window.AH3.prep(n);
+    return n;
+  }
+
   // ---------- the shareable front page ----------
   function paperData() {
     const calls = S.log.map(function (l) { const s = CASES()[l.id]; return { t: s.title, how: l.appr + (l.k && s.kind !== "accuse" ? " (" + first(l.k) + ")" : ""), r: { win: "Closed", mixed: "Partial", loss: "Failed" }[l.res] }; });
     if (S.call && S.day === 1) calls.push({ t: "The call from No.10", how: (S.call.choice === "deny" ? "Denied " : "Stood by ") + first(S.call.k), r: S.call.choice === "deny" ? "Denied" : "Stood by" });
     const d = { grade: gradeOf(), calls: calls, mole: moleText(), caught: moleCaught(), day: S.day, side: S.heads.filter(function (h) { return h.indexOf("Bath") < 0; }).slice(-3) };
-    if (S.day === 2) { const p = window.AH2.paperLead(); d.lead = p.lead; d.sub = p.sub; }
+    if (S.day >= 2) { const p = S.day === 3 ? window.AH3.paperLead() : window.AH2.paperLead(); d.lead = p.lead; d.sub = p.sub; }
     else { d.lead = "MAN FIGHTS FOR LIFE AFTER BATH BENCH COLLAPSE"; d.sub = "Former foreign official found near the Circus \u00b7 Police cordon overnight \u00b7 Downing Street \u2018monitoring\u2019"; }
     return d;
   }
   function paper() {
     const d = paperData();
     chrome(true);
-    render('<div class="frontpage" id="paper"><div class="mast">The London Evening Bugle</div><div class="dateline"><span>LATE FINAL</span><span>' + (d.day === 2 ? "Thursday" : "Wednesday") + "</span><span>Price 2p \u00b7 fiction</span></div>" +
+    render('<div class="frontpage" id="paper"><div class="mast">The London Evening Bugle</div><div class="dateline"><span>LATE FINAL</span><span>' + (d.day === 3 ? "Friday" : d.day === 2 ? "Thursday" : "Wednesday") + "</span><span>Price 2p \u00b7 fiction</span></div>" +
       '<h1 class="lead">' + esc(d.lead) + '</h1><p class="subd">' + esc(d.sub) + "</p>" +
       '<div class="molebanner ' + (d.caught ? "caught" : "free") + '">' + esc(d.mole) + "</div>" +
       '<div class="cols"><div><h3>Spy chief\u2019s long day</h3><ul>' + d.calls.map(function (c) { return "<li><b>" + esc(c.t) + "</b> \u2014 " + esc(c.how) + " <i>" + esc(c.r) + "</i></li>"; }).join("") + '</ul></div><div class="gradebox"><small>Whitehall verdict</small><span>' + d.grade + "</span><small>Albion House</small></div></div>" +
@@ -570,7 +597,7 @@
     for (let i = 0; i < 3000; i++) { x.fillStyle = "rgba(90,70,40," + Math.random() * 0.05 + ")"; x.fillRect(Math.random() * W, Math.random() * H, 2, 2); }
     x.fillStyle = "#1c1a16"; x.textAlign = "center"; let ms = 92; do { x.font = "bold " + ms + "px " + serif; ms -= 2; } while (x.measureText("The London Evening Bugle").width > W - 120); x.fillText("The London Evening Bugle", W / 2, 130);
     x.fillRect(60, 160, W - 120, 4); x.fillRect(60, 214, W - 120, 2);
-    x.font = "24px " + mono; x.textAlign = "left"; x.fillText("LATE FINAL", 64, 198); x.textAlign = "center"; x.fillText(d.day === 2 ? "THURSDAY" : "WEDNESDAY", W / 2, 198); x.textAlign = "right"; x.fillText("A WORK OF FICTION", W - 64, 198);
+    x.font = "24px " + mono; x.textAlign = "left"; x.fillText("LATE FINAL", 64, 198); x.textAlign = "center"; x.fillText(d.day === 3 ? "FRIDAY" : d.day === 2 ? "THURSDAY" : "WEDNESDAY", W / 2, 198); x.textAlign = "right"; x.fillText("A WORK OF FICTION", W - 64, 198);
     x.textAlign = "left"; x.font = "bold 76px " + serif; let y = wrap(x, d.lead, 64, 310, W - 128, 84);
     x.font = "italic 32px " + serif; x.fillStyle = "#3b352b"; y = wrap(x, d.sub, 64, y + 10, W - 128, 42);
     // the mole banner: a solid strip so it reads at a glance
@@ -611,7 +638,7 @@
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, kite: kite, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome };
 
   fresh(); title();
   window.__SPY__ = { state: function () { return S; }, fresh: function () { fresh(); title(); }, paperDataURL: function () { return drawPaper().toDataURL("image/png"); } };

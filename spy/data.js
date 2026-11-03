@@ -6,7 +6,7 @@ window.AH_DATA = (function () {
   // Albion House: an invented British overseas intelligence service. The rival is the invented
   // Varenian Republic and its service, the Grey House. Real cities, invented states, firms and people.
   const METERS = [
-    { id: "trust", name: "Public trust" }, { id: "capital", name: "No.10\u2019s favour" },
+    { id: "trust", name: "Public trust" }, { id: "capital", name: "No.10 trust" },
     { id: "safety", name: "Officer safety" }, { id: "secrecy", name: "Secrecy" }
   ];
   const AGENTS = {

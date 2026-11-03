@@ -444,3 +444,41 @@ body.still *, body.still *::before, body.still *::after { animation: none !impor
 .card.dossier:has(> .stamp.corner) > .lh + .kicker { padding-right: 112px; }
 .card.dossier.sealed { padding-bottom: 46px; }
 .seal { bottom: -24px; } .card.dossier.sealed { margin-bottom: 34px; }
+
+/* ---------- Day 3: The Green Coat ---------- */
+.pmb { display: inline-block; font-family: var(--type); font-size: 8px; line-height: 1; padding: 2px 3px; margin-right: 4px; background: #111; color: var(--paper); border: 1px solid var(--brass-lo); border-radius: 2px; vertical-align: 1px; letter-spacing: 0; }
+.morale { font-family: var(--type); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; border: 1px solid currentColor; vertical-align: 2px; white-space: nowrap; }
+.morale.m-loyal { color: var(--green-2); } .morale.m-steady { color: var(--paper-mute); } .morale.m-wavering { color: var(--brass-lo); } .morale.m-bitter { color: #fff; background: var(--stamp); border-color: var(--stamp); }
+.chip.kesk { color: #fff; background: #4a1414; border-color: #4a1414; }
+.chip.rec { color: var(--paper-ink); background: rgba(201,162,74,.35); border-color: var(--brass-lo); }
+.chip.pmchip { color: var(--paper); background: #111; border-color: #111; }
+.follows { list-style: none; padding: 0; margin: 6px 0 12px; display: grid; gap: 6px; }
+.follows li { font-size: 13.5px; line-height: 1.35; padding: 7px 9px 7px 28px; position: relative; border-radius: 4px; background: rgba(31,58,47,.1); color: var(--paper-ink); }
+.follows li::before { content: "\2713"; position: absolute; left: 9px; top: 7px; font-weight: 700; color: var(--green-2); }
+.follows li.bad { background: rgba(122,31,31,.1); } .follows li.bad::before { content: "\2715"; color: var(--stamp); }
+.followstrip { margin: 0 0 10px; background: var(--paper); border-radius: 4px; padding: 8px 10px; color: var(--paper-ink); }
+.followstrip summary { font-family: var(--type); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; color: var(--oxblood); }
+.followstrip .follows { margin-bottom: 2px; }
+.kletter { background: linear-gradient(180deg, #f3ecdc, #e6dbc2); color: var(--paper-ink); padding: 16px 16px 12px; border-radius: 3px; transform: rotate(-.5deg); box-shadow: 0 14px 30px rgba(0,0,0,.55); border-top: 6px solid #4a1414; }
+.kl-top { display: flex; gap: 12px; align-items: center; border-bottom: 1px solid rgba(42,36,27,.25); padding-bottom: 10px; margin-bottom: 8px; }
+.kl-top .portrait { width: 72px; height: 72px; filter: grayscale(.4) contrast(1.05); }
+.kl-from { font-family: var(--type); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--paper-mute); }
+.kl-name { font-weight: 700; font-size: 18px; } .kl-role { font-family: var(--type); font-size: 11px; color: #4a1414; }
+.kl-body p { font-style: italic; font-size: 15.5px; line-height: 1.5; margin: 0 0 8px; }
+.kl-sig { font-family: "Brush Script MT", "Segoe Script", cursive; font-style: normal !important; font-size: 34px !important; color: var(--stamp); text-align: right; margin: 0 8px 0 0 !important; transform: rotate(-6deg); }
+.kl-note { font-family: var(--type); font-size: 11px; color: var(--paper-mute); margin: 8px 0 0; }
+.tailgame { position: relative; min-height: 600px; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; padding: 10px; background: linear-gradient(180deg, rgba(8,9,9,.55), rgba(8,9,9,.15) 30%, rgba(8,9,9,.75) 85%), url(img/tail-street.jpg) center 40% / cover no-repeat; touch-action: none; user-select: none; -webkit-user-select: none; }
+.tg-top { display: flex; justify-content: space-between; font-family: var(--type); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 3px #000; }
+.tg-top .hp { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: -1px; } .tg-top .hp i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--paper); } .tg-top .hp i.on { background: var(--stamp); border-color: var(--stamp); }
+.tg-timer { height: 6px; margin: 10px 0; background: rgba(0,0,0,.5); border-radius: 3px; overflow: hidden; } .tg-timer i { display: block; height: 100%; width: 100%; background: var(--brass-hi); transition-property: width; transition-timing-function: linear; } .tg-timer i.run { width: 0; background: var(--stamp); } .tg-timer.still { opacity: 0; }
+.tg-lanes { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }
+.lane { min-height: 300px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 6px; border: 1px solid rgba(232,200,116,.4); background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.6)); color: var(--paper); font-family: var(--serif); cursor: pointer; }
+.lane .arr { font-size: 28px; color: var(--brass-hi); } .lane .ln { font-family: var(--type); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.lane .what { font-size: 12.5px; line-height: 1.3; text-align: center; min-height: 92px; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 4px; background: rgba(239,230,210,.92); color: var(--paper-ink); }
+.lane .what.watch { background: rgba(122,31,31,.92); color: #fff; } .lane .what.dead { background: rgba(60,60,60,.92); color: #fff; }
+.lane.safe { outline: 3px solid var(--brass-hi); }
+.tg-msg { min-height: 44px; margin-top: 10px; text-align: center; font-weight: 700; color: var(--paper); text-shadow: 0 1px 4px #000; font-size: 16px; } .tg-msg.bad { color: #ff9a8e; } .tg-msg.ok { color: var(--brass-hi); }
+.step.x4 i.bad { background: var(--stamp); }
+.chips.helps { margin-top: 6px; }
+.flash-card.green { background: linear-gradient(180deg, rgba(8,9,9,.05) 30%, rgba(8,9,9,.95) 76%), url(img/flash-green.jpg) center 80% / cover no-repeat; }
+@media (prefers-reduced-motion: reduce) { .tg-timer i { transition: none; } }
