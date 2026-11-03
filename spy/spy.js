@@ -73,9 +73,10 @@
   const EMBLEM = '<svg class="emblem" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="br" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d68a"/><stop offset=".55" stop-color="#c9a24a"/><stop offset="1" stop-color="#7a5d22"/></linearGradient></defs>' +
     '<circle cx="50" cy="50" r="47" fill="#1f3a2f" stroke="url(#br)" stroke-width="4"/><circle cx="50" cy="50" r="40" fill="none" stroke="url(#br)" stroke-width="1"/>' +
     '<path d="M50 16 l4 9 h10 l-8 6 3 9 -9 -6 -9 6 3 -9 -8 -6 h10z" fill="url(#br)"/>' +
-    '<path d="M28 44 h44 v14 c0 12 -10 20 -22 24 c-12 -4 -22 -12 -22 -24z" fill="#7a1f1f" stroke="url(#br)" stroke-width="2"/>' +
-    '<path d="M33 60 q4 -4 8 0 t8 0 t8 0 t8 0 M33 67 q4 -4 8 0 t8 0 t8 0 t8 0" fill="none" stroke="#efe6d2" stroke-width="2"/>' +
-    '<path d="M40 52 h20" stroke="url(#br)" stroke-width="3"/></svg>';
+    '<clipPath id="sh"><path d="M28 44 h44 v14 c0 12 -10 20 -22 24 c-12 -4 -22 -12 -22 -24z"/></clipPath><g clip-path="url(#sh)" opacity=".85"><rect x="20" y="40" width="60" height="46" fill="#22305a"/>' +
+    '<path d="M20 40 L80 86 M80 40 L20 86" stroke="#efe6d2" stroke-width="8"/><path d="M20 40 L80 86 M80 40 L20 86" stroke="#9c2a2a" stroke-width="3"/>' +
+    '<path d="M50 40 V86 M20 63 H80" stroke="#efe6d2" stroke-width="11"/><path d="M50 40 V86 M20 63 H80" stroke="#9c2a2a" stroke-width="6"/></g>' +
+    '<path d="M28 44 h44 v14 c0 12 -10 20 -22 24 c-12 -4 -22 -12 -22 -24z" fill="none" stroke="url(#br)" stroke-width="2"/></svg>';
   // ---------- state ----------
   let S;
   function fresh() {
@@ -116,16 +117,18 @@
   // ---------- screens ----------
   function title() {
     chrome(false);
-    render('<div class="title"><div>' + EMBLEM + '<h1>Albion House</h1><div class="sub">The Overseas Intelligence Bureau</div></div>' +
-      '<div><p class="tag">London. Rain on the river. Four problems before midnight.</p><button class="btn primary" id="go">Take the chair</button><div class="fine">A work of fiction. All states, services, firms and people are invented.</div></div></div>');
+    render('<div class="title"><div>' + EMBLEM + '<h1>Albion House</h1><div class="sub">British Secret Intelligence</div><div class="flagband" aria-hidden="true"></div></div>' +
+      '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Four problems before midnight.</p><button class="btn primary" id="go">Take the chair</button><div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     $("go").onclick = intro;
   }
   function intro() {
     chrome(false);
-    render('<div class="card" style="margin-top:calc(var(--safe-t) + 18px)"><span class="stamp corner">SECRET</span><div class="kicker">Personal file \u00b7 For the Chief only</div><h2 style="margin-top:10px">You are \u2018C\u2019.</h2>' +
-      '<p>You head <strong>Albion House</strong>, Britain\u2019s overseas intelligence service (invented), in a grey stone building on the Thames. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, and to nobody else.</p>' +
+    render('<figure class="no10" id="no10"><img src="' + pic("no10") + '" alt="The Prime Minister hands C a file in a study at Number 10, a Union Flag by the window"><figcaption>10 Downing Street \u00b7 the study, 07:10</figcaption></figure>' +
+      '<div class="card dossier"><div class="lh">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><span class="stamp corner">SECRET</span><div class="kicker">Personal file \u00b7 For C only</div><h2 style="margin-top:10px">You are \u2018C\u2019.</h2>' +
+      '<p>You are the Chief of <strong>Albion House</strong>, Britain\u2019s foreign intelligence service: the people who run Britain\u2019s spies abroad. (It\u2019s invented, but you\u2019ll know the type.) Your office looks across the Thames at Westminster. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, at Number 10, and to nobody else.</p>' +
+      '<p>She has just handed you the morning file in her study. \u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +
       '<p>Your Chief of Staff, <strong>Kite</strong>, runs the building. Your officers in the field are brave, tired, and not all of them are entirely yours.</p>' +
-      '<p>Today four problems reach your desk. You have <strong>three officers</strong> and <strong>one day</strong>. You can\u2019t fix everything. Each choice moves four gauges: public trust, No.10\u2019s favour, officer safety and secrecy.</p>' +
+      '<p>Back across Whitehall, four problems reach your desk. You have <strong>three officers</strong> and <strong>one day</strong>. You can\u2019t fix everything. Each choice moves four gauges: public trust, No.10\u2019s favour, officer safety and secrecy.</p>' +
       '<button class="btn primary" id="go">Read the morning brief</button></div>');
     $("go").onclick = function () { chrome(true); meters(); ticker(); briefing(); };
   }
@@ -136,17 +139,17 @@
   function briefing() {
     if (!freeAgents().length || !remaining().length) return summary();
     const first = !S.log.length, flash = S.order.indexOf("sabotage") >= 0 && !S.done.sabotage, fresh = flash && !S.flashShown;
-    const line = first ? "Morning, C. Three files on the desk, three officers on the bench. Start with the one that frightens you most. Mind the deadlines."
+    const line = first ? "Morning, C. Tea\u2019s on the desk. Three files on the desk, three officers on the bench. Start with the one that frightens you most. Mind the deadlines."
       : fresh ? "<b>Flash from the night desk.</b> Someone means to cut a North Sea cable tonight. Two reports, two places. I\u2019ve put it top of the pile."
       : "Next. " + freeAgents().length + " officer" + (freeAgents().length > 1 ? "s" : "") + " left. Whatever we don\u2019t touch today will sort itself out, badly.";
     if (flash) S.flashShown = true;
     let list = "", n = 0;
     S.order.forEach(function (id) {
       const s = SITS[id], done = S.done[id], late = !done && S.hour >= s.due; n++;
-      list += '<button class="card sit' + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done ? " disabled" : "") + '><span class="num">' + ["I", "II", "III", "IV"][n - 1] + '</span><span><div class="t">' + esc(s.title) + '</div><div class="s">' + esc(s.where) + '</div></span><span class="dl">' +
+      list += '<button class="card dossier sit' + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done ? " disabled" : "") + '><span class="num">' + ["I", "II", "III", "IV"][n - 1] + '</span><span><div class="t">' + esc(s.title) + '</div><div class="s">' + esc(s.where) + '</div></span><span class="dl">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : late ? "OVERDUE" : "by " + s.due + ":00") + "</span></button>";
     });
-    render('<div class="kicker">Morning brief \u00b7 Albion House</div>' + kite(line, fresh) + map() + list, "Tap a file to deal with it.");
+    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">Morning brief for C \u00b7 Albion House</div>' + kite(line, fresh) + map() + list, "Tap a file to deal with it.");
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { const id = b.getAttribute("data-sit"); id === "sabotage" && !S.belief ? judgement() : pickAgent(id); }; });
   }
 
@@ -185,7 +188,7 @@
         return '<button class="card agent' + (pick === k ? " sel" : "") + (used ? " used" : "") + '" data-a="' + k + '"><img class="portrait" src="' + pic(st >= 4 ? a.alt : a.img) + '" alt=""><div style="flex:1;min-width:0"><div class="nm">' + a.name + (used ? " \u00b7 in the field" : "") + '</div><div class="role">' + a.role + '</div><div class="traits">' +
           pips(a.skill, "", "Skill") + pips(a.loyalty, "", "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + '</div><div class="fit' + (fit ? "" : " bad") + '">' + (fit ? "\u2713 Right person for this" : "Not their line of work") + (id === "mole" && a.loyalty <= 2 ? " \u00b7 loyalty in doubt" : "") + "</div></div></button>";
       }).join("");
-      render('<div class="step"><i class="on"></i><i></i></div><div class="card"><span class="stamp corner">CONFIDENTIAL</span><div class="kicker">' + esc(s.where) + " \u00b7 by " + s.due + ":00" + (S.hour >= s.due ? " \u00b7 OVERDUE" : "") + '</div><h2 style="margin-top:8px;padding-right:110px">' + esc(s.title) + "</h2><p>" + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p></div><div class="kicker" style="margin:4px 0 8px">Who do you send?</div><div class="agents">' + cards + '</div><div class="sticky-go"><button class="btn primary" id="go"' + (pick ? "" : " disabled") + ">" + (pick ? "Send " + AGENTS[pick].name.split(" ")[0] : "Choose an officer") + '</button></div><button class="btn ghost" id="back">Back to the brief</button>',
+      render('<div class="step"><i class="on"></i><i></i></div><div class="card dossier"><div class="lh">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><span class="stamp corner">CONFIDENTIAL</span><div class="kicker">' + esc(s.where) + " \u00b7 by " + s.due + ":00" + (S.hour >= s.due ? " \u00b7 OVERDUE" : "") + '</div><h2 style="margin-top:8px;padding-right:110px">' + esc(s.title) + "</h2><p>" + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p></div><div class="kicker" style="margin:4px 0 8px">Who do you send?</div><div class="agents">' + cards + '</div><div class="sticky-go"><button class="btn primary" id="go"' + (pick ? "" : " disabled") + ">" + (pick ? "Send " + AGENTS[pick].name.split(" ")[0] : "Choose an officer") + '</button></div><button class="btn ghost" id="back">Back to the brief</button>',
         "Step 1 of 2 \u00b7 Who goes? High stress means mistakes.");
       document.querySelectorAll("[data-a]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-a"); draw(); }; });
       $("go").onclick = function () { approach(id, pick); };
@@ -240,7 +243,7 @@
     meters(ch); ticker();
     render('<div class="card outcome ' + res + '"><span class="stamp">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res] + '</span><img class="portrait" src="' + pic(res === "loss" ? ag.alt : (k === "mira" && res === "win" ? ag.alt : ag.img)) + '" alt=""><h2>' + esc(s.title) + "</h2><p>" + esc(line) + (note ? " <strong>" + esc(note) + "</strong>" : "") + '</p><div class="deltas">' +
       Object.keys(ch).map(function (m) { return '<span class="' + (ch[m] >= 0 ? "up" : "down") + '">' + (ch[m] >= 0 ? "+" : "") + ch[m] + " " + mname(m) + "</span>"; }).join("") +
-      '</div><div class="headline"><small>The Evening Standard-Bearer \u00b7 late edition</small><div>' + esc(head) + "</div></div></div>" +
+      '</div><div class="headline"><small>The London Evening Bugle \u00b7 late edition</small><div>' + esc(head) + "</div></div></div>" +
       '<p style="font-family:var(--type);font-size:11.5px;text-align:center;margin:-2px 0 12px">' + odds + "% odds \u00b7 " + first + "\u2019s stress now " + S.stress[k] + "/5 \u00b7 clock " + S.hour + ':00</p><button class="btn primary" id="go">Back to the desk</button>',
       "The gauges moved. The papers noticed.");
     $("go").onclick = briefing;
@@ -261,14 +264,14 @@
     const extra = S.defector
       ? "The Vienna clerk, in her safe house, has seen the news. Her first words: <b>\u201cVass was only the first name on the list.\u201d</b>"
       : "A message on Kite\u2019s private line, unsigned: <b>\u201cYou left our clerk behind. Now you\u2019ll know how it feels.\u201d</b>";
-    render('<div class="card" style="text-align:center"><span class="stamp corner">TOP SECRET</span><div class="kicker">Cabinet Office \u00b7 report to the Prime Minister</div><div class="grade">' + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
+    render('<div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span><div class="lh">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">From C to the Prime Minister \u00b7 10 Downing Street</div><div class="grade">' + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = SITS[l.id];
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AGENTS[l.k].img) + '" alt="">' : '<span class="portrait" style="display:grid;place-items:center;background:#ddd2b6;font-family:var(--type);color:var(--oxblood)">\u2014</span>') +
           "<span><b>" + esc(s.title) + '</b><br><span style="font-family:var(--type);color:var(--paper-mute);font-size:11px">' + esc(l.appr) + (l.k ? " \u00b7 " + AGENTS[l.k].name.split(" ")[0] : "") + '</span></span><span class="r ' + l.res + '">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[l.res] + "</span></li>";
       }).join("") + "</ul></div>" +
       '<div class="flash-card" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:47 \u00b7 BATH</span></div><div class="tele">' +
-      "C \u2014 Avon Police report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + extra + "<br><br>\u2014 Kite</div></div>" +
+      "<span class=\"hdr\">TO: C &nbsp;\u00b7&nbsp; FROM: KITE, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 Avon Police report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + extra + "<br><br>\u2014 Kite</div></div>" +
       '<button class="btn primary" id="again">Play the day again</button><a class="btn ghost" href="../index.html">Back to Ashline</a>',
       "To be continued. Try other officers and plans.");
     $("again").onclick = function () { fresh(); title(); };
