@@ -151,7 +151,10 @@ window.AL = (function () {
   }
   AL.newGame = function () {
     Audio.unlock(); AL.sfx("tap");
-    const fresh = function () { wipeKeepSettings(); AL.save.seenTitle = true; AL.persist(); AL.sfx("whoosh"); AL.openHub(); };
+    const fresh = function () {
+      wipeKeepSettings(); AL.save.seenTitle = true; AL.persist();
+      AL.scenes.play("intro", function () { AL.save.introSeen = true; AL.persist(); AL.sfx("whoosh"); AL.openHub(); });
+    };
     if (!AL.hasProgress()) { fresh(); return; }
     AL.showModal("lose", "NEW GAME", "Start over?", "<p>This wipes credits, upgrades, completed ops and headlines. Your settings are kept.</p>",
       [{ label: "Wipe and start fresh", primary: true, fn: fresh }, { label: "Cancel", fn: function () {} }]);
@@ -174,6 +177,7 @@ window.AL = (function () {
       '<div class="set-row">' + ART.icon("wave", 20) + '<label for="set-vol">Music volume</label><input id="set-vol" type="range" min="0" max="100" value="' + Math.round(s.musicVol * 100) + '"></div>' +
       '<div class="set-row">' + ART.icon("text", 20) + '<label>Text speed</label><div class="seg" id="set-speed">' + speeds + "</div></div>" +
       sw("reduceMotion", "Reduce motion", "motion") +
+      '<div class="set-row">' + ART.icon("play", 20) + '<label>Intro</label><button type="button" class="btn glass sm" id="set-intro">Replay</button></div>' +
       '<div class="set-row">' + ART.icon("trash", 20) + '<label>Reset progress</label><button type="button" class="btn danger sm" id="set-reset">Reset</button></div>',
       [{ label: "Done", primary: true, id: "set-done", fn: function () { if (AL.screen === "hub") AL.renderHub(); } }]);
     el.modalBody.querySelectorAll(".switch").forEach(function (b) {
@@ -192,6 +196,10 @@ window.AL = (function () {
         AL.save.settings.textSpeed = b.getAttribute("data-v"); AL.persist(); AL.sfx("tap");
         $("set-speed").querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
       });
+    });
+    $("set-intro").addEventListener("click", function () {
+      el.overlay.classList.add("hidden");
+      AL.scenes.play("intro", function () { if (AL.screen === "hub") AL.renderHub(); });
     });
     $("set-reset").addEventListener("click", function () {
       AL.showModal("lose", "RESET", "Wipe all progress?", "<p>Credits, upgrades, completed ops and headlines will be cleared. Settings stay.</p>", [

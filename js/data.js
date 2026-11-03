@@ -37,6 +37,18 @@ window.ASHLINE_DATA = (function () {
     }
   ];
 
+  // Story scenes: painted stills with slow pan/zoom and subtitles. Reused for breakaways between jobs.
+  const SCENES = {
+    intro: [
+      { img: "img/intro-1.jpg", from: "scale(1.08) translate(0,2%)", to: "scale(1.18) translate(0,-3%)", sfx: "whoosh", kicker: "Shetland · 02:14", line: "The North Sea. Every message between two continents runs through cables like this one." },
+      { img: "img/intro-2.jpg", from: "scale(1.2) translate(2%,0)", to: "scale(1.06) translate(-2%,2%)", sfx: "err", kicker: "Kelp Line · 140 m down", line: "At 2:14 this morning, one of them went dark." },
+      { img: "img/intro-3.jpg", from: "scale(1.05)", to: "scale(1.2) translate(0,2%)", sfx: "heartbeat", kicker: "Same night", line: "Nobody admits to the machine that was down there." },
+      { img: "img/intro-4.jpg", from: "scale(1.15) translate(-2%,0)", to: "scale(1.05) translate(2%,0)", sfx: "warn", kicker: "Breaking", line: "“A routine data outage,” says the operator. Analysts aren’t buying it." },
+      { img: "img/intro-5.jpg", from: "scale(1.2) translate(0,-4%)", to: "scale(1.06) translate(0,0)", sfx: "connect", kicker: "Kite · Ashline handler", portrait: "kite", line: "I’m Kite. Ashline is a small crew. We get into places and find out what they’re hiding. You’re our new operator." },
+      { img: "img/intro-5.jpg", from: "scale(1.06)", to: "scale(1.14) translate(0,3%)", sfx: "unlock", kicker: "Kite", portrait: "kite", line: "Someone’s listening to the seabed. We’re going to find out who." }
+    ]
+  };
+
   const JOBS = [
     {
       id: "glasswing",
@@ -59,14 +71,12 @@ window.ASHLINE_DATA = (function () {
       },
       decoys: ["novak", "2024"],
       tutorial: true,
+      where: "Lena's inbox and social feed",
+      hints: ["Open inbox/ and social/. Lena overshares.", "Sam's email says pet name + year. Her feed says when Pixel came home.", "Tiles: pixel + 2019."],
       kiteBoot: [
-        "~smirk~Hey. You're early. Good — means you're hungry.",
-        "I'm <em>Kite</em>. I run ops for <em>Ashline</em> — small crew, big opinions.",
-        "Act One: <em>Deep Water</em>. Someone's been listening to the seabed. We start small.",
-        "Tonight: <em>Op Glasswing</em>. <em>Aether Dynamics</em> builds cable-tap sensors out of a lab in Marseille, a stone's throw from the landing stations. Gateway: <code>203.0.113.42</code>.",
-        "Their guest share is wide open. Open Lena Novak's mail and feed — every clue you read becomes a tile on your crack screen.",
-        "Map your hops, grab <code>schematic_v3.dat</code>, disconnect clean. I'll be in your ear.",
-        "Hit accept when you're ready. And don't touch real systems. This is our playground."
+        "~smirk~First job. <em>Aether Dynamics</em> in Marseille builds sensors that clip onto undersea cables.",
+        "Get into their share, find Lena Novak's password, grab <code>schematic_v3.dat</code>. I'll walk you through it.",
+        "Tap <em>Accept</em> when you're ready."
       ],
       kite: {
         connect: "Link's live. Guest share is open — tap folders, dig inbox and social, then crack.",
@@ -135,6 +145,8 @@ window.ASHLINE_DATA = (function () {
         "dock/rov_manifest.txt": ["21"]
       },
       decoys: ["saltchoir", "cho"],
+      where: "Mira's tickets and the dock board",
+      hints: ["Check tickets/ for the vessel name, then dock/ for the berth.", "Mira's ship is the Quiet Harbor. Which berth is it on the board?", "Tiles: quietharbor + 14."],
       kiteBoot: [
         "~smirk~Glasswing paid off. That schematic wasn't for weather buoys.",
         "Next: <em>Op Driftnet</em>. <em>Thalassa Link</em> — a cable consortium — runs the <em>Kelp Line</em> and the <em>Azimuth Spine</em> from a NOC in Lerwick, Shetland.",
@@ -213,6 +225,8 @@ window.ASHLINE_DATA = (function () {
         "social/ren_okada_posts.txt": ["okada"]
       },
       decoys: ["2023", "lab"],
+      where: "Ren's HR files and badge slip",
+      hints: ["The gate wants mother's maiden name + last four of the badge.", "HR notes name his mother Elena Vale. Vale is the maiden name.", "Tiles: vale + 7391."],
       kiteBoot: [
         "~smirk~Last stop in Deep Water. Smile for the cutout.",
         "<em>Meridian Softworks</em> invoices Thalassa for \"telemetry adapters.\" Their real customer is the <em>Virelian Directorate</em> — fictional state actor, gray-zone hobbyists.",
@@ -276,5 +290,5 @@ window.ASHLINE_DATA = (function () {
   const HOME = { name: "Your Rig", city: "Toronto", ip: "192.0.2.10", x: 280, y: 102 };
   const SPINE_LABEL = [672, 199];
 
-  return { CABLES: CABLES, LAND: LAND, HOME: HOME, SPINE_LABEL: SPINE_LABEL, RELAYS: RELAYS, UPGRADES: UPGRADES, JOBS: JOBS, ACT_TITLE: "Deep Water", ACT_NUM: 1 };
+  return { CABLES: CABLES, LAND: LAND, HOME: HOME, SPINE_LABEL: SPINE_LABEL, RELAYS: RELAYS, UPGRADES: UPGRADES, JOBS: JOBS, SCENES: SCENES, ACT_TITLE: "Deep Water", ACT_NUM: 1 };
 })();

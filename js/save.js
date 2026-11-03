@@ -28,6 +28,7 @@ window.ASHLINE_SAVE = (function () {
       act1Done: false,
       seenTitle: false,
       tutorialDone: false,
+      introSeen: false,
       stars: {},
       settings: defaultSettings()
     };
@@ -62,6 +63,7 @@ window.ASHLINE_SAVE = (function () {
     d.act1Done = !!raw.act1Done;
     d.seenTitle = !!raw.seenTitle;
     d.tutorialDone = !!raw.tutorialDone || d.completedJobs.indexOf("glasswing") >= 0;
+    d.introSeen = !!raw.introSeen;
     if (raw.stars && typeof raw.stars === "object") {
       Object.keys(raw.stars).forEach(function (k) { var n = raw.stars[k] | 0; if (n >= 1 && n <= 3) d.stars[k] = n; });
     }

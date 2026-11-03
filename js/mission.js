@@ -90,24 +90,86 @@
   };
   function tutorialOn() { return !!(job() && job().tutorial && !AL.save.tutorialDone && !AL.tutorSkipped); }
   // Recomputed only on state changes, never on a timer.
+  // One stage drives the objective bar, the tutorial coaching line, the pulse target and the hints.
+  function stage() {
+    const m = M();
+    if (!m.accepted) return "accept";
+    if (!m.connected && !m.route.length) return "route";
+    if (!m.connected) return "connect";
+    if (!m.cracked && m.tiles.length < 2) return "dig";
+    if (!m.cracked) return "crack";
+    if (!m.downloaded) return "download";
+    return "disconnect";
+  }
+  function objective(st) {
+    const j = job();
+    return {
+      accept: "Hear Kite’s brief, then accept the op.",
+      route: "Add a relay on the map, then connect.",
+      connect: "Tap Connect to bounce in.",
+      dig: "Find the password hidden in " + j.where + ".",
+      crack: "Find the password hidden in " + j.where + ".",
+      download: "Download " + j.loot + ".",
+      disconnect: "Disconnect before the trace reaches you."
+    }[st];
+  }
+  const COACH = {
+    accept: function (m) { return m.briefingDone ? "Tap Accept to take the job." : "Kite’s briefing. Tap the chat to speed up."; },
+    route: function () { return "Tap a relay. Each hop buys you time."; },
+    connect: function () { return "Good route. Tap Connect."; },
+    dig: function () { return "Tap files to read them. Clues become password tiles."; },
+    crack: function () { return "Tap Crack and build the password from your tiles."; },
+    download: function () { return "You’re in. Tap Download."; },
+    disconnect: function () { return "Got it. Tap Disconnect to get out."; }
+  };
+  const GENERIC_HINTS = {
+    accept: ["Wait for Kite to finish, then tap Accept at the bottom of the chat."],
+    route: ["Open the Map tab and tap any unlocked relay."],
+    connect: ["On the Map tab, tap Connect."],
+    download: ["In the Terminal, tap the download chip."],
+    disconnect: ["In the Terminal, tap disconnect."]
+  };
   function updateTutor() {
     document.querySelectorAll(".pulse").forEach(function (n) { n.classList.remove("pulse"); });
     const m = M();
-    if (!tutorialOn() || m.gameOver) { el.tutor.classList.add("hidden"); return; }
-    let text, target = null, want;
-    const chip = function (sel) { return el.chips.querySelector(sel); };
-    if (!m.accepted) { want = "chat"; text = m.briefingDone ? "Tap Accept to take the contract." : "Kite is briefing you. Tap the chat to speed it up."; target = m.briefingDone ? el.accept : null; }
-    else if (!m.connected && !m.route.length) { want = "map"; text = "Tap a relay to add a hop. More hops = more time."; target = AL.$("world").querySelector(".node.relay:not(.locked)"); }
-    else if (!m.connected) { want = "map"; text = "Nice route. Tap Connect to bounce in."; target = el.connect; }
-    else if (!m.cracked && m.tiles.length < 2) { want = "term"; text = "Open files. Every clue you read becomes a crack tile."; target = el.out.querySelector(".fs-link:not(.read):not(.dir):not(.bin)") || el.out.querySelector(".fs-link.dir") || chip('[data-cmd="ls"]'); }
-    else if (!m.cracked) { want = "term"; text = "Tap Crack and build the passphrase from your tiles."; target = chip('[data-cmd="crack"]'); }
-    else if (!m.downloaded) { want = "term"; text = "Gate\u2019s open. Download the contract file."; target = chip('[data-cmd^="download"]'); }
-    else { want = "term"; text = "Got it. Disconnect before the trace reaches you."; target = chip('[data-cmd="disconnect"]'); }
-    el.tutorText.textContent = text;
+    if (!job() || m.gameOver) { el.tutor.classList.add("hidden"); return; }
+    const st = stage(), tut = tutorialOn();
+    if (m.hintStage !== st) { m.hintStage = st; m.hintText = ""; }
     el.tutor.classList.remove("hidden");
+    el.tutor.classList.toggle("coach", tut);
+    el.tutor.classList.toggle("hinted", !!m.hintText);
+    el.tutorText.innerHTML = m.hintText ? "<b>Kite:</b> " + AL.esc(m.hintText) : tut ? AL.esc(COACH[st](m)) : "<b>Objective</b> " + AL.esc(objective(st));
+    AL.$("tutor-skip").classList.toggle("hidden", !tut);
+    if (!tut) return;
+    let target = null, want = "term";
+    const chip = function (sel) { return el.chips.querySelector(sel); };
+    if (st === "accept") { want = "chat"; target = m.briefingDone ? el.accept : null; }
+    else if (st === "route") { want = "map"; target = window.innerWidth < 900 ? document.querySelector(".relay-pick:not(.locked)") : AL.$("world").querySelector(".node.relay:not(.locked)"); }
+    else if (st === "connect") { want = "map"; target = el.connect; }
+    else if (st === "dig") target = el.out.querySelector(".fs-link:not(.read):not(.dir):not(.bin)") || el.out.querySelector(".fs-link.dir") || chip('[data-cmd="ls"]');
+    else if (st === "crack") target = chip('[data-cmd="crack"]');
+    else if (st === "download") target = chip('[data-cmd^="download"]');
+    else target = chip('[data-cmd="disconnect"]');
     if (want !== tab && window.innerWidth < 900) target = document.querySelector('.tab[data-tab="' + want + '"]');
     if (target) target.classList.add("pulse");
   }
+  // Escalating hints. Free in the tutorial; otherwise each one costs a little trace time while linked.
+  AL.hint = function () {
+    const m = M();
+    if (!job() || m.gameOver) return;
+    const st = stage();
+    const list = (st === "dig" || st === "crack") ? job().hints : GENERIC_HINTS[st];
+    m.hintLvl = m.hintLvl || {};
+    const lvl = m.hintLvl[st] | 0;
+    const text = list[Math.min(lvl, list.length - 1)];
+    m.hintLvl[st] = lvl + 1; m.hints = (m.hints | 0) + 1;
+    m.hintStage = st; m.hintText = text;
+    AL.sfx("clue");
+    AL.chat.say(text, lvl >= 1 ? "worried" : "neutral");
+    if (!tutorialOn() && m.connected && m.trace.active) { penalise(2000); AL.toast("Hint: trace +2s"); }
+    updateTutor();
+    return text;
+  };
   AL.updateTutor = updateTutor;
 
   // ---------- trace ----------
@@ -474,6 +536,7 @@
       el.input.value = m.histIdx === m.history.length ? m.draft : m.history[m.histIdx];
     }
   });
+  AL.$("btn-hint").addEventListener("click", function () { AL.Audio.unlock(); AL.hint(); });
   el.chatLog.addEventListener("click", function () { AL.chat.tap(!M().briefingDone); });
   el.accept.addEventListener("click", AL.acceptOp);
   el.clear.addEventListener("click", function () { AL.sfx("tap"); AL.map.clear(); });

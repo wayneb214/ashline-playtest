@@ -45,7 +45,7 @@
         <button id="btn-new" class="btn glass xl" type="button"></button>
         <button id="btn-settings-title" class="btn glass xl" type="button"></button>
       </div>
-      <p class="title-foot">A work of fiction. All networks, people and places are invented.</p>
+      <p class="title-foot">A work of fiction. All organisations, networks and people are invented.</p>
     </div>
   </section>
 
@@ -104,7 +104,9 @@
     </nav>
 
     <div id="tutor" class="tutor hidden" role="status">
+      <span class="obj-ic" aria-hidden="true"></span>
       <span id="tutor-text"></span>
+      <button id="btn-hint" class="hint-btn" type="button" aria-label="Ask Kite for a hint">Hint</button>
       <button id="tutor-skip" class="tutor-skip" type="button">Skip tips</button>
     </div>
 
@@ -192,6 +194,21 @@
     </div>
   </div>
 
+  <!-- STORY SCENES -->
+  <div id="scene" class="scene hidden" role="dialog" aria-modal="true" aria-label="Story">
+    <div id="scene-a" class="scene-img"></div>
+    <div id="scene-b" class="scene-img"></div>
+    <div class="scene-shade" aria-hidden="true"></div>
+    <button id="scene-skip" class="btn glass sm scene-skip" type="button">Skip</button>
+    <div class="scene-caption" aria-live="polite">
+      <div id="scene-face" class="scene-face hidden"></div>
+      <div id="scene-kicker" class="scene-kicker"></div>
+      <p id="scene-line" class="scene-line"></p>
+      <div id="scene-dots" class="scene-dots" aria-hidden="true"></div>
+      <div class="scene-tap">Tap to continue</div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden" role="status"></div>
 
   <script src="js/data.js"></script>
@@ -203,6 +220,7 @@
   <script src="js/map.js"></script>
   <script src="js/crack.js"></script>
   <script src="js/mission.js"></script>
+  <script src="js/scenes.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

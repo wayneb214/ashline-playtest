@@ -23,7 +23,7 @@
   document.addEventListener("touchstart", unlockAudio, { passive: true });
 
   // Stop iOS rubber-banding outside the scroll areas
-  const SCROLLERS = ".chat-log, .term-out, .hub-scroll, .modal, .sheet, .cmd-chips, .hop-ladder";
+  const SCROLLERS = ".scene, .chat-log, .term-out, .hub-scroll, .modal, .sheet, .cmd-chips, .hop-ladder";
   document.addEventListener("touchmove", function (e) {
     if (!e.target.closest || !e.target.closest(SCROLLERS)) e.preventDefault();
   }, { passive: false });
@@ -63,6 +63,8 @@
     buyUpgrade: AL.buyUpgrade,
     addCredits: function (n) { AL.save.credits += n; AL.persist(); if (AL.screen === "hub") AL.renderHub(); },
     dismissOverlay: function () { el.overlay.classList.add("hidden"); },
+    hint: AL.hint,
+    scenes: AL.scenes,
     audio: { unlocked: Audio.isUnlocked, musicPlaying: Audio.isMusicPlaying }
   };
 })(window.AL);
