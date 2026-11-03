@@ -9,7 +9,10 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: var(--ink); color: var(--fog-2); font-family: var(--serif); font-size: 16px; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+html, body { margin: 0; height: 100%;
+}
+html { background: var(--ink); }
+body { background: transparent; color: var(--fog-2); font-family: var(--serif); font-size: 16px; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,12,11,.55), rgba(10,12,11,.92) 55%), url(img/briefing-room.jpg) center top / cover no-repeat; }
 body.on-title::before { background: linear-gradient(180deg, rgba(8,9,9,.25), rgba(8,9,9,.05) 35%, rgba(8,9,9,.9) 80%), url(img/title.jpg) center / cover no-repeat; }
 #app { max-width: 520px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
