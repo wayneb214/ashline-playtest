@@ -67,6 +67,7 @@
       const v = m.id === "service" ? svc() : S.meters[m.id], d = changes && changes[m.id];
       return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '" aria-label="' + m.name + " " + v + ' out of 100"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + m.name + '</span></div><div class="mval"><b>' + v + "</b><small>/100</small>" + (d ? ' <span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span>" : "") + '</div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
+    if (window.FUN) FUN.track(S);
     $("clock").textContent = hh(S.hour); LOOK.night(S.hour);
     const open = remaining().map(function (id) { return dueOf(id) - S.hour; });
     const soon = open.length ? Math.min.apply(null, open) : 99, box = $("clock").parentNode;
@@ -564,6 +565,7 @@
       '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
       "The gauges moved. The papers noticed. " + nm + " will remember this.");
     $("go").onclick = briefing;
+    if (window.FUN) FUN.event("case", { id: id, k: k, res: res });
     if (S.status && S.status[k] && S.status[k] !== "burned") MENU.coach("status", "Officers can come back <b>Tired</b> (\u22128%) or <b>Wounded</b> (\u221215%). It shows on their file and fades after a night\u2019s rest.");
   }
 
@@ -666,7 +668,7 @@
     const grade = gradeOf();
     const verdict = { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
     render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
-      '<p class="scoreline" id="scoreline">' + scores() + "</p>" +
+      '<p class="scoreline" id="scoreline">' + scores() + "</p>" + (window.FUN ? FUN.medalHTML(S) : "") +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +
@@ -681,6 +683,7 @@
     if ($("day2")) $("day2").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY2)); save("briefing"); window.AH2.briefingIntro(); }); };
     if ($("day3")) $("day3").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY3)); save("briefing"); window.AH3.briefingIntro(); }); };
     S.finished = grade;
+    if (window.FUN) FUN.event("day");
   }
   // Day 2 begins from the end of Day 1: same officers, meters and mole result; a fresh clock and kit
   function day2State() {
