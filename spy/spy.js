@@ -426,6 +426,7 @@
   function apply(delta) {
     const ch = {};
     const d2 = fold(delta);
+    if (d2.service < 0) d2.service = Math.round(d2.service * 0.65); // setbacks bruise the Service; a run of them breaks it
     Object.keys(d2).forEach(function (m) { const before = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, before + d2[m])); if (m !== "mood" && S.meters[m] !== before) ch[m] = S.meters[m] - before; });
     return ch;
   }
@@ -444,6 +445,10 @@
     S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
     let delta = a[res];
     if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
+    // Good tradecraft keeps the Service healthy: the right officer on the plan they recommend steadies it, a mismatch drains it.
+    const fitK = AG(k).good.indexOf(id) >= 0, recK = !over;
+    const craft = res === "loss" ? (fitK ? 0 : -6) : (fitK ? 1 : -4) + (recK ? 2 : 0);
+    delta = Object.assign({}, delta); delta.service = (delta.service || 0) + craft;
     const ch = apply(delta);
     S.done[id] = res; S.used[k] = true; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
@@ -596,6 +601,7 @@
     n.clues = { cctv: true, hire: true }; n.links = {}; n.unlocked = {}; n.interro = {}; n.seenIntro = false;
     n.heads = S.heads.slice(-2).concat(["Bath: police hunt three after bench collapse"]);
     n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - 1); }); // a night's sleep
+    { const tired = n.roster.filter(function (k) { return n.stress[k] >= 4; }).length; n.meters.service = Math.max(0, Math.min(100, n.meters.service + (tired ? -3 * tired : 6))); } // rested officers steady the Service overnight
     return n;
   }
 
@@ -607,6 +613,7 @@
     n.order = ["bath", "york", "tail", "cable", "exfil"]; n.kit = Object.assign({}, diff().kit); n.seenIntro = false; n.letters = {}; n.riskSeen = {}; n.deal = null;
     n.heads = S.heads.slice(-2).concat(["Mystery of the woman in green deepens"]);
     n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - 1); });
+    { const tired = n.roster.filter(function (k) { return n.stress[k] >= 4; }).length; n.meters.service = Math.max(0, Math.min(100, n.meters.service + (tired ? -3 * tired : 6))); } // rested officers steady the Service overnight
     window.AH3.prep(n);
     return n;
   }
