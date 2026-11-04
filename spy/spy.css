@@ -885,3 +885,18 @@ body.paused #view, body.paused #hud { filter: blur(2px) brightness(.7); }
 @keyframes crunchpulse { 50% { box-shadow: 0 0 0 3px rgba(140,28,19,.35); } }
 @media (prefers-reduced-motion: reduce) { .crunchf { animation: none; } }
 .crunchf .t { font-weight: 700; margin-bottom: 2px; }
+/* the desk reacts: file pile, flickering lamp, moving needle, latest headline */
+.hub-needle line { transform-origin: 20px 20px; transition: transform 1.2s cubic-bezier(.3,1.6,.5,1); }
+.hub-pile { position: absolute; left: 39%; top: 30%; width: 30%; height: 1px; pointer-events: none; }
+.hub-pile i { display: block; position: absolute; left: 0; width: 100%; height: 8px; background: #b98f4e; border: 1px solid #5a4422; border-radius: 2px 2px 0 0; box-shadow: 0 2px 3px rgba(0,0,0,.5); }
+.hub-pile i:nth-child(1) { bottom: 0; transform: rotate(-3deg); } .hub-pile i:nth-child(2) { bottom: 5px; transform: rotate(2deg); }
+.hub-pile i:nth-child(3) { bottom: 10px; transform: rotate(-1deg); } .hub-pile i:nth-child(4) { bottom: 15px; transform: rotate(4deg); }
+.hub-pile i:nth-child(5) { bottom: 20px; transform: rotate(-4deg); } .hub-pile i:nth-child(6) { bottom: 25px; transform: rotate(1deg); }
+.hub-pile i:nth-child(7) { bottom: 30px; transform: rotate(-2deg); }
+.hub-lamp.flicker { animation: lampflick 1.7s steps(1) infinite; }
+@keyframes lampflick { 0%, 100% { opacity: .9; } 12% { opacity: .15; } 18% { opacity: .8; } 55% { opacity: .3; } 60% { opacity: .9; } }
+.hub-paper { position: absolute; right: 3%; bottom: 7%; width: 44%; background: #efe6cf; color: #1d1a14; font: 700 11px/1.25 Georgia, serif; padding: 5px 7px; transform: rotate(-2deg); box-shadow: 0 3px 8px rgba(0,0,0,.6); pointer-events: none; }
+.hub-paper small { display: block; font: 9px/1 monospace; letter-spacing: .14em; text-transform: uppercase; border-bottom: 1px solid #1d1a14; margin-bottom: 3px; padding-bottom: 2px; }
+.hub-paper.fresh { animation: paperin .7s ease-out; }
+@keyframes paperin { from { transform: translateY(30px) rotate(6deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hub-needle line { transition: none; } .hub-lamp.flicker { animation: none; opacity: .3; } .hub-paper.fresh { animation: none; } }

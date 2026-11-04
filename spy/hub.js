@@ -5,17 +5,22 @@
   "use strict";
   function html() {
     const A = window.AH, S = A.S(), t = A.score(S.meters.capital), v = A.svc();
-    const ang = -120 + v * 2.4;
+    const ang = -120 + v * 2.4, from = S.needle == null ? ang : S.needle, open = S.order.filter(function (id) { return !S.done[id]; }).length;
+    const head = S.heads[S.heads.length - 1], fresh = head && S.lastHead !== S.heads.length;
+    S.needle = ang; S.lastHead = S.heads.length;
     return '<div class="hub" id="hub"><img src="img/desk-hub.jpg" alt="Your desk at Albion House: a red-lamp telephone, a brass gauge, case files and a ledger">' +
-      '<span class="hub-lamp" style="opacity:' + (0.25 + t / 130).toFixed(2) + '"></span>' +
-      '<svg class="hub-needle" viewBox="0 0 40 40" aria-hidden="true"><line x1="20" y1="20" x2="20" y2="5" transform="rotate(' + ang + ' 20 20)"/><circle cx="20" cy="20" r="2.5"/></svg>' +
+      '<span class="hub-pile" aria-hidden="true">' + new Array(Math.min(open, 7) + 1).join("<i></i>") + "</span>" +
+      '<span class="hub-lamp' + (t < 30 ? " flicker" : "") + '" style="opacity:' + (0.25 + t / 130).toFixed(2) + '"></span>' +
+      '<svg class="hub-needle" viewBox="0 0 40 40" aria-hidden="true"><line x1="20" y1="20" x2="20" y2="5" data-to="' + ang + '" style="transform:rotate(' + from + 'deg)"/><circle cx="20" cy="20" r="2.5"/></svg>' +
       '<button class="hs hs-phone" data-hs="phone" aria-label="Red phone: No.10 trust ' + t + ' out of 100"><span>No.10 ' + t + '/100</span></button>' +
       '<button class="hs hs-gauge" data-hs="gauge" aria-label="Brass gauge: Service ' + v + ' out of 100"><span>Service ' + v + '/100</span></button>' +
       '<button class="hs hs-files" data-hs="files" aria-label="Today\u2019s case files"><span>Cases</span></button>' +
-      '<button class="hs hs-ledger" data-hs="ledger" aria-label="Ledger: menu"><span>Ledger</span></button></div>';
+      '<button class="hs hs-ledger" data-hs="ledger" aria-label="Ledger: menu"><span>Ledger</span></button>' +
+      (head ? '<div class="hub-paper' + (fresh ? " fresh" : "") + '" role="note"><small>Evening Bugle</small>' + A.esc(head) + "</div>" : "") + "</div>";
   }
   function info(h) { MENU.sheet(h + '<button class="btn primary" id="hs-back">Got it</button>'); document.getElementById("hs-back").onclick = MENU.close; }
   function bind() {
+    const n = document.querySelector(".hub-needle line"); if (n) requestAnimationFrame(function () { requestAnimationFrame(function () { n.style.transform = "rotate(" + n.getAttribute("data-to") + "deg)"; }); });
     const A = window.AH, S = A.S();
     document.querySelectorAll("[data-hs]").forEach(function (b) {
       b.onclick = function () {
