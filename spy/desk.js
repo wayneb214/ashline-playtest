@@ -22,7 +22,7 @@
     let left = secs * 1000, last = performance.now(), live = true;
     const id = setInterval(function () {
       const now = performance.now(), dt = now - last; last = now;
-      if (!live || document.hidden) return;
+      if (!live || document.hidden || window.AH_PAUSED) return;
       left -= dt; const el = document.getElementById(bar); if (el) el.style.width = Math.max(0, left / (secs * 1000) * 100).toFixed(1) + "%";
       if (left <= 0) { live = false; clearInterval(id); out(); }
     }, 100);
@@ -64,7 +64,7 @@
           '<div class="note"><div class="who">' + o.who + '</div><span class="tx">' + o.text + "</span></div>" + (secs ? '<div class="replybar" aria-hidden="true"><i id="replybar"></i></div><div class="replyhint">Answer before the line goes quiet' + "</div>" : "") + "</div>" +
           o.opts.map(function (p) { return '<button class="card appr' + (sel === p.k ? " sel" : "") + '" data-c="' + p.k + '"><div class="t">' + p.t + '</div><div class="chips">' + p.chips + "</div></button>"; }).join("") +
           '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? o.say || "Tell them" : "What do you say?") + "</button></div>", o.hint || "There is no right answer. Only a choice.");
-        document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); const w = document.getElementById("replybar"), keep = w ? w.style.width : ""; draw(); const w2 = document.getElementById("replybar"); if (w2) w2.style.width = keep; }; });
+        document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); commit(sel, false); }; });
         a.$("go").onclick = function () { commit(sel, false); };
       };
       draw();

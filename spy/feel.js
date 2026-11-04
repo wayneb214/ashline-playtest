@@ -5,10 +5,24 @@
 (function () {
   "use strict";
   const mq = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
-  const PATTERNS = { tap: 8, stamp: 30, win: [20, 40, 20], loss: [70, 40, 70], ring: [180, 120, 180], tear: 15 };
+  // player preferences, shared by sound, haptics, motion and tips. Stored on this device only.
+  const PKEY = "albion-prefs";
+  const PDEF = { mode: "all", music: 0.8, amb: 0.8, voice: 1, fx: 0.8, haptics: true, reduce: null, tips: true };
+  let P = Object.assign({}, PDEF);
+  try { Object.assign(P, JSON.parse(localStorage.getItem(PKEY) || "{}")); } catch (e) {}
+  window.PREFS = {
+    get: function (k) { return P[k]; },
+    set: function (k, v) { P[k] = v; try { localStorage.setItem(PKEY, JSON.stringify(P)); } catch (e) {} document.dispatchEvent(new CustomEvent("prefs")); },
+    // effective volume for a channel after the sound mode
+    vol: function (ch) { const m = P.mode; if (m === "off") return 0; if (m === "music" && ch !== "music") return 0; if (m === "effects" && ch === "music") return 0; return P[ch]; },
+    canBuzz: function () { return !!(typeof window.AH_HAPTICS === "function" || (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics) || navigator.vibrate); }
+  };
+  const PATTERNS = { tap: 8, stamp: 30, win: [20, 40, 20], loss: [70, 40, 70], ring: [180, 120, 180], tear: 15, drop: 18, heavy: [40, 30, 60], rumble: [60, 40, 60, 40, 60] };
   const FEEL = {
-    get reduce() { return !!(mq && mq.matches) || /[?&]still=1/.test(location.search); },
+    get deviceReduce() { return !!(mq && mq.matches); },
+    get reduce() { const r = P.reduce; return (r == null ? !!(mq && mq.matches) : r) || /[?&]still=1/.test(location.search); },
     buzz: function (kind) {
+      if (!P.haptics) return;
       try {
         if (typeof window.AH_HAPTICS === "function") return window.AH_HAPTICS(kind);
         const H = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics;

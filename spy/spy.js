@@ -19,7 +19,7 @@
   function applyTextSize() { document.documentElement.classList.toggle("text-large", store.get(TEXTSIZE) === "large"); }
   function textSizeHTML() { const l = store.get(TEXTSIZE) === "large"; return '<div class="textsize" role="group" aria-label="Text size"><button type="button" data-ts="normal" aria-pressed="' + !l + '"' + (l ? "" : ' class="on"') + '>Normal text</button><button type="button" data-ts="large" aria-pressed="' + l + '"' + (l ? ' class="on"' : "") + ">Large text</button></div>"; }
   function bindTextSize(redraw) { document.querySelectorAll("[data-ts]").forEach(function (b) { b.onclick = function () { store.set(TEXTSIZE, b.getAttribute("data-ts")); applyTextSize(); redraw(); }; }); }
-  const SAVE = "albion-save-v1", DAY2 = "albion-day2-start", DAY3 = "albion-day3-start", TIPS_DONE = "albion-tips-done";
+  const DAY1 = "albion-day1-start", SAVE = "albion-save-v1", DAY2 = "albion-day2-start", DAY3 = "albion-day3-start", TIPS_DONE = "albion-tips-done";
   const FAST = /[?&]fast=1/.test(location.search);
   const HRS = { low: 4, med: 3, high: 2 };
   const EXPIRE = 3; // hours after the deadline before a case is lost for good
@@ -96,7 +96,7 @@
     return '<div class="ash-note card"><img class="portrait" src="' + pic(worried ? "ash-worried" : "ash") + '" alt="Margaret Ashby, Chief of Staff"><div class="note"><div class="who">Ash \u00b7 Chief of Staff</div><span class="tx">' + text + "</span></div></div>";
   }
   // a first-run tip card; gone once dismissed, and switched off after Day 1
-  function tip(key) { return S.day > 1 && S.tips && !S.tipSeen[key] ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
+  function tip(key) { return S.day > 1 && S.tips && PREFS.get("tips") && !S.tipSeen[key] ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
   function pips(n, cls, label) { let s = ""; for (let i = 1; i <= 5; i++) s += '<i class="' + (i <= n ? "on" : "") + '"></i>'; return '<div class="tr ' + cls + '">' + label + '<div class="pips">' + s + "</div></div>"; }
   const mname = function (m) { return D.METERS.filter(function (x) { return x.id === m; })[0].name; };
   function deltas(ch) { return '<div class="deltas">' + Object.keys(ch).map(function (m) { return '<span class="' + (ch[m] >= 0 ? "up" : "down") + '">' + (ch[m] >= 0 ? "+" : "") + ch[m] + " " + mname(m) + "</span>"; }).join("") + "</div>"; }
@@ -139,16 +139,23 @@
     render(LOOK.living() + '<div class="title"><div>' + D.EMBLEM + '<h1>Albion House</h1><div class="sub">British Secret Intelligence</div><div class="flagband" aria-hidden="true"></div></div>' +
       '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Four problems before midnight.</p>' +
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
-      '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "Start a new game" : "Take the chair") + "</button>" +
+      '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (day2 ? '<button class="btn ghost" id="days">Choose a day</button>' : "") +
-      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' +
+      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div><button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     LOOK.place(); LOOK.rain(true); LOOK.night(8);
-    $("go").onclick = difficulty;
+    $("go").onclick = saved ? function () { MENU.confirm("Start a new game?", "Your saved game (Day " + (saved.S.day || 1) + ") will be replaced.", "Start again", difficulty); } : difficulty;
+    $("helpbtn").onclick = function () { MENU.help(); };
     if (saved) $("continue").onclick = function () { restore(saved); resume(); };
     if (day2) $("days").onclick = daySelect;
     $("opening").onclick = function () { CINE.play("open", title); };
-    $("cinema").onclick = function () { CINE.settings(title); };
+    $("cinema").onclick = function () { MENU.settings(); };
+  }
+  // Restart day: back to 08:00 of the day you are on, from the snapshot taken when it began
+  function restartDay() {
+    const d = S.day, snap = loadJSON(d === 3 ? DAY3 : d === 2 ? DAY2 : DAY1);
+    if (!snap) { fresh(S.diff); } else restore(snap);
+    S.seenIntro = true; save("briefing"); chrome(true); meters(); ticker(); briefing();
   }
   function resume() { chrome(true); meters(); ticker(); S.screen === "summary" ? summary() : briefing(); }
   function daySelect() {
@@ -173,7 +180,7 @@
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
       bindTextSize(draw);
-      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); if (!CINE.maybe("day1", intro)) intro(); };
+      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); if (!CINE.maybe("day1", intro)) intro(); };
       $("back").onclick = title;
     };
     draw();
@@ -182,13 +189,15 @@
     chrome(false);
     render('<figure class="no10" id="no10"><img src="' + pic("no10") + '" alt="The Prime Minister hands C a file in a study at Number 10, a Union Flag by the window"><figcaption>10 Downing Street \u00b7 the study, 07:10</figcaption></figure>' +
       '<div class="card dossier">' + LH + '<span class="stamp corner">SECRET</span><div class="kicker">Personal file \u00b7 For C only</div><h2 style="margin-top:10px">You are \u2018C\u2019.</h2>' +
-      '<p>You are the Chief of <strong>Albion House</strong>, Britain\u2019s foreign intelligence service: the people who run Britain\u2019s spies abroad. (It\u2019s invented, but you\u2019ll know the type.) Your office looks across the Thames at Westminster. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, at Number 10, and to nobody else.</p>' +
-      '<p>She has just handed you the morning file in her study. \u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +
-      '<p>Your Chief of Staff, <strong>Margaret \u201cAsh\u201d Ashby</strong>, runs the building. You have <strong>three officers</strong>, and <strong>one of them is working for the other side</strong>. Watch for small slips.</p>' +
-      '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Watch two gauges: <b>No.10 trust</b>, which opens the bold plans, and <b>Service</b>, your officers\u2019 safety, loyalty and cover, which makes every plan likelier. The public\u2019s mood shows in the papers.</p>' +
+      '<p>You run <strong>Albion House</strong>, Britain\u2019s invented foreign intelligence service. You answer to the Prime Minister, <strong>Eleanor Hale</strong>.</p>' +
+      '<p>\u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +
+      '<p>Three officers. Cases until midnight. <strong>One of your officers is working for the other side.</strong></p>' +
+      '<button class="linkbtn" id="more">Read the full file</button>' +
       '<button class="btn primary" id="go">Read the morning brief</button></div>');
     $("go").onclick = function () { chrome(true); meters(); ticker(); briefing(); };
+    $("more").onclick = function () { dossier({ tab: "PERSONAL FILE", stamp: "SECRET", kicker: "For C only", title: "You are \u2018C\u2019", img: pic("no10"), body: INTRO_FULL }); };
   }
+  const INTRO_FULL = '<p>You are the Chief of <strong>Albion House</strong>, Britain\u2019s foreign intelligence service: the people who run Britain\u2019s spies abroad. (It\u2019s invented, but you\u2019ll know the type.) Your office looks across the Thames at Westminster. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, at Number 10, and to nobody else.</p>' +      '<p>She has just handed you the morning file in her study. \u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +      '<p>Your Chief of Staff, <strong>Margaret \u201cAsh\u201d Ashby</strong>, runs the building. You have <strong>three officers</strong>, and <strong>one of them is working for the other side</strong>. Watch for small slips.</p>' +      '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Watch two gauges: <b>No.10 trust</b>, which opens the bold plans, and <b>Service</b>, your officers\u2019 safety, loyalty and cover, which makes every plan likelier. The public\u2019s mood shows in the papers.</p>';
 
   // ---------- the brief: the hub of each day ----------
   function remaining() { return S.order.filter(function (id) { return !S.done[id]; }); }
@@ -234,6 +243,7 @@
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { openCase(b.getAttribute("data-sit")); }; });
     if (S.day === 2) window.AH2.bindBoardButton();
     LOOK.rain(true);
+    MENU.coach("menu", "Tap \u2630 any time to pause, change settings or return to the title. The game saves itself.");
     $("endday").onclick = function () { S.hour = 24; summary(); };
   }
   // painted header for each case file
@@ -309,7 +319,7 @@
           return '<button class="card agent recruit' + (pick === k ? " sel" : "") + '" data-r="' + k + '"><img class="portrait" src="' + pic(a.img) + '" alt=""><div style="flex:1;min-width:0"><div class="nm">' + a.name + '</div><div class="role">' + a.role + '</div><div class="quirk">\u2605 ' + a.quirkTxt + '</div><div class="fnote">File note: ' + a.note + "</div></div></button>";
         }).join("") + "</div>" +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (pick ? "" : " disabled") + ">" + (pick ? "Hire " + first(pick) : "Choose a recruit") + '</button></div><button class="btn ghost" id="skip">Manage without</button>', "Each recruit has a quirk. Choose the one that fits what\u2019s left.");
-      document.querySelectorAll("[data-r]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-r"); draw(); }; });
+      document.querySelectorAll("[data-r]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-r"); $("go").onclick(); }; });
       $("go").onclick = function () {
         const a = D.RECRUITS[pick]; S.roster.push(pick); S.stress[pick] = a.stress; S.loyal[pick] = a.loyalty;
         S.pendingRecruit--; advance(1); S.heads.push("Whitehall job advert draws \u2018unusual\u2019 applicants"); FEEL.buzz("stamp"); briefing();
@@ -332,7 +342,7 @@
         '<div class="vs">\u2014 OR \u2014</div><button class="card report' + (sel === "split" ? " sel" : "") + '" data-r="split"><div class="src"><span>Hedge your bets</span><span class="rel">Thinner everywhere</span></div><div class="q">Split your people between both sites.</div><div class="chips"><span class="chip risk-med">Odds \u221212%</span><span class="chip risk-low">Can\u2019t be wholly wrong</span></div></button></div>' +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? (sel === "split" ? "Cover both sites" : "Believe it \u2014 defend " + sel) : "Decide what to believe") + "</button></div>",
         "Pick the report you trust. Then send someone.");
-      document.querySelectorAll("[data-r]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-r"); draw(); }; });
+      document.querySelectorAll("[data-r]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-r"); S.belief = sel; pickAgent("sabotage"); }; });
       $("go").onclick = function () { S.belief = sel; pickAgent("sabotage"); };
     };
     draw();
@@ -380,7 +390,7 @@
       const lt = late(id);
       render('<div data-screen="officer-pick">' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + "</p></div>" + lesson(id, "agent") + '<h3 class="question">Who do you send?</h3><div class="agents">' + cards + '</div><div class="sticky-go"><button class="btn primary" id="go"' + (pick ? "" : " disabled") + ">" + (pick ? "Send " + first(pick) : "Choose an officer") + '</button></div><button class="linkbtn" id="back">Back to the desk</button></div>',
         S.day === 1 ? "" : "Each officer has one strength. Pick the one that fits.");
-      document.querySelectorAll("[data-a]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-a"); draw(); }; });
+      document.querySelectorAll("[data-a]").forEach(function (b) { b.onclick = function () { approach(id, b.getAttribute("data-a")); }; });
       $("go").onclick = function () { approach(id, pick); };
       $("back").onclick = briefing;
     };
@@ -407,7 +417,7 @@
         '<h3 class="question">How do they play it?</h3>' + opts + kitRow +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose a plan" : "Go \u2014 " + esc(s.approaches[sel].t)) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
         "Careful plans take longer. Bold ones are quick, and can backfire.");
-      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
+      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { resolve(id, k, s.approaches[+b.getAttribute("data-i")], kit); }; });
       document.querySelectorAll("[data-kit]").forEach(function (b) { b.onclick = function () { const key = b.getAttribute("data-kit"); kit = kit === key ? null : key; draw(); }; });
       if ($("kitt")) $("kitt").onclick = function () { kitOpen = !kitOpen; draw(); };
       $("go").onclick = function () { resolve(id, k, s.approaches[sel], kit); };
@@ -499,7 +509,7 @@
         '<button class="card appr' + (sel === "none" ? " sel" : "") + '" data-m="none"><div class="t">Not yet. Keep watching.</div><p style="margin:0">No accusation today. Safer for now, and the leak goes on.</p></button></div>' +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (!sel ? "Choose someone" : sel === "none" ? "Keep watching" : "Accuse " + first(sel)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>',
         late(id) ? "Overdue. The longer we wait, the more they give away." : "Three clues: the file note, the porter, a slip in a debrief.");
-      document.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-m"); draw(); }; });
+      document.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-m"); if (sel === "none") return accuseResolve(sel, id); MENU.confirm("Accuse " + first(sel) + "?", "It takes two hours. If you’re wrong, a loyal officer is hurt and the real mole goes quiet.", "Accuse " + first(sel), function () { accuseResolve(sel, id); }); }; });
       $("go").onclick = function () { accuseResolve(sel, id); };
       $("back").onclick = briefing;
     };
@@ -697,7 +707,7 @@
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, textSizeHTML: textSizeHTML, bindTextSize: bindTextSize, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, relabel: relabel };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, relabel: relabel, title: title, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay };
 
   applyTextSize();
   fresh();

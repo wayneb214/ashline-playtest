@@ -53,8 +53,9 @@
     now: function (id) {
       const o = L[id]; if (!o) return;
       if (o.sub) subtitle(o);
-      if (!o.src || (window.SFX && SFX.muted)) return;
-      try { const a = player(); a.pause(); a.muted = false; a.src = o.src; a.currentTime = 0; a.volume = 0.9; const pr = a.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+      const vv = window.PREFS ? PREFS.vol("voice") : 1;
+      if (!o.src || (window.SFX && SFX.muted) || !vv) return;
+      try { const a = player(); a.pause(); a.muted = false; a.src = o.src; a.currentTime = 0; a.volume = 0.9 * vv; const pr = a.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
     },
     hush: function () { if (cur) cur.pause(); },
     stop: function () { if (cur) { cur.pause(); cur.muted = false; } const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }

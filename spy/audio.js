@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const KEY = "albion-muted";
-  let ctx = null, master = null, rain = null, ringing = null;
+  let ctx = null, master = null, out = null, amb = null, mus = null, rain = null, ringing = null;
   let muted = false;
   try { muted = localStorage.getItem(KEY) === "1"; } catch (e) {}
 
@@ -13,18 +13,25 @@
     return b;
   }
   function unlock() {
-    if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+    if (ctx) { if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} } return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    ctx = new AC(); master = ctx.createGain(); master.gain.value = muted ? 0 : 0.8; master.connect(ctx.destination);
+    ctx = new AC(); out = ctx.createGain(); out.gain.value = muted ? 0 : 0.8; out.connect(ctx.destination);
+    // three buses so each slider in Settings has its own volume: effects (master), ambience, music
+    master = ctx.createGain(); amb = ctx.createGain(); mus = ctx.createGain(); [master, amb, mus].forEach(function (b) { b.connect(out); }); levels();
     // soft rain bed: looped noise through a band-pass, gently swelling
     const src = ctx.createBufferSource(); src.buffer = noiseBuffer(3); src.loop = true;
     const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1400; bp.Q.value = 0.4;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4200;
     const g = ctx.createGain(); g.gain.value = 0.05;
     const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 0.015; lfo.connect(lg).connect(g.gain); lfo.start();
-    src.connect(bp).connect(lp).connect(g).connect(master); src.start(); rain = g;
+    src.connect(bp).connect(lp).connect(g).connect(amb); src.start(); rain = g;
     if (want) setMusic(want);
   }
+  function levels() { if (!ctx || !window.PREFS) return; const t = ctx.currentTime; master.gain.setTargetAtTime(PREFS.vol("fx"), t, 0.05); amb.gain.setTargetAtTime(PREFS.vol("amb"), t, 0.05); mus.gain.setTargetAtTime(PREFS.vol("music"), t, 0.05); }
+  document.addEventListener("prefs", levels);
+  // coming back from another app: iOS suspends the context, so wake it on return and on the next tap
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && ctx && ctx.state !== "running") { try { ctx.resume(); } catch (e) {} } });
+  window.addEventListener("pageshow", function () { if (ctx && ctx.state !== "running") { try { ctx.resume(); } catch (e) {} } });
   function env(node, t, a, peak, dec) { node.gain.setValueAtTime(0.0001, t); node.gain.exponentialRampToValueAtTime(peak, t + a); node.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
   function bell(freq, t, dur, vol) {
     // a struck bell: a few inharmonic partials decaying at different rates
@@ -73,7 +80,7 @@
     if (mbus) { const old = mbus; old.gain.setTargetAtTime(0.0001, t, 0.4); setTimeout(function () { try { old.disconnect(); } catch (e) {} }, 2500); mbus = null; }
     mode = m; if (mtimer) { clearInterval(mtimer); mtimer = null; }
     if (!m) return;
-    mbus = ctx.createGain(); mbus.gain.setValueAtTime(0.0001, t); mbus.gain.linearRampToValueAtTime(m === "jazz" ? 0.55 : 0.6, t + 2.5); mbus.connect(master);
+    mbus = ctx.createGain(); mbus.gain.setValueAtTime(0.0001, t); mbus.gain.linearRampToValueAtTime(m === "jazz" ? 0.55 : 0.6, t + 2.5); mbus.connect(mus);
     nextT = t + 0.1; step = 0; schedule(); mtimer = setInterval(schedule, 200);
   }
   const api = {
@@ -82,7 +89,7 @@
     get musicMode() { return mode || want; },
     voice: function (id) { if (window.VOICE) VOICE.play(id); },
     get muted() { return muted; },
-    setMuted: function (m) { muted = !!m; try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (e) {} if (master) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05); if (muted && window.VOICE && VOICE.hush) VOICE.hush(); },
+    setMuted: function (m) { muted = !!m; try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (e) {} if (out) out.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05); if (muted && window.VOICE && VOICE.hush) VOICE.hush(); },
     // Westminster-style quarter phrase, then a few deep strikes for the hour
     chime: function (strikes) {
       if (!ctx) return; const t0 = ctx.currentTime + 0.05, n = [329.6, 415.3, 370, 246.9];

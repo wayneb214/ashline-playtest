@@ -119,7 +119,7 @@
         '<button class="card appr' + (sel === "off" ? " sel" : "") + '" data-o="off"><div class="t">Send them home for the day</div><p style="margin:0">Rest, and out of harm\u2019s way. One fewer pair of hands.</p><div class="chips"><span class="chip risk-med">Off duty today</span><span class="chip risk-low">Loyalty +1</span></div></button>' +
         '<button class="card appr' + (sel === "ignore" ? " sel" : "") + '" data-o="ignore"><div class="t">Ignore it. There\u2019s no time.</div><p style="margin:0">Free, for now. If they talk, Kesk hears.</p><div class="chips"><span class="chip risk-high">Chance of a leak</span></div></button>' +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Decide" : "How do you handle it?") + "</button></div>", "Overruling and overworking officers wears loyalty down.");
-      document.querySelectorAll("[data-o]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-o"); draw(); }; });
+      document.querySelectorAll("[data-o]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-o"); $("go").onclick(); }; });
       $("go").onclick = function () {
         let ch = {}, txt, res = "win", stamp = "SETTLED";
         if (sel === "talk") { A.advance(1); s.loyal[k] = A.clamp5(s.loyal[k] + 2); s.stress[k] = A.clamp5(s.stress[k] - 1); txt = "Forty minutes, the door shut. " + A.first(k) + " leaves red-eyed, but back with you."; }
@@ -289,7 +289,7 @@
               '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence +10%</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : "")) + "</div></button>";
         }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: up to +10% at the border.");
-      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
+      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
       $("go").onclick = function () {
         const a = POD[sel], p = podOdds(a), res = roll(p);
         s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[a.risk]++;
@@ -359,9 +359,9 @@
       A.render('<div class="step x4">' + STAGES.map(function (z, j) { return '<i class="' + (j <= X.stage ? "on" : "") + (X.picks[j] === "fail" ? " bad" : "") + '"></i>'; }).join("") + '</div><div class="card dossier exfil">' + '<div class="chead"><img src="' + pic(st.img) + '" alt=""></div>' + A.LH + '<span class="stamp corner">' + (X.alarms ? X.alarms + " ALARM" + (X.alarms > 1 ? "S" : "") : "QUIET") + '</span><div class="kicker">The Green Coat \u00b7 stage ' + (X.stage + 1) + " of 4 \u00b7 " + A.hh(s.hour) + '</div><h2 style="margin-top:8px;padding-right:110px">' + st.title + "</h2><p>" + st.tx + "</p>" +
         (helps.length ? '<div class="chips helps">' + helps.map(function (h) { return '<span class="chip ' + (h[1] > 0 ? "risk-low" : "risk-high") + '">' + esc(h[0]) + " " + (h[1] > 0 ? "+" : "\u2212") + Math.abs(h[1]) + "%</span>"; }).join("") + "</div>" : "") + "</div>" + body +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (ready ? "" : " disabled") + ">" + (ready ? (st.car ? "Drive" : "Go") : "Decide") + "</button></div>" + (X.stage === 0 ? '<button class="btn ghost" id="back">Not yet</button>' : ""), "Two alarms and she doesn\u2019t make it.");
-      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { draw(+b.getAttribute("data-i")); }; });
-      document.querySelectorAll("[data-d]").forEach(function (b) { const k = b.getAttribute("data-d"); if (!banned(k)) b.onclick = function () { draw(k, sel2); }; });
-      document.querySelectorAll("[data-car]").forEach(function (b) { b.onclick = function () { draw(sel, b.getAttribute("data-car")); }; });
+      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
+      document.querySelectorAll("[data-d]").forEach(function (b) { const k = b.getAttribute("data-d"); if (!banned(k)) b.onclick = function () { if (sel2) { sel = k; $("go").onclick(); } else draw(k, sel2); }; });
+      document.querySelectorAll("[data-car]").forEach(function (b) { b.onclick = function () { if (sel) { sel2 = b.getAttribute("data-car"); $("go").onclick(); } else draw(sel, b.getAttribute("data-car")); }; });
       if ($("back")) $("back").onclick = A.briefing;
       $("go").onclick = function () {
         if (st.car) { X.driver = sel === "ash" ? null : sel; X.car = sel2; if (X.driver) s.used[X.driver] = true; X.picks[X.stage] = "ok"; X.notes.push((X.driver ? A.first(X.driver) : "Ash") + " drives the " + (sel2 === "dip" ? "diplomatic car" : "hired estate") + "."); X.stage++; if (STAGES[X.stage].key === "dog" && CINE.maybe("border", function () { draw(null, null); })) return; return draw(null, null); }
