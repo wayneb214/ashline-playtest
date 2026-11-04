@@ -11,8 +11,8 @@
   const reduce = function () { return window.FEEL && FEEL.reduce; };
   const sfx = function (n, a) { if (window.SFX && SFX[n]) SFX[n](a); };
   // moving paintings: each plays once, then holds its last frame; the layered stills stay underneath as the fallback
-  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1 }; // york: video retired (car morphed), the painted still with parallax is used
-  const WIDE = { york: 1, border: 1, no10: 1, cable: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1 };
+  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1, "d4-letter": 1, "d5-bridge": 1, "d6-london": 1, "end2-good": 1, "end2-bad": 1 }; // york: video retired (car morphed), the painted still with parallax is used
+  const WIDE = { york: 1, border: 1, no10: 1, cable: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1, "d6-london": 1, "end2-good": 1, "end2-bad": 1 };
   const S = function () { return window.AH ? window.AH.S() : {}; };
 
   // ---------- the scenes ----------
@@ -39,6 +39,16 @@
       { img: "border", dur: 9, ask: { id: "border", at: 6.9 }, pan: [70, 25], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "The Varenian border. A queue of cars in the dark."], [3.6, "", "She is in the boot, under a picnic blanket."], [6.2, "", "A guard. A dog."]], sfx: [[0.1, "engine", 6], [3.4, "heart", 5]] }]; } },
     end3: { name: "The Green Coat ends", shots: function () { const s = S(), e = s.deal === "deal" ? "traded" : (s.done && s.done.exfil) || "loss"; return [
       { img: "end-" + e, dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.16, 0, -4], caps: [[0.5, "", { win: "Pine forest. Our side of the line.", mixed: "She\u2019s out. One of ours isn\u2019t.", loss: "The barrier. A grey car. Gone.", traded: "A deal is a deal." }[e]], [4, "", { win: "She asks for a cup of tea.", mixed: "Kesk will want a trade.", loss: "Kesk wins this round.", traded: "Nobody mentions a woman in green." }[e]]], sfx: [[0.2, e === "win" ? "chime" : "stinger", 2]] }]; } },
+    day4: { name: "Act 2 \u00b7 Day 4 \u00b7 The Letter", shots: function () { return [
+      { img: "d4-letter", dur: 7, cam: [1.14, 0, 3, 1.02, 0, -2], caps: [[0.5, "", "Tuesday. Albion House."], [2.6, "Ash", "Chief. A letter came for you this morning. Hand delivered. To this address."]], sfx: [[0.2, "rainUp", true], [2.6, "voice", "ash_d4_open"], [6.2, "stinger"]] }]; } },
+    day5: { name: "Day 5 \u00b7 The Bridge", shots: function () { return [
+      { img: "phone", dur: 6.5, cam: [1.0, 0, 0, 1.1, 3, -3], inset: "ash", caps: [[0.5, "", "Wednesday. 06:40."], [2.2, "Ash", "They\u2019ve taken one of ours, Chief. At the airport in Kessgrad, this morning."]], sfx: [[0.2, "ring"], [1.8, "stopRing"], [2.2, "voice", "ash_d5_open"]] }]; } },
+    bridge: { name: "The bridge at dawn", shots: function () { return [
+      { img: "d5-bridge", dur: 8, cam: [1.02, 0, -2, 1.16, 0, 3], caps: [[0.5, "", "A border bridge. Fog on the water."], [4.2, "", "Two cars. One each end. Nobody wants to go first."]], sfx: [[0.1, "rainUp", true], [4, "heart", 3]] }]; } },
+    day6: { name: "Day 6 \u00b7 Kesk in London", shots: function () { return [
+      { img: "d6-london", dur: 7.5, pan: [20, 65], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "Thursday. London. Rain."], [2.6, "Ash", "He\u2019s here, Chief. Kesk is in London. He landed an hour ago, under another name."]], sfx: [[0.2, "rainUp", true], [0.3, "bigben", 3], [2.6, "voice", "ash_d6_open"]] }]; } },
+    end6: { name: "Act 2 ends", shots: function () { const e = window.AH4 ? AH4.ending() : "quiet", ok = e === "knight" || e === "quiet"; return [
+      { img: ok ? "end2-good" : "end2-bad", dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.14, 0, -3], caps: [[0.5, "", window.AH4 ? AH4.END[e].name : ""]], sfx: [[0.2, ok ? "chime" : "stinger", 1]] }]; } },
     trailer: { name: "Trailer", shots: function () { return [
       { img: "thames", dur: 2.6, cam: [1.16, 0, 3, 1.04, 0, -1], sfx: [[0, "rainUp", true], [0.2, "bigben", 2]] },
       { card: "Run Britain\u2019s secret war", dur: 2 },
@@ -55,7 +65,7 @@
       { img: "green", dur: 2.4, cam: [1.14, 0, 3, 1.02, 0, 0] },
       { title: true, dur: 3, sfx: [[0.2, "chime", 1]] }]; } }
   };
-  const ORDER = ["open", "day1", "bath", "day2", "ferry", "day3", "border", "end3"];
+  const ORDER = ["open", "day1", "bath", "day2", "ferry", "day3", "border", "end3", "day4", "day5", "bridge", "day6", "end6"];
 
   // ---------- engine ----------
   let run = null, gated = null;

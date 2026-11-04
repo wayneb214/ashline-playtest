@@ -19,7 +19,7 @@
   function applyTextSize() { document.documentElement.classList.toggle("text-large", store.get(TEXTSIZE) === "large"); }
   function textSizeHTML() { const l = store.get(TEXTSIZE) === "large"; return '<div class="textsize" role="group" aria-label="Text size"><button type="button" data-ts="normal" aria-pressed="' + !l + '"' + (l ? "" : ' class="on"') + '>Normal text</button><button type="button" data-ts="large" aria-pressed="' + l + '"' + (l ? ' class="on"' : "") + ">Large text</button></div>"; }
   function bindTextSize(redraw) { document.querySelectorAll("[data-ts]").forEach(function (b) { b.onclick = function () { store.set(TEXTSIZE, b.getAttribute("data-ts")); applyTextSize(); redraw(); }; }); }
-  const DAY1 = "albion-day1-start", SAVE = "albion-save-v1", DAY2 = "albion-day2-start", DAY3 = "albion-day3-start", TIPS_DONE = "albion-tips-done";
+  const DAY1 = "albion-day1-start", SAVE = "albion-save-v1", DAY2 = "albion-day2-start", DAY3 = "albion-day3-start", DAYK = { 1: DAY1, 2: DAY2, 3: DAY3, 4: "albion-day4-start", 5: "albion-day5-start", 6: "albion-day6-start" }, TIPS_DONE = "albion-tips-done";
   const FAST = /[?&]fast=1/.test(location.search);
   const HRS = { low: 4, med: 3, high: 2 };
   const EXPIRE = 3; // hours after the deadline before a case is lost for good
@@ -49,7 +49,7 @@
   // old saves had four gauges: secrecy and safety fold into Service, public trust becomes the hidden mood
   function twoMeters(st) { const m = st.meters; if (m && m.service == null) { m.service = Math.round(((m.safety || 55) + (m.secrecy || 55)) / 2); m.mood = m.trust == null ? 55 : m.trust; delete m.safety; delete m.secrecy; delete m.trust; } }
   const hh = function (h) { return (h < 10 ? "0" : "") + h + ":00"; };
-  const CASES = function () { return S.day === 3 ? D.SITS3 : S.day === 2 ? D.SITS2 : D.SITS1; };
+  const CASES = function () { return S.day >= 4 ? window.AH4.cases(S.day) : S.day === 3 ? D.SITS3 : S.day === 2 ? D.SITS2 : D.SITS1; };
   const diff = function () { return D.DIFFICULTY[S.diff] || D.DIFFICULTY.standard; };
   const dueOf = function (id) { return CASES()[id].due + diff().due; };
   const AG = function (k) { return D.AGENTS[k] || D.RECRUITS[k]; };
@@ -152,7 +152,7 @@
     chrome(false);
     const saved = loadJSON(SAVE), day2 = loadJSON(DAY2);
     render(LOOK.living() + '<div class="title"><div>' + D.EMBLEM + '<h1>Albion House</h1><div class="sub">British Secret Intelligence</div><div class="flagband" aria-hidden="true"></div></div>' +
-      '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Four problems before midnight.</p>' +
+      '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Six days, one spymaster, and a lot of problems before midnight.</p>' +
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (day2 ? '<button class="btn ghost" id="days">Choose a day</button>' : "") +
@@ -168,7 +168,7 @@
   }
   // Restart day: back to 08:00 of the day you are on, from the snapshot taken when it began
   function restartDay() {
-    const d = S.day, snap = loadJSON(d === 3 ? DAY3 : d === 2 ? DAY2 : DAY1);
+    const d = S.day, snap = loadJSON(DAYK[d] || DAY1);
     if (!snap) { fresh(S.diff); } else restore(snap);
     S.seenIntro = true; save("briefing"); chrome(true); meters(); ticker(); briefing();
   }
@@ -179,7 +179,9 @@
       '<button class="card dossier sit" id="d1"><span class="num">1</span><span><div class="t">The Long Day</div><div class="s">A defector, a mole, a leak, a cable. Ends in Bath.</div></span><span class="dl">NEW</span></button>' +
       '<button class="card dossier sit" id="d2"' + (day2 ? "" : " disabled") + '><span class="num">2</span><span><div class="t">Pale Hour</div><div class="s">' + (day2 ? "Hunt the Bath team before they leave Britain." : "Finish Day 1 first.") + '</div></span><span class="dl">' + (day2 ? "OPEN" : "LOCKED") + "</span></button>" +
       '<button class="card dossier sit" id="d3"' + (day3 ? "" : " disabled") + '><span class="num">3</span><span><div class="t">The Green Coat</div><div class="s">' + (day3 ? "Bring the woman in green home before midnight." : "Finish Day 2 first.") + '</div></span><span class="dl">' + (day3 ? "OPEN" : "LOCKED") + "</span></button>" +
+      [4, 5, 6].map(function (d) { const ok = loadJSON(DAYK[d]); return '<button class="card dossier sit" id="d' + d + '"' + (ok ? "" : " disabled") + '><span class="num">' + d + '</span><span><div class="t">' + window.AH4.NAMEOF[d] + '</div><div class="s">' + (ok ? { 4: "Act 2. Kesk writes to Albion House itself.", 5: "One of ours is held. A bridge at dawn.", 6: "Kesk in London. Everyone, everywhere." }[d] : "Finish Day " + (d - 1) + " first.") + '</div></span><span class="dl">' + (ok ? "OPEN" : "LOCKED") + "</span></button>"; }).join("") +
       '<button class="btn ghost" id="back">Back</button></div>');
+    [4, 5, 6].forEach(function (d) { const snap = loadJSON(DAYK[d]); if (snap) $("d" + d).onclick = function () { restore(snap); save("briefing"); chrome(true); meters(); ticker(); window.AH4.briefingIntro(); }; });
     $("d1").onclick = difficulty;
     if (day3) $("d3").onclick = function () { restore(day3); save("briefing"); chrome(true); meters(); ticker(); window.AH3.briefingIntro(); };
     if (day2) $("d2").onclick = function () { restore(day2); save("briefing"); chrome(true); meters(); ticker(); window.AH2.briefingIntro(); };
@@ -195,7 +197,7 @@
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
       bindTextSize(draw);
-      $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); if (!CINE.maybe("day1", intro)) intro(); };
+      $("go").onclick = function () { store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); }); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); if (!CINE.maybe("day1", intro)) intro(); };
       $("back").onclick = title;
     };
     draw();
@@ -240,10 +242,11 @@
     if (window.DESK.interrupt()) return;
     if (window.CRUNCH && CRUNCH.interrupt()) return;
     if (S.day >= 2 && window.AH3.interrupt()) return;
+    if (S.day >= 4 && window.AH4.interrupt()) return;
     if (stuck()) return summary();
     meters(); ticker(); save("briefing");
     if (!S.chimed) { S.chimed = true; if (window.SFX) SFX.chime(S.hour); }
-    const line = S.day === 3 ? window.AH3.line(gone) : S.day === 2 ? window.AH2.line(gone) : day1Line(gone);
+    const line = S.day >= 4 ? window.AH4.line(gone) : S.day === 3 ? window.AH3.line(gone) : S.day === 2 ? window.AH2.line(gone) : day1Line(gone);
     let list = "", n = 0, warnTxt = "";
     S.order.forEach(function (id) {
       const s = CASES()[id], done = S.done[id], lt = late(id), due = dueOf(id), left = due - S.hour; n++;
@@ -251,11 +254,11 @@
       if (!done && lt > 0 && !warnTxt) warnTxt = s.title + " is overdue. Odds are dropping; it\u2019s lost at " + hh(due + EXPIRE) + ".";
       const lockT = S.day === 1 && !done && S.order.slice(0, S.order.indexOf(id)).some(function (x) { return !S.done[x]; });
       const off = (!done && needsOfficer(id) && !freeAgents().length) || lockT;
-      const sub = s.kind === "mini" ? " \u00b7 hands-on \u00b7 no officer" : s.kind === "accuse" || s.kind === "interro" || s.kind === "mole2" || s.kind === "tail" || s.kind === "cable" ? " \u00b7 no officer needed" : s.kind === "exfil" ? " \u00b7 needs a driver" : "";
+      const sub = s.kind === "mini" ? " \u00b7 hands-on \u00b7 no officer" : s.kind === "accuse" || s.kind === "interro" || s.kind === "mole2" || s.kind === "tail" || s.kind === "cable" || s.kind === "leak" || s.kind === "swap" || s.kind === "showdown" ? " \u00b7 no officer needed" : s.kind === "exfil" ? " \u00b7 needs a driver" : s.kind === "chase" ? " \u00b7 everyone" : "";
       list += '<button class="card dossier sit tile' + (lockT ? " locked" : "") + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V", "VI", "VII"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (lockT ? " \u00b7 after lesson " + (n - 1) : done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : lt > 0 ? "LATE " + lt + "h" : "by " + hh(due)) + "</span></button>";
     });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div>' + (window.HUB ? HUB.html() : "") + '<div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + list +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div>' + (window.HUB ? HUB.html() : "") + '<div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + list +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || "Tap a file to deal with it.");
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { openCase(b.getAttribute("data-sit")); }; });
     if (S.day === 2) window.AH2.bindBoardButton();
@@ -266,7 +269,7 @@
     $("endday").onclick = function () { S.hour = 24; summary(); };
   }
   // painted header for each case file
-  const HEADS = { defector: "vienna", mole: "mole", leak: "fleet", sabotage: "rig", courier: "airport", safehouse: "bristol", mole2: "mole", exit: "harwich", bath: "bath", york: "york", tail: "fleet", cable: "cabletap", exfil: "signal", cipher: "signal", spot: "bristol", lie: "york" };
+  const HEADS = { defector: "vienna", mole: "mole", leak: "fleet", sabotage: "rig", courier: "airport", safehouse: "bristol", mole2: "mole", exit: "harwich", bath: "bath", york: "york", watch: "fleet", manchester: "manchester", leak: "letter", recon: "bridge", press: "fleet", swap: "bridge", find: "london", chase: "london", showdown: "fleet", tail: "fleet", cable: "cabletap", exfil: "signal", cipher: "signal", spot: "bristol", lie: "york" };
   function chead(id) { return HEADS[id] ? '<button type="button" class="chead big" data-case-file="' + id + '" aria-label="Open the case file"><img src="img/h-' + HEADS[id] + '.jpg" alt=""><span class="zoomhint">Open the file</span></button>' : ""; }
 
   // ---------- files and dossiers: their own full-screen paper folder, picture large, tap to zoom ----------
@@ -310,6 +313,7 @@
     if (kind === "judge" && !S.belief) return judgement();
     if (kind === "interro" || kind === "mole2") return window.AH2.open(id);
     if (kind === "tail" || kind === "cable" || kind === "exfil") return window.AH3.open(id);
+    if (kind === "leak" || kind === "swap" || kind === "chase" || kind === "showdown") return window.AH4.open(id);
     pickAgent(id);
   }
   function day1Line(gone) {
@@ -385,6 +389,7 @@
     if (kitId) add(D.KIT[kitId].name, D.KIT[kitId].odds || 0);
     const lt = late(id); if (lt > 0) add("Late", -(10 + lt * 5));
     if (S.day === 3) add("Day 3 file", window.AH3.oddsMod(id, k, a));
+    if (S.day >= 4) add("Kesk and the week so far", window.AH4.oddsMod(id, k, a));
     add("Earlier choices", window.DESK.oddsMod(id));
     add("Service", (svc() - 50) / 4);
     if (window.OPS) OPS.parts(id, k, a, add);
@@ -534,7 +539,7 @@
     const craft = res === "loss" ? (fitK ? 0 : -6) : (fitK ? 1 : -4) + (recK ? 2 : 0);
     delta = Object.assign({}, delta); delta.service = (delta.service || 0) + craft;
     const ch = apply(delta);
-    S.done[id] = res; S.used[k] = true; advance(hrs);
+    S.done[id] = res; S.used[k] = true; S.sent = S.sent || {}; S.sent[k] = (S.sent[k] || 0) + 1; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
     if (window.FUN) FUN.xp(k, res);
     let head = s.head[res], note = "";
@@ -545,6 +550,7 @@
     }
     if (S.day === 2) note = (note + " " + window.AH2.afterCase(id, res)).trim();
     if (S.day === 3) note = (note + " " + window.AH3.afterCase(id, res)).trim();
+    if (S.day >= 4) note = (note + " " + window.AH4.afterCase(id, res)).trim();
     // the mole's slip: a small wrong detail in their debrief
     const slip = k === S.mole && S.accused !== S.mole && D.AGENTS[k] ? D.AGENTS[k].slip : "";
     S.heads.push(head); S.log.push({ id: id, k: k, res: res, appr: a.t + (kitId ? " + " + kitD.name.toLowerCase() : ""), slip: !!slip });
@@ -660,14 +666,16 @@
       "<span class=\"hdr\">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 Avon Police report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + moleLine() + "<br><br>" + extra + "<br><br>\u2014 Ash</div></div>";
   }
   function summary() {
-    if (!S.ended && CINE.maybe({ 1: "bath", 2: "ferry", 3: "end3" }[S.day], summary)) return;
+    const cineId = { 1: "bath", 2: "ferry", 3: "end3", 6: "end6" }[S.day];
+    if (!S.ended && cineId && CINE.maybe(cineId, summary)) return;
     if (!S.ended) {
       remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id] || CASES()[id].pen); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk" }); });
       S.hour = 24; S.ended = true;
-      S.heads.push(S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019");
+      S.heads.push(S.day >= 4 ? window.AH4.lastHead() : S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019");
       if (window.SFX) { SFX.chime(12); setTimeout(function () { SFX.tele(); }, 1500); }
       if (S.day === 1) { store.set(TIPS_DONE, "1"); store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: day2State() })); }
       if (S.day === 2) store.set(DAY3, JSON.stringify({ v: 1, seed: seed, S: day3State() }));
+      if (S.day >= 3 && S.day < 6) store.set(DAYK[S.day + 1], JSON.stringify({ v: 1, seed: seed, S: actState(S.day + 1) }));
     }
     meters(); ticker(); save("summary");
     const grade = gradeOf();
@@ -679,14 +687,15 @@
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +
           "<span><b>" + esc(s.title) + '</b><br><span class="how">' + esc(l.appr) + (l.k && s.kind !== "accuse" ? " \u00b7 " + first(l.k) : "") + '</span></span><span class="r ' + l.res + '">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[l.res] + "</span></li>";
       }).join("") + (S.call && S.day === 1 ? '<li><span class="portrait dash">\u260e</span><span><b>The call from No.10</b><br><span class="how">' + (S.call.choice === "deny" ? "Denied " : "Stood by ") + first(S.call.k) + "</span></span><span></span></li>" : "") + "</ul></div>" +
-      (S.day === 1 ? day1Flash() : S.day === 3 ? window.AH3.flash() : window.AH2.flash()) +
-      (S.day === 1 ? '<button class="btn primary" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : S.day === 2 ? '<button class="btn primary" id="day3">Begin Day 3 \u00b7 The Green Coat</button>' : "") +
-      '<button class="btn ' + (S.day < 3 ? "ghost" : "primary") + '" id="paperbtn">Read tomorrow\u2019s front page</button><button class="btn ghost" id="again">New game</button>',
-      S.day === 1 ? "To be continued. Day 2 starts at eight." : S.day === 2 ? "To be continued. Day 3 starts at eight." : "The end of the Green Coat. Day 4 is being written.");
+      (S.day === 1 ? day1Flash() : S.day >= 4 ? window.AH4.flash() : S.day === 3 ? window.AH3.flash() : window.AH2.flash()) +
+      (S.day === 1 ? '<button class="btn primary" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : S.day === 2 ? '<button class="btn primary" id="day3">Begin Day 3 \u00b7 The Green Coat</button>' : S.day < 6 ? '<button class="btn primary" id="daynext">' + (S.day === 3 ? "Begin Act 2 \u00b7 Day 4 \u00b7 " : "Begin Day " + (S.day + 1) + " \u00b7 ") + window.AH4.NAMEOF[S.day + 1] + "</button>" : "") +
+      '<button class="btn ' + (S.day < 6 ? "ghost" : "primary") + '" id="paperbtn">Read tomorrow\u2019s front page</button><button class="btn ghost" id="again">New game</button>',
+      S.day === 1 ? "To be continued. Day 2 starts at eight." : S.day === 2 ? "To be continued. Day 3 starts at eight." : S.day < 6 ? "To be continued. Day " + (S.day + 1) + " starts at eight." : "The end of Act 2. The spymaster has gone home, one way or another.");
     $("again").onclick = function () { store.del(SAVE); difficulty(); };
     $("paperbtn").onclick = function () { FEEL.tearThen($("flash"), paper); };
     if ($("day2")) $("day2").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY2)); save("briefing"); window.AH2.briefingIntro(); }); };
     if ($("day3")) $("day3").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY3)); save("briefing"); window.AH3.briefingIntro(); }); };
+    if ($("daynext")) $("daynext").onclick = function () { const nx = DAYK[S.day + 1]; FEEL.tearThen($("flash"), function () { restore(loadJSON(nx)); save("briefing"); window.AH4.briefingIntro(); }); };
     S.finished = grade;
     if (window.FUN) FUN.event("day");
   }
@@ -716,30 +725,45 @@
     return n;
   }
 
+  // Days 4-6 begin from the end of the day before, carrying every flag forward
+  function actState(d) {
+    const n = JSON.parse(JSON.stringify(S));
+    n.days = n.days || {}; n.days[S.day] = Object.assign({ grade: gradeOf() }, window.AH4.record(S));
+    n.day = d; n.hour = 8; n.used = {}; n.status = rest(n.status); n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false; n.finished = null;
+    n.order = window.AH4.ORDER[d].slice(); n.kit = Object.assign({}, diff().kit); n.seenIntro = false; n.letters = {}; n.riskSeen = {}; n.bridgeSeen = false;
+    n.heads = S.heads.slice(-2).concat([{ 4: "Varenian trade delegation arrives in Manchester", 5: "Briton \u2018detained\u2019 at Kessgrad airport", 6: "Tractor firm boss in London for talks" }[d]]);
+    n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - (d === 4 ? 3 : 1)); });
+    { const tired = n.roster.filter(function (k) { return n.stress[k] >= 4; }).length; n.meters.service = Math.max(0, Math.min(100, n.meters.service + (tired ? -3 * tired : 6))); }
+    window.AH4.prep(n);
+    return n;
+  }
+
   // ---------- the shareable front page ----------
   function paperData() {
     const calls = S.log.map(function (l) { const s = CASES()[l.id]; return { t: s.title, how: l.appr + (l.k && s.kind !== "accuse" ? " (" + first(l.k) + ")" : ""), r: { win: "Closed", mixed: "Partial", loss: "Failed" }[l.res] }; });
     if (S.call && S.day === 1) calls.push({ t: "The call from No.10", how: (S.call.choice === "deny" ? "Denied " : "Stood by ") + first(S.call.k), r: S.call.choice === "deny" ? "Denied" : "Stood by" });
     const d = { grade: gradeOf(), calls: calls, mole: moleText(), caught: moleCaught(), day: S.day, side: S.heads.filter(function (h) { return h.indexOf("Bath") < 0; }).slice(-3) };
-    if (S.day >= 2) { const p = S.day === 3 ? window.AH3.paperLead() : window.AH2.paperLead(); d.lead = p.lead; d.sub = p.sub; }
+    if (S.day >= 2) { const p = S.day >= 4 ? window.AH4.paperLead() : S.day === 3 ? window.AH3.paperLead() : window.AH2.paperLead(); d.lead = p.lead; d.sub = p.sub; }
+    if (S.day >= 4) { const b = window.AH4.banner(); d.mole = b.t; d.caught = b.ok; }
     else { d.lead = "MAN FIGHTS FOR LIFE AFTER BATH BENCH COLLAPSE"; d.sub = "Former foreign official found near the Circus \u00b7 Police cordon overnight \u00b7 Downing Street \u2018monitoring\u2019"; }
     return d;
   }
   // the radio bulletin read over the front page: one per day, one per ending
-  function bulletinId() { if (S.day === 1) return "bulletin_day1"; if (S.day === 2) return S.done.exit === "win" ? "bulletin_day2_win" : "bulletin_day2_lose"; if (S.deal === "deal") return "bulletin_end_traded"; return "bulletin_end_" + ({ win: "win", mixed: "mixed" }[S.done.exfil] || "loss"); }
+  function bulletinId() { if (S.day >= 4) return window.AH4.bulletinId(); if (S.day === 1) return "bulletin_day1"; if (S.day === 2) return S.done.exit === "win" ? "bulletin_day2_win" : "bulletin_day2_lose"; if (S.deal === "deal") return "bulletin_end_traded"; return "bulletin_end_" + ({ win: "win", mixed: "mixed" }[S.done.exfil] || "loss"); }
   function paper() {
     const d = paperData();
     chrome(true);
     setTimeout(function () { if (window.VOICE) VOICE.play(bulletinId()); }, 700);
-    render('<div class="frontpage" id="paper"><div class="mast">The London Evening Bugle</div><div class="dateline"><span>LATE FINAL</span><span>' + (d.day === 3 ? "Friday" : d.day === 2 ? "Thursday" : "Wednesday") + "</span><span>Price 2p \u00b7 fiction</span></div>" +
+    render('<div class="frontpage" id="paper"><div class="mast">The London Evening Bugle</div><div class="dateline"><span>LATE FINAL</span><span>' + (d.day >= 4 ? window.AH4.DAYWORD[d.day] : d.day === 3 ? "Friday" : d.day === 2 ? "Thursday" : "Wednesday") + "</span><span>Price 2p \u00b7 fiction</span></div>" +
       '<h1 class="lead">' + esc(d.lead) + '</h1><p class="subd">' + esc(d.sub) + "</p>" +
       '<div class="molebanner ' + (d.caught ? "caught" : "free") + '">' + esc(d.mole) + "</div>" +
       '<div class="cols"><div><h3>Spy chief\u2019s long day</h3><ul>' + d.calls.map(function (c) { return "<li><b>" + esc(c.t) + "</b> \u2014 " + esc(c.how) + " <i>" + esc(c.r) + "</i></li>"; }).join("") + '</ul></div><div class="gradebox"><small>Whitehall verdict</small><span>' + d.grade + "</span><small>Albion House</small></div></div>" +
       '<div class="also"><b>Also inside:</b> ' + d.side.map(esc).join(" \u00b7 ") + "</div></div>" +
-      '<button class="btn primary" id="save">Save image</button><p class="saved" id="savedmsg"></p>' + (d.day === 1 && loadJSON(DAY2) ? '<button class="btn ghost" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : "") + '<button class="btn ghost" id="again">New game</button>', "Share your front page.");
+      '<button class="btn primary" id="save">Save image</button><p class="saved" id="savedmsg"></p>' + (d.day === 1 && loadJSON(DAY2) ? '<button class="btn ghost" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : "") + (d.day >= 3 && d.day < 6 && loadJSON(DAYK[d.day + 1]) ? '<button class="btn ghost" id="daynext">Begin Day ' + (d.day + 1) + " \u00b7 " + window.AH4.NAMEOF[d.day + 1] + "</button>" : "") + '<button class="btn ghost" id="again">New game</button>', "Share your front page.");
     $("save").onclick = savePaper;
     $("again").onclick = function () { store.del(SAVE); difficulty(); };
     if ($("day2")) $("day2").onclick = function () { restore(loadJSON(DAY2)); save("briefing"); window.AH2.briefingIntro(); };
+    if ($("daynext")) $("daynext").onclick = function () { restore(loadJSON(DAYK[d.day + 1])); save("briefing"); window.AH4.briefingIntro(); };
   }
   function wrap(ctx, text, x, y, maxW, lh) {
     const words = text.split(" "); let line = "";
@@ -754,7 +778,7 @@
     for (let i = 0; i < 3000; i++) { x.fillStyle = "rgba(90,70,40," + Math.random() * 0.05 + ")"; x.fillRect(Math.random() * W, Math.random() * H, 2, 2); }
     x.fillStyle = "#1c1a16"; x.textAlign = "center"; let ms = 92; do { x.font = "bold " + ms + "px " + serif; ms -= 2; } while (x.measureText("The London Evening Bugle").width > W - 120); x.fillText("The London Evening Bugle", W / 2, 130);
     x.fillRect(60, 160, W - 120, 4); x.fillRect(60, 214, W - 120, 2);
-    x.font = "24px " + mono; x.textAlign = "left"; x.fillText("LATE FINAL", 64, 198); x.textAlign = "center"; x.fillText(d.day === 3 ? "FRIDAY" : d.day === 2 ? "THURSDAY" : "WEDNESDAY", W / 2, 198); x.textAlign = "right"; x.fillText("A WORK OF FICTION", W - 64, 198);
+    x.font = "24px " + mono; x.textAlign = "left"; x.fillText("LATE FINAL", 64, 198); x.textAlign = "center"; x.fillText(d.day >= 4 ? window.AH4.DAYWORD[d.day].toUpperCase() : d.day === 3 ? "FRIDAY" : d.day === 2 ? "THURSDAY" : "WEDNESDAY", W / 2, 198); x.textAlign = "right"; x.fillText("A WORK OF FICTION", W - 64, 198);
     x.textAlign = "left"; x.font = "bold 76px " + serif; let y = wrap(x, d.lead, 64, 310, W - 128, 84);
     x.font = "italic 32px " + serif; x.fillStyle = "#3b352b"; y = wrap(x, d.sub, 64, y + 10, W - 128, 42);
     // the mole banner: a solid strip so it reads at a glance

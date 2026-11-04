@@ -75,3 +75,29 @@ The phone calls and Kesk letters change with the player’s earlier choices; the
 | `op_hartley_send2` | harrier | Say no more. |
 | `op_hartley_send3` | harrier | I'll get it done. |
 | `bulletin_end_traded` | news | Thamesmouth Wireless News. A British lorry driver held in Varenia is home tonight. In Kessgrad, trade talks open on Monday as planned. |
+
+
+## Act 2 (Days 4–6)
+
+| id | who | line |
+|---|---|---|
+| ash_d4_open | Ash | Chief. A letter came for you this morning. Hand delivered. To this address. |
+| kesk_d4_letter | Colonel Kesk | My dear C. Such a handsome building. I have always wanted to see where you work. Now I have. Someone of yours was kind enough to show me. K. |
+| call_pm_d4 | Eleanor Hale | C, there's a Varenian trade delegation in Manchester, and the Chancellor wants that deal. Whatever you're doing near them, be careful. |
+| bulletin_day4 | Thamesmouth Wireless News | Thamesmouth Wireless News. A Varenian trade delegation has cut short its visit to Manchester. Officials describe the talks as cordial. |
+| ash_d5_open | Ash | They've taken one of ours, Chief. At the airport in Kessgrad, this morning. |
+| kesk_d5_call | Colonel Kesk | Good morning, C. I have your friend. You have mine. Let us meet on the bridge at dawn, like civilised men. |
+| call_pm_d5 | Eleanor Hale | C. I want our officer home, and I want it quiet. No headlines, no heroics. Can you do that? |
+| bulletin_day5_win | Thamesmouth Wireless News | Thamesmouth Wireless News. A British citizen detained in Varenia has been released. The Foreign Office called it a humanitarian gesture. |
+| bulletin_day5_lose | Thamesmouth Wireless News | Thamesmouth Wireless News. Varenia says a British national will stand trial in Kessgrad. Downing Street has made no comment. |
+| ash_d6_open | Ash | He's here, Chief. Kesk is in London. He landed an hour ago, under another name. |
+| kesk_d6_letter | Colonel Kesk | My dear C. I am in your city. Rain, buses, very good tea. Come and find me before Friday, or I shall find you. K. |
+| call_pm_d6 | Eleanor Hale | C. Kesk is in London, and the Foreign Secretary knows. Bring me something by tonight, or bring me your resignation. |
+| kesk_d6_final | Colonel Kesk | Well played, C. Or nearly. I shall see you again. |
+| bulletin_a2_knight | Thamesmouth Wireless News | Thamesmouth Wireless News. A senior civil servant has been quietly honoured tonight. No reason was given, and none is expected. |
+| bulletin_a2_quiet | Thamesmouth Wireless News | Thamesmouth Wireless News. A Varenian diplomat has left London at short notice. The embassy calls it a routine rotation. |
+| bulletin_a2_scandal | Thamesmouth Wireless News | Thamesmouth Wireless News. Questions in the House tonight over a foreign intelligence officer seen in Westminster. Ministers say they were not told. |
+| bulletin_a2_resign | Thamesmouth Wireless News | Thamesmouth Wireless News. The head of a little known government department has resigned with immediate effect. Downing Street thanked them for their service. |
+| op_macrae_freed | Linnet | I knew you'd come, C. I knew it. |
+| op_pryce_freed | Wren | Took your time, C. Thank you. |
+| op_hartley_freed | Harrier | You came. Course you did. |

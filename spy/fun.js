@@ -15,7 +15,11 @@
     ["mole", "Mole catcher", "Name the mole correctly."],
     ["no_hurt", "Nobody hurt", "Finish the game with no officer wounded, burned or lost."],
     ["trust", "Never lost No.10", "Finish the game without No.10 trust ever dropping below 40/100."],
-    ["home", "Home before midnight", "Bring the woman in the green coat home clean."]
+    ["home", "Home before midnight", "Bring the woman in the green coat home clean."],
+    ["leak", "Who showed him the door", "Find the Day 4 leak."],
+    ["bridge", "Across the bridge", "Bring your held officer home clean on Day 5."],
+    ["knight", "Knighted in silence", "Earn the best ending of Act 2."],
+    ["six", "The whole week", "Finish all six days of one game."]
   ];
   let got = {}; try { got = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
   const A = function () { return window.AH; };
@@ -62,6 +66,7 @@
         if (f.minTrust >= 40) unlock("trust");
         if (S.done.exfil === "win") unlock("home");
       }
+      if (S.day === 6 && window.AH4) { const e = AH4.ending(); if (window.REPLAY) REPLAY.found("a2_" + e); if (e === "knight") unlock("knight"); if (S.days && S.days[1] && S.days[5]) unlock("six"); }
     }
   }
   function screen(back) {

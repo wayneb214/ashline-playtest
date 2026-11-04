@@ -12,7 +12,12 @@
       { id: "press", img: "fleet", t: "A journalist is asking about Bath", s: "She has half a story and a deadline at six.",
         left: { capital: -6 }, head: "Paper hints at \u2018secret Bath operation\u2019" },
       { id: "ferry", img: "harwich", t: "Our courier stopped at the night ferry", s: "His papers won\u2019t hold if they check twice. Get him clear.", good: true,
-        left: { capital: -4, service: -10 }, head: "Ferry passenger held for questioning at Harwich" } ] }
+        left: { capital: -4, service: -10 }, head: "Ferry passenger held for questioning at Harwich" } ] },
+    5: { at: 11, files: [
+      { id: "family", img: "fleet", t: "Our held officer\u2019s family has visitors", s: "Two men in a grey car outside the house in Croydon. The children are home.", good: true,
+        left: { capital: -4, service: -10 }, head: "Croydon: police called to \u2018suspicious car\u2019" },
+      { id: "minister", img: "fleet", t: "A minister wants a briefing, now", s: "He\u2019s heard rumours about Kessgrad and he\u2019s cross he heard them in a pub.",
+        left: { capital: -8 }, head: "Minister \u2018kept in the dark\u2019 over Varenia, say friends" } ] }
   };
   const REW = { win: { capital: 4, service: 4 }, mixed: { service: 1 }, loss: { service: -4 } };
   function due(S) { const p = PAIRS[S.day]; return p && !(S.crunch || {})[S.day] && S.hour >= p.at && S.hour < 22 && p; }

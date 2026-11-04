@@ -24,7 +24,27 @@
     bulletin_end_win: { who: B, sub: true, text: B + ". A woman described only as a British national has landed at an airfield in Oxfordshire. Whitehall says nothing at all." },
     bulletin_end_mixed: { who: B, sub: true, text: B + ". Confused reports from the Varenian border tonight. London neither confirms nor denies a British operation." },
     bulletin_end_traded: { who: B, sub: true, text: B + ". A British lorry driver held in Varenia is home tonight. In Kessgrad, trade talks open on Monday as planned." },
-    bulletin_end_loss: { who: B, sub: true, text: B + ". The Varenian Republic has paraded a woman it calls a British spy. The Foreign Office is seeking urgent clarification." }
+    bulletin_end_loss: { who: B, sub: true, text: B + ". The Varenian Republic has paraded a woman it calls a British spy. The Foreign Office is seeking urgent clarification." },
+    ash_d4_open: { who: "Ash", sub: true, text: "Chief. A letter came for you this morning. Hand delivered. To this address." },
+    kesk_d4_letter: { who: "Colonel Kesk", sub: true, text: "My dear C. Such a handsome building. I have always wanted to see where you work. Now I have. Someone of yours was kind enough to show me. K." },
+    call_pm_d4: { who: "Eleanor Hale", sub: true, text: "C, there's a Varenian trade delegation in Manchester, and the Chancellor wants that deal. Whatever you're doing near them, be careful." },
+    bulletin_day4: { who: B, sub: true, text: B + ". " + "A Varenian trade delegation has cut short its visit to Manchester. Officials describe the talks as cordial." },
+    ash_d5_open: { who: "Ash", sub: true, text: "They've taken one of ours, Chief. At the airport in Kessgrad, this morning." },
+    kesk_d5_call: { who: "Colonel Kesk", sub: true, text: "Good morning, C. I have your friend. You have mine. Let us meet on the bridge at dawn, like civilised men." },
+    call_pm_d5: { who: "Eleanor Hale", sub: true, text: "C. I want our officer home, and I want it quiet. No headlines, no heroics. Can you do that?" },
+    bulletin_day5_win: { who: B, sub: true, text: B + ". " + "A British citizen detained in Varenia has been released. The Foreign Office called it a humanitarian gesture." },
+    bulletin_day5_lose: { who: B, sub: true, text: B + ". " + "Varenia says a British national will stand trial in Kessgrad. Downing Street has made no comment." },
+    ash_d6_open: { who: "Ash", sub: true, text: "He's here, Chief. Kesk is in London. He landed an hour ago, under another name." },
+    kesk_d6_letter: { who: "Colonel Kesk", sub: true, text: "My dear C. I am in your city. Rain, buses, very good tea. Come and find me before Friday, or I shall find you. K." },
+    call_pm_d6: { who: "Eleanor Hale", sub: true, text: "C. Kesk is in London, and the Foreign Secretary knows. Bring me something by tonight, or bring me your resignation." },
+    kesk_d6_final: { who: "Colonel Kesk", sub: true, text: "Well played, C. Or nearly. I shall see you again." },
+    bulletin_a2_knight: { who: B, sub: true, text: B + ". " + "A senior civil servant has been quietly honoured tonight. No reason was given, and none is expected." },
+    bulletin_a2_quiet: { who: B, sub: true, text: B + ". " + "A Varenian diplomat has left London at short notice. The embassy calls it a routine rotation." },
+    bulletin_a2_scandal: { who: B, sub: true, text: B + ". " + "Questions in the House tonight over a foreign intelligence officer seen in Westminster. Ministers say they were not told." },
+    bulletin_a2_resign: { who: B, sub: true, text: B + ". " + "The head of a little known government department has resigned with immediate effect. Downing Street thanked them for their service." },
+    op_macrae_freed: { who: "Linnet", sub: true, text: "I knew you'd come, C. I knew it." },
+    op_pryce_freed: { who: "Wren", sub: true, text: "Took your time, C. Thank you." },
+    op_hartley_freed: { who: "Harrier", sub: true, text: "You came. Course you did." }
   };
   // officers on the radio (live ops) and their send-off replies: op_<officer>_<beat>
   const OFF = {"macrae": {"pos": "Linnet. In position. Nice and quiet.", "eyes": "Eyes on. That’s her, the one by the window.", "lost": "I’ve lost her. Give me a minute.", "ask": "C, it’s getting crowded. I need a decision.", "push": "Right. Going now.", "hold": "Holding. Patience, then.", "abort": "Pulling out. Coming home the long way.", "done": "It’s done, C. Clean as a whistle.", "hurt": "It’s gone wrong, C. I’m out, but only just.", "send1": "On it, C.", "send2": "Leave it with me.", "send3": "Aye. I’ll handle it."}, "pryce": {"pos": "Wren here. In position. Nobody’s looked twice.", "eyes": "Eyes on. Two men, a parked car.", "lost": "Lost them. Sorry, C. Working back.", "ask": "They’re getting twitchy, C. Your call.", "push": "Understood. Going in.", "hold": "Holding. I can wait all night.", "abort": "Pulling out. Nobody saw a thing.", "done": "Job done, C. Not a whisper.", "hurt": "Bad news, C. I’m hurt. Not badly. Getting clear.", "send1": "Right you are, C.", "send2": "I’ll be a shadow.", "send3": "Leave it to me, C."}, "hartley": {"pos": "Harrier. In position. Ready when you are.", "eyes": "Contact. Eyes on the target.", "lost": "I’ve lost him. Damn it.", "ask": "C, it’s on a knife edge. Push or pull me out?", "push": "Going now. Hard.", "hold": "Holding. Don’t like it, but holding.", "abort": "Pulling out. Back the long way.", "done": "Done. We’ve got it, C.", "hurt": "I’m hit, C. It’s not bad. Getting out.", "send1": "On it, C.", "send2": "Say no more.", "send3": "I’ll get it done."}};

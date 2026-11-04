@@ -1,8 +1,8 @@
 /* replay.js: endings found, Hard mode unlock, and a short bonus "What if…" day (three scenes, existing art).
-   Main endings are Day 3's: win, mixed, loss, traded. The bonus day adds two more. */
+   Act 1 endings are Day 3's: win, mixed, loss, traded. The bonus day adds two more; Act 2 (Day 6) adds four. */
 (function () {
   "use strict";
-  const KEY = "albion-endings", NAMES = { win: "Home safe", mixed: "Expelled, alive", loss: "On state TV", traded: "The trade", wi_good: "What if: the quiet night", wi_bad: "What if: the long night" };
+  const KEY = "albion-endings", NAMES = { win: "Home safe", mixed: "Expelled, alive", loss: "On state TV", traded: "The trade", wi_good: "What if: the quiet night", wi_bad: "What if: the long night", a2_knight: "Knighted in silence", a2_quiet: "A quiet Tuesday", a2_scandal: "On the front page", a2_resign: "Resignation by Friday" };
   const ALL = Object.keys(NAMES);
   const get = function () { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
   function found(e) { const f = get(); if (f[e]) return; f[e] = 1; try { localStorage.setItem(KEY, JSON.stringify(f)); } catch (x) {} if (window.FUN) FUN.toast && FUN.toast("Ending found: " + NAMES[e]); }
