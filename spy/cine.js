@@ -10,6 +10,8 @@
   let seen = {}; try { seen = JSON.parse(store.get(SEEN) || "{}") || {}; } catch (e) { seen = {}; }
   const reduce = function () { return window.FEEL && FEEL.reduce; };
   const sfx = function (n, a) { if (window.SFX && SFX[n]) SFX[n](a); };
+  // moving paintings: each plays once, then holds its last frame; the layered stills stay underneath as the fallback
+  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1, york: 1 };
   const WIDE = { york: 1, border: 1, no10: 1, cable: 1 };
   const S = function () { return window.AH ? window.AH.S() : {}; };
 
@@ -67,6 +69,7 @@
     if (sh.ui) return '<div class="shot uishot"><div class="ly" style="background-image:url(img/cine/thames-0.jpg)"></div><div class="device"><img src="img/cine/tr-' + sh.ui + '.jpg" alt=""></div></div>';
     let h = '<div class="shot' + (WIDE[sh.img] ? " wide" : "") + '">';
     for (let i = 0; i < 3; i++) h += '<div class="ly l' + i + '" style="background-image:url(img/cine/' + sh.img + "-" + i + (i ? ".webp" : ".jpg") + ')"></div>';
+    if (MOVE[sh.img] && !reduce()) h += '<video class="mv" muted playsinline preload="' + (sh.hold ? "metadata" : "auto") + '" poster="img/cine/' + sh.img + '-0.jpg"><source src="img/cine/video/' + sh.img + '.mp4" type="video/mp4"><source src="img/cine/video/' + sh.img + '.webm" type="video/webm"></video>';
     if (sh.inset) h += '<img class="inset" src="img/' + sh.inset + '.jpg" alt="">';
     return h + "</div>";
   }
@@ -81,6 +84,7 @@
   }
   function build(id, opts) {
     const shots = SCENES[id].shots();
+    shots.forEach(function (s, i) { s.hold = i > 0 && !!s.img && shots[i - 1].img === s.img; });
     const t = timeShots(shots);
     const el = document.createElement("div"); el.className = "cine" + (reduce() ? " still" : "") + (opts.trailer ? " trailer" : ""); el.id = "cine";
     el.setAttribute("role", "dialog"); el.setAttribute("aria-label", SCENES[id].name);
@@ -99,6 +103,21 @@
       n.style.opacity = still ? (i === cur ? "1" : "0") : String(i === cur ? fadeIn : 1);
       n.style.zIndex = i === cur ? "2" : "1";
       const p = still ? 0.5 : ease(clamp(local / s.dur, 0, 1));
+      const v = n.querySelector("video.mv");
+      if (v && !v.dataset.wired) {
+        v.dataset.wired = "1";
+        const ok = function () { n.classList.add("moving"); };
+        const bad = function () { n.classList.remove("moving"); v.remove(); };
+        v.addEventListener("error", bad, true); v.querySelectorAll("source").forEach(function (so) { so.addEventListener("error", function () { if (so === v.querySelector("source:last-of-type")) bad(); }); });
+        if (s.hold) { const toEnd = function () { v.currentTime = Math.max(0, v.duration - 0.05); }; v.addEventListener("seeked", ok); if (v.readyState >= 1) toEnd(); else v.addEventListener("loadedmetadata", toEnd); }
+        else { v.addEventListener("playing", ok); const pr = v.play(); if (pr && pr.catch) pr.catch(function () { if (!v.currentTime) bad(); }); }
+      }
+      if (v && v.isConnected) {
+        if (window.__CINE_CLOCK__ != null && !s.hold && v.readyState >= 1) { v.pause(); const want = Math.min(local, v.duration - 0.05); if (Math.abs(v.currentTime - want) > 0.08) v.currentTime = want; n.classList.add("moving"); }
+        else if (!s.hold && v.paused && !v.ended && !r.paused && i === cur) { const pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+        else if (r.paused && !v.paused) v.pause();
+        if (s.pan) v.style.objectPosition = lerp(s.pan[0], s.pan[1], p).toFixed(2) + "% 50%";
+      }
       if (s.cam) {
         const c = s.cam, sc = lerp(c[0], c[3], p), x = lerp(c[1], c[4], p), y = lerp(c[2], c[5], p);
         n.querySelectorAll(".ly").forEach(function (ly, j) {
