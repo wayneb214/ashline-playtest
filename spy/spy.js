@@ -59,10 +59,13 @@
   const clamp5 = function (v) { return Math.max(0, Math.min(5, v)); };
 
   // ---------- chrome ----------
+  const score = function (v) { return Math.max(0, Math.min(100, Math.round(v == null ? 55 : v))); };
+  function scores() { return "No.10 trust " + score(S.meters.capital) + "/100 \u00b7 Service " + svc() + "/100"; }
   function meters(changes) {
+    ["capital", "service", "mood"].forEach(function (m) { if (S.meters[m] != null) S.meters[m] = score(S.meters[m]); });
     $("meters").innerHTML = D.METERS.map(function (m) {
       const v = m.id === "service" ? svc() : S.meters[m.id], d = changes && changes[m.id];
-      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + m.name + "</span><span>" + (d ? '<span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span> " : "") + v + '</span></div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
+      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '" aria-label="' + m.name + " " + v + ' out of 100"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + m.name + '</span></div><div class="mval"><b>' + v + "</b><small>/100</small>" + (d ? ' <span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span>" : "") + '</div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
     $("clock").textContent = hh(S.hour); LOOK.night(S.hour);
     const open = remaining().map(function (id) { return dueOf(id) - S.hour; });
@@ -465,7 +468,7 @@
         const lk = lockOf(a), locked = !!lk;
         const h = hoursFor(k, a, kit), ends = Math.min(24, S.hour + h);
         return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + "</p>" +
-          (lk === "pm" ? '<div class="chips"><span class="chip risk-high">Needs No.10 trust ' + a.pm + " (now " + S.meters.capital + ")</span></div>" : locked ? '<div class="chips"><span class="chip risk-high">Locked \u00b7 link the ' + (a.needs === "ferry" ? "ferry booking" : "hire-car receipt") + " on the evidence board</span></div>" :
+          (lk === "pm" ? '<div class="chips"><span class="chip risk-high">Needs No.10 trust ' + a.pm + " (now " + S.meters.capital + "/100)</span></div>" : locked ? '<div class="chips"><span class="chip risk-high">Locked \u00b7 link the ' + (a.needs === "ferry" ? "ferry booking" : "hire-car receipt") + " on the evidence board</span></div>" :
             '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '%</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (i === rec ? '<span class="chip rec">\u2605 ' + first(k) + "\u2019s pick</span>" : sel === i ? '<span class="chip risk-high">Overrules ' + first(k) + "</span>" : "") + (S.day === 3 ? window.AH3.chips(id, k, a) : "") + "</div>") + "</button>";
       }).join("");
       const kits = Object.keys(D.KIT).map(function (key) {
@@ -632,7 +635,7 @@
   }
 
   // ---------- end of day ----------
-  function gradeOf() { const v = S.meters, avg = (v.capital + svc()) / 2 + ((v.mood == null ? 55 : v.mood) - 55) / 10; return avg >= 68 ? "A" : avg >= 60 ? "B" : avg >= 50 ? "C" : avg >= 40 ? "D" : "E"; }
+  function gradeOf() { const v = S.meters, avg = (score(v.capital) + svc()) / 2 + ((v.mood == null ? 55 : v.mood) - 55) / 10; return avg >= 68 ? "A" : avg >= 60 ? "B" : avg >= 50 ? "C" : avg >= 40 ? "D" : "E"; }
   const moleCaught = function () { return S.accused === S.mole; };
   function moleText() { return moleCaught() ? "Mole caught: " + D.AGENTS[S.mole].name : S.accused && S.accused !== "none" ? "Wrong officer accused \u2014 mole still free" : "Mole still at large"; }
   function moleLine() {
@@ -661,6 +664,7 @@
     const grade = gradeOf();
     const verdict = { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
     render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
+      '<p class="scoreline" id="scoreline">' + scores() + "</p>" +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +
@@ -781,7 +785,7 @@
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, textSizeHTML: textSizeHTML, bindTextSize: bindTextSize, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, relabel: relabel, title: title, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, oddsFor: oddsFor, statusName: statusName, FAST: FAST };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, title: title, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, oddsFor: oddsFor, statusName: statusName, FAST: FAST };
 
   applyTextSize();
   fresh();

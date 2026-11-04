@@ -817,3 +817,11 @@ body.paused #view, body.paused #hud { filter: blur(2px) brightness(.7); }
 @keyframes xfin { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .hub-lamp { animation: none; } .view.xf > * { animation: none; } }
 .meter .row > span + span { margin-left: 6px; flex-shrink: 0; }
+
+/* scores out of 100 (fun step 0) */
+.meter .row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meter .mval { font-family: var(--type); color: var(--brass-hi); font-size: 1rem; line-height: 1.1; margin-top: 2px; white-space: nowrap; }
+.meter .mval b { font-size: 1.15rem; } .meter .mval small { color: var(--fog); font-size: .7rem; margin-left: 1px; }
+.meter .mval .delta { font-size: .8rem; }
+.hud .clock { flex: 0 0 auto; }
+.scoreline { font-family: var(--type); font-size: .95rem; color: var(--paper-ink); letter-spacing: .03em; margin: 4px 0 10px; }
