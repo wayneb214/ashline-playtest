@@ -55,6 +55,7 @@
     knob.addEventListener("pointerup", function () { if (x0 == null) return; x0 = null; if (dx > maxX() * 0.7) answer(); else { knob.style.transform = ""; a.$("swipefill").style.width = ""; } });
     knob.addEventListener("click", function () { if (!dragged) answer(); });
     function talk() {
+      if (window.VOICE) VOICE.play("call_" + o.id);
       let sel = null, tt = null;
       const secs = timer(o.replySecs || 20);
       const commit = function (k, timedOut) { if (state !== "talk") return; state = "done"; if (tt) tt.stop(); C().calls = C().calls || {}; C().calls[o.id] = { k: k, late: !!timedOut }; o.answer(k, !!timedOut); };

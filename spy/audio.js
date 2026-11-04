@@ -23,6 +23,7 @@
     const g = ctx.createGain(); g.gain.value = 0.05;
     const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 0.015; lfo.connect(lg).connect(g.gain); lfo.start();
     src.connect(bp).connect(lp).connect(g).connect(master); src.start(); rain = g;
+    if (want) setMusic(want);
   }
   function env(node, t, a, peak, dec) { node.gain.setValueAtTime(0.0001, t); node.gain.exponentialRampToValueAtTime(peak, t + a); node.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
   function bell(freq, t, dur, vol) {
@@ -32,8 +33,54 @@
       env(g, t, 0.01, vol * p[1], dur * (p[0] > 2 ? 0.45 : 1)); o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.1);
     });
   }
+
+  // ---------- music: original, synthesised on the fly. A slow smoky jazz loop for the desk, tense strings for operations ----------
+  let mode = null, want = null, mbus = null, mtimer = null, nextT = 0, step = 0;
+  const mtof = function (m) { return 440 * Math.pow(2, (m - 69) / 12); };
+  // ii-V-I-VI in C, voiced like a tired piano at 2am: [bass root, chord tones]
+  const JAZZ = [[38, [53, 57, 60, 64]], [43, [53, 57, 59, 64]], [36, [52, 55, 59, 62]], [45, [55, 58, 61, 64]]];
+  const WALK = [[38, 41, 45, 44], [43, 47, 50, 49], [36, 40, 43, 46], [45, 44, 43, 42]];
+  const TEMPO = { jazz: 62, tense: 96 };
+  function mnote(freq, t, dur, vol, type, cut) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter(); o.type = type || "sine"; o.frequency.value = freq;
+    f.type = "lowpass"; f.frequency.value = cut || 1800; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(mbus); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function brush(t, vol) { const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = noiseBuffer(0.3); f.type = "bandpass"; f.frequency.value = 5200; f.Q.value = 0.7; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26); s.connect(f).connect(g).connect(mbus); s.start(t); }
+  function schedule() {
+    if (!ctx || !mode) return;
+    const beat = 60 / TEMPO[mode];
+    while (nextT < ctx.currentTime + 0.6) {
+      const bar = Math.floor(step / 4) % 4, b = step % 4, t = nextT;
+      if (mode === "jazz") {
+        // swung walking bass, a soft electric-piano chord on 1 and the "and" of 2, brushes on 2 and 4
+        mnote(mtof(WALK[bar][b] - 12 + 12), t, beat * 0.95, 0.11, "triangle", 600);
+        if (b === 0 || (b === 1 && step % 8 === 1)) JAZZ[bar][1].forEach(function (m, i) { mnote(mtof(m), t + (b === 1 ? beat * 0.66 : 0) + i * 0.012, beat * (b === 0 ? 2.6 : 1.2), 0.028, "sine", 2400); mnote(mtof(m + 12), t + i * 0.012, beat * 0.8, 0.006, "triangle", 3000); });
+        if (b === 1 || b === 3) brush(t, 0.025); brush(t + beat * 0.66, 0.012);
+        if (bar === 3 && b === 2 && Math.random() < 0.5) mnote(mtof(76 - Math.floor(Math.random() * 3) * 2), t, beat * 1.6, 0.02, "sine", 2000); // a lazy high note
+      } else {
+        // tense: a low string drone that shifts every two bars, a heartbeat pulse, and a nervous tremolo now and then
+        if (b === 0 && bar % 2 === 0) [38, 45, bar === 2 ? 51 : 50].forEach(function (m) { [0, 4].forEach(function (dt) { const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = mtof(m); o.detune.value = dt - 2; f.type = "lowpass"; f.frequency.value = 520; const d = beat * 8; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.018, t + 1.2); g.gain.setValueAtTime(0.018, t + d - 1); g.gain.linearRampToValueAtTime(0.0001, t + d + 0.2); o.connect(f).connect(g).connect(mbus); o.start(t); o.stop(t + d + 0.3); }); });
+        mnote(55, t, 0.25, b === 0 ? 0.12 : 0.06, "sine", 200);
+        if (bar === 3 && b >= 2) for (let i = 0; i < 4; i++) mnote(mtof(74), t + i * beat / 4, beat / 5, 0.012, "sawtooth", 1800);
+      }
+      nextT += beat * (mode === "jazz" && b % 2 === 0 ? 1.08 : mode === "jazz" ? 0.92 : 1); step++;
+    }
+  }
+  function setMusic(m) {
+    want = m; if (!ctx || m === mode) return;
+    const t = ctx.currentTime;
+    if (mbus) { const old = mbus; old.gain.setTargetAtTime(0.0001, t, 0.4); setTimeout(function () { try { old.disconnect(); } catch (e) {} }, 2500); mbus = null; }
+    mode = m; if (mtimer) { clearInterval(mtimer); mtimer = null; }
+    if (!m) return;
+    mbus = ctx.createGain(); mbus.gain.setValueAtTime(0.0001, t); mbus.gain.linearRampToValueAtTime(m === "jazz" ? 0.55 : 0.6, t + 2.5); mbus.connect(master);
+    nextT = t + 0.1; step = 0; schedule(); mtimer = setInterval(schedule, 200);
+  }
   const api = {
     unlock: unlock,
+    music: setMusic,
+    get musicMode() { return mode || want; },
+    voice: function (id) { if (window.VOICE) VOICE.play(id); },
     get muted() { return muted; },
     setMuted: function (m) { muted = !!m; try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (e) {} if (master) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05); },
     // Westminster-style quarter phrase, then a few deep strikes for the hour

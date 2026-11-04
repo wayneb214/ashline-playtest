@@ -97,6 +97,7 @@
   function letter(n, then) {
     const s = S(); s.letters = s.letters || {}; s.letters[n] = true; A.save("briefing");
     const L = letterText(n);
+    if (window.VOICE) VOICE.play("kesk_letter_" + n);
     if (window.SFX) SFX.tele();
     A.render('<div class="kletter card" id="kletter"><div class="kl-top"><img class="portrait" src="' + pic("kesk") + '" alt="Colonel Kesk"><div><div class="kl-from">From the desk of</div><div class="kl-name">' + KESK + '</div><div class="kl-role">Director \u00b7 the Grey House</div></div></div>' +
       '<div class="kl-body"><p>My dear C,</p><p>' + esc(L.body) + "</p>" + (n === 1 ? window.DESK.inkHTML("kesk") : "") + '<p class="kl-sig">K.</p></div>' +
