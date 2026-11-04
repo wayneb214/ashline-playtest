@@ -103,14 +103,16 @@
   // ---------- one-time coach marks: a short tip the first time a mechanic appears ----------
   const CKEY = "albion-coach";
   let seenC = {}; try { seenC = JSON.parse(localStorage.getItem(CKEY) || "{}"); } catch (e) {}
+  const coachQ = [];
   function coach(key, html) {
     if (seenC[key] || !PREFS.get("tips") || /[?&]nocoach=1/.test(location.search)) return;
+    if ($("coach")) { if (!coachQ.some(function (q) { return q[0] === key; })) coachQ.push([key, html]); return; }
     seenC[key] = 1; try { localStorage.setItem(CKEY, JSON.stringify(seenC)); } catch (e) {}
     const old = $("coach"); if (old) old.remove();
     const c = document.createElement("div"); c.id = "coach"; c.className = "coach"; c.setAttribute("role", "status");
     c.innerHTML = "<b>New</b><span>" + html + '</span><button type="button" aria-label="Dismiss tip">Got it</button>';
     document.body.appendChild(c); requestAnimationFrame(function () { c.classList.add("on"); });
-    const go = function () { c.classList.remove("on"); setTimeout(function () { c.remove(); }, 300); };
+    let gone = false; const go = function () { if (gone) return; gone = true; c.classList.remove("on"); setTimeout(function () { c.remove(); const n = coachQ.shift(); if (n) coach(n[0], n[1]); }, 300); };
     c.querySelector("button").onclick = function (e) { e.stopPropagation(); go(); }; setTimeout(go, 9000);
   }
 

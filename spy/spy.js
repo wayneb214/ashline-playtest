@@ -62,7 +62,7 @@
   function meters(changes) {
     $("meters").innerHTML = D.METERS.map(function (m) {
       const v = m.id === "service" ? svc() : S.meters[m.id], d = changes && changes[m.id];
-      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '"><div class="row"><span>' + (m.id === "capital" ? '<b class="pmb">10</b>' : "") + m.name + "</span><span>" + (d ? '<span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span> " : "") + v + '</span></div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
+      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + m.name + "</span><span>" + (d ? '<span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span> " : "") + v + '</span></div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
     $("clock").textContent = hh(S.hour); LOOK.night(S.hour);
     const open = remaining().map(function (id) { return dueOf(id) - S.hour; });
@@ -75,12 +75,14 @@
   function moodHead() { const m = S.meters.mood == null ? 55 : S.meters.mood; return m >= 65 ? "Poll: public warms to the government on security" : m >= 45 ? "Poll: voters shrug at Whitehall spy rows" : m >= 30 ? "Poll: public faith in the secret services slips" : "Poll: voters lose faith in Whitehall\u2019s spies"; }
   function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
-  function render(html, h) {
-    LOOK.rain(false); LOOK.fade();
-    $("view").innerHTML = relabel(html);
+  function render(html, h, keep) {
+    LOOK.rain(false); if (!keep) LOOK.fade();
+    const vw = $("view"), y = window.scrollY;
+    vw.innerHTML = relabel(html);
+    if (!keep && !FEEL.reduce) { vw.classList.remove("xf"); void vw.offsetWidth; vw.classList.add("xf"); }
     const mm = /data-music="(\w+)"/.exec(html);
     if (window.SFX) SFX.music(mm ? mm[1] : /data-screen="(officer-pick|approach)"|tailgame|class="card report|data-car=|data-pod|data-m=/.test(html) ? "tense" : "jazz");
-    if (window.VOICE) VOICE.stop(); window.scrollTo(0, 0); $("hint").textContent = h || "";
+    if (window.VOICE) VOICE.stop(); window.scrollTo(0, keep ? y : 0); $("hint").textContent = h || "";
     typeAll(); reveal(); LOOK.seals($("view"));
     document.querySelectorAll("[data-file]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); officerFile(b.getAttribute("data-file")); }; });
     document.querySelectorAll("[data-case-file]").forEach(function (b) { b.onclick = function () { caseFile(b.getAttribute("data-case-file")); }; });
@@ -247,11 +249,12 @@
       list += '<button class="card dossier sit tile' + (lockT ? " locked" : "") + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (lockT ? " \u00b7 after lesson " + (n - 1) : done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : lt > 0 ? "LATE " + lt + "h" : "by " + hh(due)) + "</span></button>";
     });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + list +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div>' + (window.HUB ? HUB.html() : "") + '<div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + list +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || "Tap a file to deal with it.");
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { openCase(b.getAttribute("data-sit")); }; });
     if (S.day === 2) window.AH2.bindBoardButton();
     LOOK.rain(true);
+    if (window.HUB) HUB.bind();
     MENU.coach("menu", "Tap \u2630 any time to pause, change settings or return to the title. The game saves itself.");
     $("endday").onclick = function () { S.hour = 24; summary(); };
   }
@@ -388,7 +391,7 @@
   function recIdx(id, k) { let best = -1, bo = -1; CASES()[id].approaches.forEach(function (a, i) { if (lockOf(a)) return; const o = oddsFor(id, k, a, null); if (o > bo) { bo = o; best = i; } }); return best; }
   function lockOf(a) { if (a.needs && !(S.unlocked || {})[a.needs]) return "needs"; if (a.pm && S.meters.capital < a.pm) return "pm"; return ""; }
   const morale = function (k) { const l = S.loyal[k]; return l >= 5 ? "Loyal" : l >= 3 ? "Steady" : l >= 2 ? "Wavering" : "Bitter"; };
-  function hoursFor(k, a, kitId) { return Math.max(1, HRS[a.risk] - (AG(k).quirk === "quick" ? 1 : 0) + (kitId ? D.KIT[kitId].hours || 0 : 0)); }
+  function hoursFor(k, a, kitId) { return Math.max(1, HRS[a.risk] - (AG(k).quirk === "quick" ? 1 : 0) + (kitId ? D.KIT[kitId].hours || 0 : 0) + (window.OPS && OPS.hours ? OPS.hours() : 0)); }
 
   // one officer: face, name, one clear strength. The stat bars live in their file (tap File).
   function strengthOf(k) { const a = AG(k); return a.strength || a.quirkTxt || a.role; }
@@ -444,7 +447,7 @@
     const s = CASES()[id];
     const free = S.roster.filter(function (k) { return !S.used[k]; }).sort(function (x, y) { return (AG(y).good.indexOf(id) >= 0) - (AG(x).good.indexOf(id) >= 0); }).slice(0, 3);
     const lt = late(id);
-    render('<div data-screen="officer-pick"><div class="casefile" id="dropzone">' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") +
+    render('<div data-screen="officer-pick"><div class="casefile manila" id="dropzone"><span class="cftab">CASE ' + esc(String(id).toUpperCase().slice(0, 6)) + '</span><span class="cfstamp">SECRET</span>' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><p class="redline">Source: <span class="redact">\u2588\u2588\u2588\u2588\u2588\u2588</span> \u00b7 Ref <span class="redact">\u2588\u2588\u2588\u2588</span> \u00b7 Seen by C only</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") +
       dial(null) + '<h3 class="question">Who do you send?</h3><div class="otray">' + free.map(function (k) { return officerTile(k, id); }).join("") + '</div><button class="linkbtn" id="back">Back to the desk</button></div>',
       "Drag a file onto the case, or tap it.");
     dragSend(id, function (k) { approach(id, k); });
@@ -453,7 +456,8 @@
   }
   function approach(id, k) {
     const s = CASES()[id];
-    let sel = recIdx(id, k), kit = null, kitOpen = false;
+    let sel = recIdx(id, k), kit = null, kitOpen = false, drawn = false;
+    if (window.OPS && OPS.reset) OPS.reset(id, k);
     if (sel < 0) sel = s.approaches.findIndex(function (a) { return !lockOf(a); });
     const draw = function () {
       const rec = recIdx(id, k);
@@ -471,9 +475,9 @@
       const kitRow = S.day === 1 ? "" : '<button type="button" class="kittoggle" id="kitt" aria-expanded="' + kitOpen + '">\ud83e\uddf3 Kit: ' + (kit ? D.KIT[kit].name : "none packed") + ' <span>' + (kitOpen ? "Hide" : "Pack one") + "</span></button>" + (kitOpen ? '<div class="kits">' + kits + "</div>" : "");
       const a0 = s.approaches[sel];
       render('<div data-screen="approach"><div class="ash-note card slimnote">' + face(k) + '<div class="note"><div class="who">' + esc(AG(k).name) + " " + statusBadge(k) + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just not the loud way. I\u2019m running on empty." : rec >= 0 ? "If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "How do you want it played?") + "</span></div></div>" + lesson(id, "approach") +
-        '<h3 class="question">How do they play it?</h3>' + opts + kitRow + (window.OPS ? OPS.controls(id, k) : "") + dial(oddsParts(id, k, a0, kit)) +
+        '<h3 class="question">How do they play it?</h3>' + opts + kitRow + (window.OPS ? OPS.controls(id, k, a0) : "") + dial(oddsParts(id, k, a0, kit)) +
         '<div class="sticky-go"><button class="btn primary sendbtn" id="go">Send ' + esc(first(k)) + " \u00b7 " + esc(a0.t) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
-        "Pick a plan. The dial shows the odds, and why.");
+        "Pick a plan. The dial shows the odds, and why.", drawn); drawn = true;
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
       document.querySelectorAll("[data-kit]").forEach(function (b) { b.onclick = function () { const key = b.getAttribute("data-kit"); kit = kit === key ? null : key; draw(); }; });
       if ($("kitt")) $("kitt").onclick = function () { kitOpen = !kitOpen; draw(); };

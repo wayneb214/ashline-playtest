@@ -22,7 +22,7 @@
       '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 ' + A.oddsFor(id, k, a, kit) + '% odds</span></div></div>' +
       '<div class="radio" id="radio" aria-live="polite"></div><div class="opbarw"><div id="opbar" style="width:0%"></div></div><div id="opask"></div></div></div>', "Live operation. Listen to the radio.");
     const say = function (txt, who) { const r = $("radio"); if (!r) return; const p = document.createElement("p"); p.className = who || ""; p.textContent = txt; r.appendChild(p); r.scrollTop = r.scrollHeight; if (window.SFX && SFX.crackle) SFX.crackle(0.5); };
-    const finish = function () { clearInterval(timer); timer = null; A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: CHOICE.push.mod } : chosen === "abort" ? { abort: true } : {}); };
+    const finish = function () { clearInterval(timer); timer = null; A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: CHOICE.push.mod } : chosen === "abort" ? { abort: true } : {}); cur.id = null; };
     const choose = function (c) {
       if (chosen) return; chosen = c; FEEL.buzz(c === "abort" ? "heavy" : "tap");
       $("opask").innerHTML = '<p class="opchose">' + esc(CHOICE[c].t) + '</p>'; say(fill(LINES[c], A, k, id), "me");
@@ -48,5 +48,34 @@
       if (t >= total) finish();
     }, 100);
   }
-  window.OPS = { run: run, parts: function () {}, controls: function () { return ""; }, bind: function () {} };
+  // ---- how it's done: a verb that fits the plan, and a pace from Careful to Fast ----
+  const VERBS = {
+    surveil: { t: "Surveil", d: "Watch and wait", risk: "low" },
+    approach: { t: "Approach", d: "Talk your way in", risk: "med" },
+    burgle: { t: "Burgle", d: "Get in, get out", risk: "high" },
+    turn: { t: "Turn", d: "Win someone over", cases: ["defector", "mole", "courier", "leak"] }
+  };
+  const PACE = [{ t: "Careful", odds: 6, hours: 1 }, { t: "Steady", odds: 0, hours: 0 }, { t: "Fast", odds: -8, hours: -1 }];
+  let cur = { id: null, k: null, verb: null, touched: false, pace: 1 };
+  const fits = function (v, id, a) { const V = VERBS[v]; return V.cases ? V.cases.indexOf(id) >= 0 : V.risk === a.risk; };
+  const best = function (id, a) { return fits("turn", id, a) && a.risk !== "high" ? "turn" : Object.keys(VERBS).filter(function (v) { return fits(v, id, a); })[0] || "approach"; };
+  function reset(id, k) { cur = { id: id, k: k, verb: null, touched: false, pace: 1 }; }
+  function parts(id, k, a, add) {
+    if (cur.id !== id || cur.k !== k) return;
+    const v = cur.touched && cur.verb ? cur.verb : best(id, a); if (!cur.touched) cur.verb = v;
+    add(VERBS[v].t + (fits(v, id, a) ? " fits" : " doesn\u2019t fit"), fits(v, id, a) ? 5 : -5);
+    add(PACE[cur.pace].t, PACE[cur.pace].odds);
+  }
+  function hours() { return cur.id ? PACE[cur.pace].hours : 0; }
+  function controls(id, k, a) {
+    if (a && !cur.touched) cur.verb = best(id, a);
+    return '<h3 class="question">How exactly?</h3><div class="verbs">' + Object.keys(VERBS).map(function (v) { return '<button class="verb' + (cur.verb === v ? " sel" : "") + '" data-verb="' + v + '"><b>' + VERBS[v].t + "</b><small>" + VERBS[v].d + "</small></button>"; }).join("") + "</div>" +
+      '<label class="pace"><span>Careful</span><input type="range" id="pace" min="0" max="2" step="1" value="' + cur.pace + '" aria-label="Pace: careful to fast"><span>Fast</span></label><p class="pacenote">' + PACE[cur.pace].t + ": " + (PACE[cur.pace].odds ? (PACE[cur.pace].odds > 0 ? "+" : "") + PACE[cur.pace].odds + "% odds, " : "") + (PACE[cur.pace].hours ? (PACE[cur.pace].hours > 0 ? "+1h" : "\u22121h") : "no change") + "</p>";
+  }
+  function bind(draw) {
+    document.querySelectorAll("[data-verb]").forEach(function (b) { b.onclick = function () { cur.verb = b.getAttribute("data-verb"); cur.touched = true; if (window.SFX && SFX.type) SFX.type(); draw(); }; });
+    const r = document.getElementById("pace"); if (r) r.onchange = function () { cur.pace = +r.value; if (window.SFX && SFX.tick) SFX.tick(); draw(); };
+    MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide toward <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
+  }
+  window.OPS = { run: run, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
 })();
