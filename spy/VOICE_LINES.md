@@ -10,9 +10,10 @@ The broadcaster, Thamesmouth Wireless News, is invented.
 
 | Line id | Speaker | Where it plays | Text |
 |---|---|---|---|
-| `nar_open_1` | Narrator (grave, older British male, unhurried) | Opening cutscene, rain on the Thames as Big Ben strikes midnight (0:00.6) | London. Midnight. Rain on the river. |
-| `nar_open_2` | Narrator | Opening cutscene, the cab pulls up at Albion House (about 0:06) | The South Bank. Albion House. Somebody has come back to work. |
-| `nar_open_3` | Narrator | Opening cutscene, the desk phone rings (about 0:11) | One light on. One phone ringing. |
+| `nar_open_1` | Narrator (deep, gravelly older British male, unhurried) | Opening, rain on the Thames as Big Ben strikes midnight (0:00.6) | You are C. As of tonight, you run His Majesty's most secret service. |
+| `nar_open_2` | Narrator | Opening, the cab pulls up at Albion House (about 0:08) | Nobody voted for you. Almost nobody knows your name. |
+| `nar_open_3` | Narrator | Opening, same cab shot (about 0:14) | Your first day was meant to begin tomorrow. |
+| `nar_open_4` | Narrator | Opening, the desk phone; it rings after the line (about 0:17.7) | Then, at midnight... the telephone rang. |
 | `ash_problem` | Ash | Opening cutscene, Ash on the phone | Chief, we have a problem. |
 | `pm_keep_safe` | Eleanor Hale | Day 1 cutscene at No.10 | Keep Britain safe, C. And keep it out of the papers. |
 | `ash_green_ours` | Ash | Day 3 opening cutscene | The woman in green isn’t one of theirs, C. She’s ours. |

@@ -20,9 +20,9 @@
   //         caps: [[t, who, text]], sfx: [[t, name, arg]], inset: portrait, card: text, ui: screenshot, title: true }
   const SCENES = {
     open: { name: "The opening", shots: function () { return [
-      { img: "thames", dur: 5.5, cam: [1.14, 0, 3, 1.0, 0, -2], caps: [[0.6, "Narrator", "London. Midnight. Rain on the river."]], sfx: [[0, "rainUp", true], [0.3, "bigben", 4], [0.6, "voice", "nar_open_1"]] },
-      { img: "cab", dur: 4.6, cam: [1.0, -2, 0, 1.12, 2, -3], caps: [[0.5, "Narrator", "The South Bank. Albion House. Somebody has come back to work."]], sfx: [[0.1, "engine", 4], [0.5, "voice", "nar_open_2"]] },
-      { img: "phone", dur: 5, cam: [1.0, 0, 0, 1.22, 8, -9], caps: [[0.8, "Narrator", "One light on. One phone ringing."]], sfx: [[0.4, "ring"], [0.8, "voice", "nar_open_3"]] },
+      { img: "thames", dur: 7.4, cam: [1.14, 0, 3, 1.0, 0, -2], caps: [[0.6, "Narrator", "You are C. As of tonight, you run His Majesty\u2019s most secret service."]], sfx: [[0, "rainUp", true], [0.3, "bigben", 4], [0.6, "voice", "nar_open_1"]] },
+      { img: "cab", dur: 9.7, cam: [1.0, -2, 0, 1.12, 2, -3], caps: [[0.5, "Narrator", "Nobody voted for you. Almost nobody knows your name."], [6.5, "Narrator", "Your first day was meant to begin tomorrow."]], sfx: [[0.1, "engine", 4], [0.5, "voice", "nar_open_2"], [6.5, "voice", "nar_open_3"]] },
+      { img: "phone", dur: 4.4, cam: [1.0, 0, 0, 1.22, 8, -9], caps: [[0.6, "Narrator", "Then, at midnight\u2026 the telephone rang."]], sfx: [[0.6, "voice", "nar_open_4"], [3.6, "ring"]] },
       { img: "phone", dur: 4.6, cam: [1.22, 8, -9, 1.3, 9, -11], inset: "ash", caps: [[0.4, "Margaret \u2018Ash\u2019 Ashby \u00b7 Chief of Staff", "Chief, we have a problem."]], sfx: [[0.4, "voice", "ash_problem"], [0, "stopRing"], [0.3, "stinger"]] }]; } },
     day1: { name: "Day 1 \u00b7 The Long Day", shots: function () { return [
       { img: "no10", dur: 7, pan: [15, 70], cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 07:10. Downing Street."], [3.6, "Eleanor Hale \u00b7 Prime Minister", "Keep Britain safe, C. And keep it out of the papers."]], sfx: [[3.6, "voice", "pm_keep_safe"], [0.2, "chime", 2]] }]; } },

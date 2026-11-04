@@ -4,9 +4,10 @@
   "use strict";
   const B = "Thamesmouth Wireless News";
   const L = {
-    nar_open_1: { who: "Narrator", text: "London. Midnight. Rain on the river." },
-    nar_open_2: { who: "Narrator", text: "The South Bank. Albion House. Somebody has come back to work." },
-    nar_open_3: { who: "Narrator", text: "One light on. One phone ringing." },
+    nar_open_1: { who: "Narrator", text: "You are C. As of tonight, you run His Majesty\u2019s most secret service." },
+    nar_open_2: { who: "Narrator", text: "Nobody voted for you. Almost nobody knows your name." },
+    nar_open_3: { who: "Narrator", text: "Your first day was meant to begin tomorrow." },
+    nar_open_4: { who: "Narrator", text: "Then, at midnight\u2026 the telephone rang." },
     ash_problem: { who: "Ash", text: "Chief, we have a problem." },
     pm_keep_safe: { who: "Eleanor Hale", text: "Keep Britain safe, C. And keep it out of the papers." },
     ash_green_ours: { who: "Ash", text: "The woman in green isn\u2019t one of theirs, C. She\u2019s ours." },
