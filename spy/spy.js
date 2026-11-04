@@ -260,6 +260,7 @@
     if (S.day === 2) window.AH2.bindBoardButton();
     LOOK.rain(true);
     if (window.HUB) HUB.bind();
+    if (window.FUN) FUN.promo();
     MENU.coach("menu", "Tap \u2630 any time to pause, change settings or return to the title. The game saves itself.");
     $("endday").onclick = function () { S.hour = 24; summary(); };
   }
@@ -285,9 +286,9 @@
   function officerFile(k) {
     const a = AG(k), st = S.stress[k], v = vetOf(k);
     dossier({ tab: "PERSONNEL", stamp: "STAFF IN CONFIDENCE", kicker: a.role, title: a.name, img: pic(st >= 4 && a.tense ? a.tense : a.img), alt: "Portrait of " + a.name,
-      body: '<p class="fstr">\u2605 ' + esc(strengthOf(k)) + " " + statusBadge(k) + "</p>" + badges(k) + '<p class="tlist">' + (D.TRAITS[k] || []).map(function (t) { return "<b>" + esc(t.n) + ":</b> " + esc(t.tx); }).join("<br>") + "</p>" + '<div class="traits">' + pips(a.skill, "", "Skill") + pips(S.loyal[k], "loyal" + (S.loyal[k] <= 2 ? " high" : ""), "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + "</div>" +
+      body: '<p class="fstr">\u2605 ' + esc(strengthOf(k)) + " " + statusBadge(k) + "</p>" + badges(k) + '<p class="tlist">' + traitsOf(k).map(function (t) { return "<b>" + esc(t.n) + ":</b> " + esc(t.tx); }).join("<br>") + "</p>" + '<div class="traits">' + pips(a.skill, "", "Skill") + pips(S.loyal[k], "loyal" + (S.loyal[k] <= 2 ? " high" : ""), "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + "</div>" +
         "<p><b>Morale:</b> " + morale(k) + (st >= 4 ? " \u00b7 <b>strained</b>, mistakes likelier" : "") + "</p><p><b>File note:</b> " + esc(a.note) + "</p>" + (a.look ? "<p><b>Usually wears:</b> " + esc(a.look) + "</p>" : "") +
-        "<p><b>Record:</b> " + (v ? v + " operation" + (v > 1 ? "s" : "") + " closed. Each one adds 4% to their odds (up to 12%)." : "No operations closed yet.") + "</p>" + (S.lost[k] ? "<p><b>Status:</b> " + esc(S.lost[k]) + "</p>" : "") });
+        (window.FUN ? FUN.xpLine(k) : "") + "<p><b>Record:</b> " + (v ? v + " operation" + (v > 1 ? "s" : "") + " closed. Each one adds 4% to their odds (up to 12%)." : "No operations closed yet.") + "</p>" + (S.lost[k] ? "<p><b>Status:</b> " + esc(S.lost[k]) + "</p>" : "") });
   }
   // ---------- Day 1 is the tutorial: one lesson per case ----------
   const LESSONS = {
@@ -374,8 +375,8 @@
     let base = 30 + ag.skill * 6 + a.mod + ag.cover * 2 + diff().odds + (S.day === 1 ? 6 : 0);
     if (k === S.mole && S.accused !== S.mole) base -= 10;
     if (ag.good.indexOf(id) >= 0) add("Right for the job", 12);
-    (D.TRAITS[k] || []).forEach(function (t) { if (t.v && ((t.risk && t.risk === a.risk) || (t.cases && t.cases.indexOf(id) >= 0))) add(t.n, t.v); });
-    const calm = (D.TRAITS[k] || []).some(function (t) { return t.calm; });
+    traitsOf(k).forEach(function (t) { if (t.v && (t.all || (t.risk && t.risk === a.risk) || (t.cases && t.cases.indexOf(id) >= 0))) add(t.n, t.v); });
+    const calm = traitsOf(k).some(function (t) { return t.calm; });
     add(S.stress[k] >= 4 ? "Strained" : "Tired", -S.stress[k] * (calm ? 2 : 4));
     add(S.loyal[k] > 3 ? "Loyal" : "Wavering", (S.loyal[k] - 3) * 3);
     add("Experience", Math.min(12, vetOf(k) * 4));
@@ -390,6 +391,7 @@
     if (id === "sabotage") { if (S.belief === "split") { add("Split teams", -12); o -= 12; } else if (S.belief !== D.TRUTH) { const cap = Math.min(o, 12); add("Wrong site", cap - o); o = cap; } }
     return { odds: Math.max(5, Math.min(92, Math.round(o))), base: Math.round(base), parts: P };
   }
+  function traitsOf(k) { return window.FUN ? FUN.traits(k) : D.TRAITS[k] || []; }
   function oddsFor(id, k, a, kitId) { return oddsParts(id, k, a, kitId).odds; }
   function statusName(k) { const st = (S.status || {})[k]; return st ? { tired: "Tired", wounded: "Wounded", burned: "Burned" }[st] || "" : ""; }
   function statusMod(k) { const st = (S.status || {})[k]; return st === "tired" ? -8 : st === "wounded" ? -15 : 0; }
@@ -407,7 +409,7 @@
     return '<div class="ocard"><button class="card agent slim' + (sel ? " sel" : "") + (disabled ? " used" : "") + '" ' + attr + '="' + k + '">' + face(k) + '<div style="flex:1;min-width:0"><div class="nm">' + esc(a.name) + (S.used[k] ? " \u00b7 in the field" : "") + (st >= 4 ? ' <span class="strain">Strained</span>' : "") + '</div><div class="str">\u2605 ' + esc(strengthOf(k)) + "</div>" + (v ? '<div class="vet">' + v + " operation" + (v > 1 ? "s" : "") + " closed \u00b7 +" + Math.min(12, v * 4) + "%</div>" : "") + (extra || "") + '</div></button><button type="button" class="filebtn" data-file="' + k + '" aria-label="Open ' + esc(a.name) + '\u2019s file">File</button></div>';
   }
   // trait badges: three per officer, at a glance
-  function badges(k) { return '<div class="badges">' + (D.TRAITS[k] || []).map(function (t) { return '<span class="badge' + (t.v < 0 ? " neg" : "") + '" title="' + esc(t.tx) + '">' + esc(t.n) + "</span>"; }).join("") + "</div>"; }
+  function badges(k) { return '<div class="badges">' + traitsOf(k).map(function (t) { return '<span class="badge' + (t.v < 0 ? " neg" : "") + (t.grown ? " grown" : "") + '" title="' + esc(t.tx) + '">' + esc(t.n) + "</span>"; }).join("") + "</div>"; }
   function statusBadge(k) { const st = (S.status || {})[k]; return st ? '<span class="ostatus s-' + st + '">' + statusName(k).toUpperCase() + "</span>" : ""; }
   // the odds dial: a brass gauge, the needle at the odds, the reasons underneath
   function dial(r, label) {
@@ -533,6 +535,7 @@
     const ch = apply(delta);
     S.done[id] = res; S.used[k] = true; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
+    if (window.FUN) FUN.xp(k, res);
     let head = s.head[res], note = "";
     if (id === "sabotage") {
       if (S.belief === D.TRUTH) note = "You read it right: Bergen was bait.";

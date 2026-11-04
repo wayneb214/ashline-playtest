@@ -71,6 +71,28 @@
     if (back) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     document.getElementById("ach-back").onclick = function () { MENU.close(); if (back) back(); };
   }
-  const FUN = window.FUN = { ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, toast: toast, unlock: unlock, got: function () { return got; },
+
+  // ---------- officers who grow: XP from successes, a new trait at each threshold ----------
+  const XPAT = [2, 5, 8];
+  const GT = { nerves: { n: "Steady nerves", risk: "high", v: 6, tx: "Bold plans +6%" }, fleet: { n: "Old friends in Fleet Street", risk: "med", v: 6, tx: "Some-risk plans +6%" },
+    eye: { n: "Sharp eye", risk: "low", v: 6, tx: "Careful plans +6%" }, ground: { n: "Knows the ground", all: true, v: 4, tx: "Every job +4%" } };
+  const PATH = { macrae: ["fleet", "nerves", "ground"], pryce: ["eye", "ground", "nerves"], hartley: ["nerves", "fleet", "ground"], ada: ["eye", "fleet", "ground"], sam: ["ground", "nerves", "eye"], hollis: ["nerves", "ground", "eye"] };
+  function traits(k) { const S = A().S(), base = A().D.TRAITS[k] || []; return base.concat(((S && S.grown && S.grown[k]) || []).map(function (g) { return Object.assign({ grown: true }, GT[g]); })); }
+  function xp(k, res) {
+    const S = A().S(), add = res === "win" ? 2 : res === "mixed" ? 1 : 0; if (!add) return;
+    S.xp = S.xp || {}; S.grown = S.grown || {}; const before = S.xp[k] || 0; S.xp[k] = before + add;
+    const lvl = XPAT.filter(function (t) { return S.xp[k] >= t; }).length, have = (S.grown[k] || []).length;
+    if (lvl > have) { const g = (PATH[k] || PATH.sam)[have]; S.grown[k] = (S.grown[k] || []).concat([g]); S.promo = (S.promo || []).concat([[k, g]]); }
+  }
+  function xpLine(k) { const S = A().S(), x = (S.xp || {})[k] || 0, nx = XPAT.filter(function (t) { return t > x; })[0]; return "<p><b>Experience:</b> " + x + " XP" + (nx ? " \u00b7 next trait at " + nx + " XP" : " \u00b7 fully seasoned") + '</p><div class="xpbar"><i style="width:' + Math.min(100, x / 8 * 100) + '%"></i></div>'; }
+  function promo() {
+    const S = A().S(); if (!S.promo || !S.promo.length || document.getElementById("sheet")) return;
+    const p = S.promo.shift(), k = p[0], t = GT[p[1]], ag = A().AG(k); A().save(S.screen || "briefing");
+    MENU.sheet('<div class="promo"><div class="kicker">Promotion \u00b7 Albion House</div><img class="portrait" src="img/' + ag.img + '.jpg" alt=""><h2>' + A().esc(ag.name) + '</h2><p>Earned a new trait in the field:</p><span class="badge grown big">' + t.n + "</span><p class=\"fine\">" + t.tx + ". It shows on the odds dial when it counts.</p>" + '<button class="btn primary" id="promo-ok">Well done</button></div>', "promo-sheet");
+    if (window.SFX && SFX.stamp) SFX.stamp(); FEEL.buzz("win");
+    document.getElementById("promo-ok").onclick = function () { MENU.close(); promo(); };
+    MENU.coach("promo", "Officers earn <b>XP</b> from successes. At 2, 5 and 8 XP they gain a new trait that lifts their odds.");
+  }
+  const FUN = window.FUN = { traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, toast: toast, unlock: unlock, got: function () { return got; },
     onUnlock: function (gcId) { const P = window.Capacitor && Capacitor.Plugins; if (P && P.GameCenter && P.GameCenter.reportAchievement) P.GameCenter.reportAchievement({ id: gcId, percent: 100 }).catch(function () {}); } };
 })();
