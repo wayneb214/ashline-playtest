@@ -222,7 +222,7 @@
   function expire() {
     const gone = [];
     remaining().forEach(function (id) {
-      if (late(id) >= EXPIRE) { S.done[id] = "loss"; apply(PENALTY[id]); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Expired at " + hh(dueOf(id) + EXPIRE) }); gone.push(id); }
+      if (late(id) >= EXPIRE) { S.done[id] = "loss"; apply(PENALTY[id] || CASES()[id].pen); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Expired at " + hh(dueOf(id) + EXPIRE) }); gone.push(id); }
     });
     return gone;
   }
@@ -230,6 +230,7 @@
   function stuck() { return remaining().every(function (id) { return needsOfficer(id) && !freeAgents().length; }); }
 
   function briefing() {
+    if (window.MINI) MINI.inject(S);
     if (S.hour >= 24) return summary();
     const gone = expire();
     if (!remaining().length) return summary();
@@ -248,8 +249,8 @@
       if (!done && lt > 0 && !warnTxt) warnTxt = s.title + " is overdue. Odds are dropping; it\u2019s lost at " + hh(due + EXPIRE) + ".";
       const lockT = S.day === 1 && !done && S.order.slice(0, S.order.indexOf(id)).some(function (x) { return !S.done[x]; });
       const off = (!done && needsOfficer(id) && !freeAgents().length) || lockT;
-      const sub = s.kind === "accuse" || s.kind === "interro" || s.kind === "mole2" || s.kind === "tail" || s.kind === "cable" ? " \u00b7 no officer needed" : s.kind === "exfil" ? " \u00b7 needs a driver" : "";
-      list += '<button class="card dossier sit tile' + (lockT ? " locked" : "") + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (lockT ? " \u00b7 after lesson " + (n - 1) : done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
+      const sub = s.kind === "mini" ? " \u00b7 hands-on \u00b7 no officer" : s.kind === "accuse" || s.kind === "interro" || s.kind === "mole2" || s.kind === "tail" || s.kind === "cable" ? " \u00b7 no officer needed" : s.kind === "exfil" ? " \u00b7 needs a driver" : "";
+      list += '<button class="card dossier sit tile' + (lockT ? " locked" : "") + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V", "VI", "VII"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (lockT ? " \u00b7 after lesson " + (n - 1) : done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : lt > 0 ? "LATE " + lt + "h" : "by " + hh(due)) + "</span></button>";
     });
     render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div>' + (window.HUB ? HUB.html() : "") + '<div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + list +
@@ -262,7 +263,7 @@
     $("endday").onclick = function () { S.hour = 24; summary(); };
   }
   // painted header for each case file
-  const HEADS = { defector: "vienna", mole: "mole", leak: "fleet", sabotage: "rig", courier: "airport", safehouse: "bristol", mole2: "mole", exit: "harwich", bath: "bath", york: "york", tail: "fleet", cable: "cabletap", exfil: "signal" };
+  const HEADS = { defector: "vienna", mole: "mole", leak: "fleet", sabotage: "rig", courier: "airport", safehouse: "bristol", mole2: "mole", exit: "harwich", bath: "bath", york: "york", tail: "fleet", cable: "cabletap", exfil: "signal", cipher: "signal", spot: "bristol", lie: "york" };
   function chead(id) { return HEADS[id] ? '<button type="button" class="chead big" data-case-file="' + id + '" aria-label="Open the case file"><img src="img/h-' + HEADS[id] + '.jpg" alt=""><span class="zoomhint">Open the file</span></button>' : ""; }
 
   // ---------- files and dossiers: their own full-screen paper folder, picture large, tap to zoom ----------
@@ -301,6 +302,7 @@
 
   function openCase(id) {
     const kind = CASES()[id].kind;
+    if (kind === "mini") return MINI.open(id);
     if (kind === "accuse") return accuse();
     if (kind === "judge" && !S.belief) return judgement();
     if (kind === "interro" || kind === "mole2") return window.AH2.open(id);
@@ -653,7 +655,7 @@
   function summary() {
     if (!S.ended && CINE.maybe({ 1: "bath", 2: "ferry", 3: "end3" }[S.day], summary)) return;
     if (!S.ended) {
-      remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id]); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk" }); });
+      remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id] || CASES()[id].pen); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk" }); });
       S.hour = 24; S.ended = true;
       S.heads.push(S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019");
       if (window.SFX) { SFX.chime(12); setTimeout(function () { SFX.tele(); }, 1500); }
