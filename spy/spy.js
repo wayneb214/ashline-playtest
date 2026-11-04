@@ -491,7 +491,7 @@
       document.querySelectorAll("[data-kit]").forEach(function (b) { b.onclick = function () { const key = b.getAttribute("data-kit"); kit = kit === key ? null : key; draw(); }; });
       if ($("kitt")) $("kitt").onclick = function () { kitOpen = !kitOpen; draw(); };
       if (window.OPS) OPS.bind(draw);
-      $("go").onclick = function () { (window.OPS ? OPS.run : resolve)(id, k, s.approaches[sel], kit); };
+      $("go").onclick = function () { if (window.VOICE) VOICE.play("op_" + k + "_send" + (1 + Math.floor(rnd() * 3))); (window.OPS ? OPS.run : resolve)(id, k, s.approaches[sel], kit); };
       $("back").onclick = function () { pickAgent(id); };
       MENU.coach("dial", "The <b>odds dial</b> shows your chance and the biggest reasons. Change the plan and watch it move.");
     };
@@ -568,6 +568,7 @@
       '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (op.push ? '<span class="down">Pushed</span>' : "") + (op.abort ? '<span class="up">Pulled out</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
       '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
       "The gauges moved. The papers noticed. " + nm + " will remember this.");
+    if (window.VOICE && !op.abort && res !== "mixed") VOICE.play("op_" + k + "_" + (res === "win" ? "done" : "hurt"));
     $("go").onclick = briefing;
     if (window.FUN) FUN.event("case", { id: id, k: k, res: res });
     if (S.status && S.status[k] && S.status[k] !== "burned") MENU.coach("status", "Officers can come back <b>Tired</b> (\u22128%) or <b>Wounded</b> (\u221215%). It shows on their file and fades after a night\u2019s rest.");
@@ -725,7 +726,7 @@
     return d;
   }
   // the radio bulletin read over the front page: one per day, one per ending
-  function bulletinId() { if (S.day === 1) return "bulletin_day1"; if (S.day === 2) return S.done.exit === "win" ? "bulletin_day2_win" : "bulletin_day2_lose"; return "bulletin_end_" + ({ win: "win", mixed: "mixed" }[S.done.exfil] || "loss"); }
+  function bulletinId() { if (S.day === 1) return "bulletin_day1"; if (S.day === 2) return S.done.exit === "win" ? "bulletin_day2_win" : "bulletin_day2_lose"; if (S.deal === "deal") return "bulletin_end_traded"; return "bulletin_end_" + ({ win: "win", mixed: "mixed" }[S.done.exfil] || "loss"); }
   function paper() {
     const d = paperData();
     chrome(true);

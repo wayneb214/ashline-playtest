@@ -11,8 +11,8 @@
   const reduce = function () { return window.FEEL && FEEL.reduce; };
   const sfx = function (n, a) { if (window.SFX && SFX[n]) SFX[n](a); };
   // moving paintings: each plays once, then holds its last frame; the layered stills stay underneath as the fallback
-  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1 }; // york: video retired (car morphed), the painted still with parallax is used
-  const WIDE = { york: 1, border: 1, no10: 1, cable: 1 };
+  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1 }; // york: video retired (car morphed), the painted still with parallax is used
+  const WIDE = { york: 1, border: 1, no10: 1, cable: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1 };
   const S = function () { return window.AH ? window.AH.S() : {}; };
 
   // ---------- the scenes ----------
@@ -38,7 +38,7 @@
     border: { name: "The border", shots: function () { return [
       { img: "border", dur: 9, ask: { id: "border", at: 6.9 }, pan: [70, 25], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "The Varenian border. A queue of cars in the dark."], [3.6, "", "She is in the boot, under a picnic blanket."], [6.2, "", "A guard. A dog."]], sfx: [[0.1, "engine", 6], [3.4, "heart", 5]] }]; } },
     end3: { name: "The Green Coat ends", shots: function () { const s = S(), e = s.deal === "deal" ? "traded" : (s.done && s.done.exfil) || "loss"; return [
-      { img: e === "win" || e === "mixed" ? "green" : "border", dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.16, 0, -4], caps: [[0.5, "", { win: "Pine forest. Our side of the line.", mixed: "She\u2019s out. One of ours isn\u2019t.", loss: "The barrier. A grey car. Gone.", traded: "A deal is a deal." }[e]], [4, "", { win: "She asks for a cup of tea.", mixed: "Kesk will want a trade.", loss: "Kesk wins this round.", traded: "Nobody mentions a woman in green." }[e]]], sfx: [[0.2, e === "win" ? "chime" : "stinger", 2]] }]; } },
+      { img: "end-" + e, dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.16, 0, -4], caps: [[0.5, "", { win: "Pine forest. Our side of the line.", mixed: "She\u2019s out. One of ours isn\u2019t.", loss: "The barrier. A grey car. Gone.", traded: "A deal is a deal." }[e]], [4, "", { win: "She asks for a cup of tea.", mixed: "Kesk will want a trade.", loss: "Kesk wins this round.", traded: "Nobody mentions a woman in green." }[e]]], sfx: [[0.2, e === "win" ? "chime" : "stinger", 2]] }]; } },
     trailer: { name: "Trailer", shots: function () { return [
       { img: "thames", dur: 2.6, cam: [1.16, 0, 3, 1.04, 0, -1], sfx: [[0, "rainUp", true], [0.2, "bigben", 2]] },
       { card: "Run Britain\u2019s secret war", dur: 2 },

@@ -1,6 +1,6 @@
 # Albion House voice lines
 
-Nothing is recorded yet. Every line is silent until you set its `src` in `voice.js` (for example `voice/ash_problem.m4a`, a path relative to `spy/`). Lines marked **subtitled** show their text on screen whether or not audio exists. Voice obeys the sound toggle.
+All lines are recorded (Chatterbox, cloning our own Kokoro reference voices) in `audio/voice/*.mp3`.
 
 The opening cutscene shows the narrator lines as captions. If a clip runs longer than its shot, the shot holds until the clip finishes, so you can record at a natural pace.
 
@@ -32,3 +32,46 @@ The broadcaster, Thamesmouth Wireless News, is invented.
 | `bulletin_end_loss` | Thamesmouth Wireless News | Ending: she is caught (subtitled) | Thamesmouth Wireless News. The Varenian Republic has paraded a woman it calls a British spy. The Foreign Office is seeking urgent clarification. |
 
 The phone calls and Kesk letters change with the player’s earlier choices; the text above is the core line, and the full wording is whatever is on screen in `desk.js` and `day3.js` (letterText). Record the core line, or one take per variant and add ids.
+
+
+## Act 2 additions
+
+| Line id | Speaker | Text |
+|---|---|---|
+| `op_macrae_pos` | linnet | Linnet. In position. Nice and quiet. |
+| `op_macrae_eyes` | linnet | Eyes on. That's her, the one by the window. |
+| `op_macrae_lost` | linnet | I've lost her. Give me a minute. |
+| `op_macrae_ask` | linnet | C, it's getting crowded. I need a decision. |
+| `op_macrae_push` | linnet | Right. Going now. |
+| `op_macrae_hold` | linnet | Holding. Patience, then. |
+| `op_macrae_abort` | linnet | Pulling out. Coming home the long way. |
+| `op_macrae_done` | linnet | It's done, C. Clean as a whistle. |
+| `op_macrae_hurt` | linnet | It's gone wrong, C. I'm out, but only just. |
+| `op_macrae_send1` | linnet | On it, C. |
+| `op_macrae_send2` | linnet | Leave it with me. |
+| `op_macrae_send3` | linnet | Aye. I'll handle it. |
+| `op_pryce_pos` | wren | Wren here. In position. Nobody's looked twice. |
+| `op_pryce_eyes` | wren | Eyes on. Two men, a parked car. |
+| `op_pryce_lost` | wren | Lost them. Sorry, C. Working back. |
+| `op_pryce_ask` | wren | They're getting twitchy, C. Your call. |
+| `op_pryce_push` | wren | Understood. Going in. |
+| `op_pryce_hold` | wren | Holding. I can wait all night. |
+| `op_pryce_abort` | wren | Pulling out. Nobody saw a thing. |
+| `op_pryce_done` | wren | Job done, C. Not a whisper. |
+| `op_pryce_hurt` | wren | Bad news, C. I'm hurt. Not badly. Getting clear. |
+| `op_pryce_send1` | wren | Right you are, C. |
+| `op_pryce_send2` | wren | I'll be a shadow. |
+| `op_pryce_send3` | wren | Leave it to me, C. |
+| `op_hartley_pos` | harrier | Harrier. In position. Ready when you are. |
+| `op_hartley_eyes` | harrier | Contact. Eyes on the target. |
+| `op_hartley_lost` | harrier | I've lost him. Damn it. |
+| `op_hartley_ask` | harrier | C, it's on a knife edge. Push or pull me out? |
+| `op_hartley_push` | harrier | Going now. Hard. |
+| `op_hartley_hold` | harrier | Holding. Don't like it, but holding. |
+| `op_hartley_abort` | harrier | Pulling out. Back the long way. |
+| `op_hartley_done` | harrier | Done. We've got it, C. |
+| `op_hartley_hurt` | harrier | I'm hit, C. It's not bad. Getting out. |
+| `op_hartley_send1` | harrier | On it, C. |
+| `op_hartley_send2` | harrier | Say no more. |
+| `op_hartley_send3` | harrier | I'll get it done. |
+| `bulletin_end_traded` | news | Thamesmouth Wireless News. A British lorry driver held in Varenia is home tonight. In Kessgrad, trade talks open on Monday as planned. |

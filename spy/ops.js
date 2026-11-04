@@ -11,13 +11,19 @@
   };
   const CHOICE = { push: { mod: 12, t: "Push", d: "+12% odds. Risk they come back hurt, or burned." }, hold: { mod: 0, t: "Hold", d: "Stay the course. No change." }, abort: { mod: 0, t: "Abort", d: "Lose the case. Bring them home safe." } };
   let timer = null;
+  // core officers have recorded radio lines (voice.js op_<k>_<beat>); the radio log shows exactly what is said
+  function voiced(k, beat) { const L = window.VOICE && VOICE.lines["op_" + k + "_" + beat]; return L ? L : null; }
+  function said(L) { return L.text.indexOf(L.who) === 0 ? L.text : L.who + ": " + L.text; }
+  function speak(k, beat, delay) { const L = voiced(k, beat); if (!L) return false; setTimeout(function () { if (document.getElementById("radio") || beat === "done") VOICE.now("op_" + k + "_" + beat); }, delay || 0); return true; }
   function pick(arr, A) { return arr[Math.floor(A.rnd() * arr.length)]; }
   function fill(s, A, k, id) { return s.replace(/\{n\}/g, A.first(k)).replace(/\{w\}/g, A.CASES()[id].where); }
   function run(id, k, a, kit) {
     const A = window.AH, $ = A.$, esc = A.esc, fast = A.FAST || window.__SPY_FAST__;
     const total = fast ? 1500 : ({ low: 15000, med: 20000, high: 25000 }[a.risk] || 20000), askAt = 0.45, askFor = A.S().diff === "hard" ? 4000 : 6000;
     let t = 0, asked = false, chosen = null, left = askFor, logged = 0;
-    const beats = [pick(LINES.start, A), pick(LINES.mid, A), null, pick(LINES.mid.filter(function (x) { return x; }), A), pick(LINES.end, A)];
+    const lost = A.rnd() < 0.35;
+    const beats = [pick(LINES.start, A), pick(LINES.mid, A), null, pick(LINES.mid.filter(function (x) { return x; }), A), pick(LINES.end, A)], vb = [ "pos", "eyes", null, lost ? "lost" : null, null];
+    const line = function (i) { const L = voiced(k, vb[i]); if (L) { speak(k, vb[i], i === 0 ? 1400 : 0); return said(L); } return fill(beats[i], A, k, id); };
     A.render('<div data-screen="op" data-music="tense"><div class="card opcard"><div class="kicker">Live \u00b7 ' + esc(A.CASES()[id].where) + '</div><h2>' + esc(A.CASES()[id].title) + '</h2>' +
       '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 ' + A.oddsFor(id, k, a, kit) + '% odds</span></div></div>' +
       '<div class="radio" id="radio" aria-live="polite"></div><div class="opbarw"><div id="opbar" style="width:0%"></div></div><div id="opask"></div></div></div>', "Live operation. Listen to the radio.");
@@ -25,17 +31,17 @@
     const finish = function () { clearInterval(timer); timer = null; A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: CHOICE.push.mod } : chosen === "abort" ? { abort: true } : {}); cur.id = null; };
     const choose = function (c) {
       if (chosen) return; chosen = c; FEEL.buzz(c === "abort" ? "heavy" : "tap");
-      $("opask").innerHTML = '<p class="opchose">' + esc(CHOICE[c].t) + '</p>'; say(fill(LINES[c], A, k, id), "me");
+      $("opask").innerHTML = '<p class="opchose">' + esc(CHOICE[c].t) + '</p>'; const Lc = voiced(k, c); say(Lc ? said(Lc) : fill(LINES[c], A, k, id), "me"); if (Lc) speak(k, c);
       if (c === "abort") t = Math.max(t, total * 0.9);
     };
     const ask = function () {
-      asked = true; say(fill(pick(LINES.ask, A), A, k, id), "ask"); FEEL.buzz("rumble"); if (window.SFX && SFX.rumble) SFX.rumble();
+      asked = true; const La = voiced(k, "ask"); say(La ? said(La) : fill(pick(LINES.ask, A), A, k, id), "ask"); if (La) speak(k, "ask"); FEEL.buzz("rumble"); if (window.SFX && SFX.rumble) SFX.rumble();
       $("opask").innerHTML = '<div class="opchoice"><div class="optimer"><div id="optime"></div></div>' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + "</b><small>" + CHOICE[c].d + "</small></button>"; }).join("") + "</div>";
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
       MENU.coach("op", "Halfway through, your officer may ask for a call. <b>Push</b> raises the odds but risks them. <b>Abort</b> loses the case but saves them. Do nothing and they <b>hold</b>.");
     };
     if (timer) clearInterval(timer);
-    say(fill(beats[0], A, k, id)); logged = 1;
+    say(line(0)); logged = 1;
     timer = setInterval(function () {
       if (!$("opbar")) { clearInterval(timer); timer = null; return; }
       if (window.AH_PAUSED || document.getElementById("coach")) return;
@@ -44,7 +50,7 @@
       const f = t / total;
       if (!asked && f >= askAt) { ask(); return; }
       const want = f < askAt ? (f > askAt * 0.6 ? 2 : 1) : (f > 0.8 ? 5 : 4);
-      while (logged < want) { const b = beats[logged]; if (b) say(fill(b, A, k, id)); logged++; }
+      while (logged < want) { if (beats[logged]) say(line(logged)); logged++; }
       if (t >= total) finish();
     }, 100);
   }
