@@ -663,3 +663,7 @@ body.in-cine #rain { opacity: .85; }
 .card.locked{opacity:1!important;filter:none!important;background:#ece6d6}
 .card.locked .t,.card.locked .s,.card.locked .num,.card.locked .dl{color:#3a3328!important;opacity:1!important}
 .chead.big{box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}
+/* officer pick: the Send button sits in the flow so it never covers the lesson */
+#view:has([data-screen="officer-pick"]) .sticky-go{position:static}
+.lesson{margin-bottom:16px}
+#view .flash-card .bar span.time{background:#1c1a16!important;color:#f3ead6!important;opacity:1!important}

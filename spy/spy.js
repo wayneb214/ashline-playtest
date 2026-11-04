@@ -78,7 +78,8 @@
   function render(html, h) {
     LOOK.rain(false); LOOK.fade();
     $("view").innerHTML = relabel(html);
-    if (window.SFX) SFX.music(/data-screen="(officer-pick|approach)"|tailgame|class="card report|data-car=|data-pod|data-m=/.test(html) ? "tense" : "jazz");
+    const mm = /data-music="(\w+)"/.exec(html);
+    if (window.SFX) SFX.music(mm ? mm[1] : /data-screen="(officer-pick|approach)"|tailgame|class="card report|data-car=|data-pod|data-m=/.test(html) ? "tense" : "jazz");
     if (window.VOICE) VOICE.stop(); window.scrollTo(0, 0); $("hint").textContent = h || "";
     typeAll(); FEEL.thud($("view")); LOOK.seals($("view"));
     document.querySelectorAll("[data-file]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); officerFile(b.getAttribute("data-file")); }; });
@@ -378,7 +379,7 @@
       }).join("");
       const lt = late(id);
       render('<div data-screen="officer-pick">' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + "</p></div>" + lesson(id, "agent") + '<h3 class="question">Who do you send?</h3><div class="agents">' + cards + '</div><div class="sticky-go"><button class="btn primary" id="go"' + (pick ? "" : " disabled") + ">" + (pick ? "Send " + first(pick) : "Choose an officer") + '</button></div><button class="linkbtn" id="back">Back to the desk</button></div>',
-        "Each officer has one strength. Pick the one that fits.");
+        S.day === 1 ? "" : "Each officer has one strength. Pick the one that fits.");
       document.querySelectorAll("[data-a]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-a"); draw(); }; });
       $("go").onclick = function () { approach(id, pick); };
       $("back").onclick = briefing;
@@ -570,7 +571,7 @@
     meters(); ticker(); save("summary");
     const grade = gradeOf();
     const verdict = { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
-    render('<div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
+    render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +

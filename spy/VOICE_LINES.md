@@ -4,6 +4,8 @@ Nothing is recorded yet. Every line is silent until you set its `src` in `voice.
 
 The opening cutscene shows the narrator lines as captions. If a clip runs longer than its shot, the shot holds until the clip finishes, so you can record at a natural pace.
 
+Colonel Kesk reads his letters in a cold, measured voice, unhurried and faintly amused. The on-screen letters add sentences that change with the player's choices. The voiced lines cover only the parts every player sees.
+
 The broadcaster, Thamesmouth Wireless News, is invented.
 
 | Line id | Speaker | Where it plays | Text |
@@ -18,9 +20,9 @@ The broadcaster, Thamesmouth Wireless News, is invented.
 | `call_hale2` | Eleanor Hale | Day 2/3 No.10 call about Tom Archer | C, the Varenian ambassador has asked me about a man called Tom Archer. Is he one of yours? |
 | `call_deal` | Eleanor Hale | Day 3 No.10 call: the deal | C, Kesk’s people have offered a deal. Leave her there, and the talks go ahead. |
 | `call_kesk` | Colonel Kesk | Kesk rings the desk | Good evening, C. We have never spoken. Let us keep it that way, after tonight. |
-| `kesk_letter_0` | Colonel Kesk | Day 3 start: Kesk letter | Kesk’s first letter, read aloud. |
-| `kesk_letter_1` | Colonel Kesk | Day 3: Kesk letter with hidden ink | Kesk’s second letter, read aloud. |
-| `kesk_letter_3` | Colonel Kesk | Day 3 late: Kesk letter | Kesk’s last letter, read aloud. |
+| `kesk_letter_0` | Colonel Kesk | Day 3 start: Kesk letter | My dear C. Welcome to Friday. You have something of mine in York, I think. Or rather, you are about to go and look for it. K. |
+| `kesk_letter_1` | Colonel Kesk | Day 3: Kesk letter with hidden ink | My dear C. I have been watching how you work. I know your habits now, and I have made my arrangements. K. |
+| `kesk_letter_3` | Colonel Kesk | Day 3 late: Kesk letter | My dear C. Tonight you will try to take something that belongs to the Republic. I will be at the border myself. Bring a warm coat. Green, perhaps. K. |
 | `bulletin_day1` | Thamesmouth Wireless News | Day 1 front page (subtitled) | Thamesmouth Wireless News, midnight. A man has collapsed on a bench in Bath. Police have sealed off the street, and Downing Street says it is monitoring events. |
 | `bulletin_day2_win` | Thamesmouth Wireless News | Day 2 front page, team caught (subtitled) | Thamesmouth Wireless News. Three people were held at Harwich tonight in a late police operation. Officials will not say why. |
 | `bulletin_day2_lose` | Thamesmouth Wireless News | Day 2 front page, team escaped (subtitled) | Thamesmouth Wireless News. Police now fear the three people wanted over the Bath collapse have left the country. |
