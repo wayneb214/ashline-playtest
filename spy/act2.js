@@ -189,7 +189,7 @@
     if (s.done.recon) out.push({ win: ["You walked the bridge", 12], mixed: ["Half a picture of the bridge", 4], loss: ["Never saw the bridge", -10] }[s.done.recon]);
     if (s.done.press) out.push({ win: ["Nothing in the papers", 8], mixed: ["A rumour in a rival paper", 0], loss: ["It\u2019s on the front page", -15] }[s.done.press]);
     if (A.late("swap")) out.push(["Late", -(10 + A.late("swap") * 5)]);
-    if (s.crunch && s.crunch[5] && s.crunch[5].sensible) out.push(["The duty team kept her family safe", 6]);
+    if (s.crunch && s.crunch[5] && s.crunch[5].sensible) out.push(["The duty team kept the family safe", 6]);
     return out.filter(function (x) { return x[1]; });
   }
   const sum = function (l) { return l.reduce(function (t, x) { return t + x[1]; }, 0); };
