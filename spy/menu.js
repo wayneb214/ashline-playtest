@@ -35,7 +35,7 @@
     sheet('<div class="kicker">Paused \u00b7 Day ' + A().S().day + " \u00b7 " + A().hh(A().S().hour) + "</div><h2>Albion House</h2>" +
       '<button class="btn primary" id="mn-resume">Resume</button>' +
       '<button class="btn ghost" id="mn-sound">' + (m ? "\ud83d\udd07 Sound is off \u00b7 turn on" : "\ud83d\udd0a Sound is on \u00b7 turn off") + "</button>" +
-      '<button class="btn ghost" id="mn-settings">Settings</button><button class="btn ghost" id="mn-help">Help &amp; FAQ</button>' +
+      '<button class="btn ghost" id="mn-settings">Settings</button><button class="btn ghost" id="mn-help">Help &amp; FAQ</button>' + (window.REVIEW && REVIEW.canRate() ? '<button class="btn ghost" id="mn-rate">\u2b50 Rate this game</button>' : "") +
       '<button class="btn ghost" id="mn-title">Title screen</button><button class="btn danger" id="mn-restart">Restart day</button>' +
       '<p class="fine">Your game saves itself after every move.</p>', "menu");
     window.AH_PAUSED = true; document.body.classList.add("paused");
@@ -43,6 +43,7 @@
     $("mn-sound").onclick = function () { if (window.SFX) { SFX.unlock(); SFX.setMuted(!SFX.muted); } A().muteBtn(); open(); };
     $("mn-settings").onclick = function () { settings(open); };
     $("mn-help").onclick = function () { help(open); };
+    if ($("mn-rate")) $("mn-rate").onclick = function () { REVIEW.openReviewPage(); };
     $("mn-title").onclick = function () { autosave(); close(); A().title(); };
     $("mn-restart").onclick = function () { confirm("Restart Day " + A().S().day + "?", "You go back to 08:00 this morning. Everything you did today is lost.", "Restart the day", A().restartDay, open); };
   }

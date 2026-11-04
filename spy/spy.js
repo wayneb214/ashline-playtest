@@ -94,6 +94,7 @@
     if (!card || FAST || window.__SPY_FAST__) { FEEL.thud(v); if (window.SFX && SFX.stamp) SFX.stamp(); return; }
     card.classList.add("hold"); if (window.SFX && SFX.duck) SFX.duck(0.9);
     setTimeout(function () { card.classList.remove("hold"); card.classList.add("landing"); FEEL.thud(v); FEEL.buzz("heavy"); if (window.SFX && SFX.stamp) SFX.stamp(); }, 500);
+    if (window.REVIEW && card.classList.contains("win")) REVIEW.happyMoment("win");
   }
   // chips written in the old four-gauge words read as the two meters
   function relabel(h) {
@@ -336,6 +337,7 @@
     };
     draw();
   }
+  function rest(st) { const o = {}; Object.keys(st || {}).forEach(function (k) { if (st[k] === "wounded") o[k] = "tired"; else if (st[k] === "burned") o[k] = "burned"; }); return o; }
   function loseOfficer(k, why) { S.roster = S.roster.filter(function (x) { return x !== k; }); S.lost[k] = why; S.pendingRecruit++; }
 
   // ---------- Day 1: the cable judgement ----------
@@ -380,8 +382,8 @@
     return { odds: Math.max(5, Math.min(92, Math.round(o))), base: Math.round(base), parts: P };
   }
   function oddsFor(id, k, a, kitId) { return oddsParts(id, k, a, kitId).odds; }
-  function statusName(k) { const st = (S.status || {})[k]; return st ? { tired: "Tired", wounded: "Wounded" }[st] || "" : ""; }
-  function statusMod(k) { const st = (S.status || {})[k]; return st === "tired" ? -15 : st === "wounded" ? -25 : 0; }
+  function statusName(k) { const st = (S.status || {})[k]; return st ? { tired: "Tired", wounded: "Wounded", burned: "Burned" }[st] || "" : ""; }
+  function statusMod(k) { const st = (S.status || {})[k]; return st === "tired" ? -8 : st === "wounded" ? -15 : 0; }
   // the officer's own pick: the approach they rate best. Choosing another overrules them.
   function recIdx(id, k) { let best = -1, bo = -1; CASES()[id].approaches.forEach(function (a, i) { if (lockOf(a)) return; const o = oddsFor(id, k, a, null); if (o > bo) { bo = o; best = i; } }); return best; }
   function lockOf(a) { if (a.needs && !(S.unlocked || {})[a.needs]) return "needs"; if (a.pm && S.meters.capital < a.pm) return "pm"; return ""; }
@@ -500,9 +502,11 @@
   // the painted vignette for an outcome: case-specific art on success, otherwise by result
   function vignette(id, res) { const art = CASES()[id].art; return '<div class="kbwrap"><img class="vignette" src="' + pic(art && res !== "loss" ? art : "v-" + res) + '" alt=""></div>'; }
 
-  function resolve(id, k, a, kitId) {
-    const s = CASES()[id], kitD = kitId ? D.KIT[kitId] : {}, odds = oddsFor(id, k, a, kitId), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
+  function resolve(id, k, a, kitId, op) {
+    op = op || {};
+    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, odds = Math.max(5, Math.min(95, oddsFor(id, k, a, kitId) + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
+    if (op.abort) res = "loss";
     if (window.__SPY_FORCE__) res = window.__SPY_FORCE__;
     if (kitId) S.kit[kitId]--;
     const st0 = S.stress[k], lo0 = S.loyal[k], over = recIdx(id, k) !== s.approaches.indexOf(a), worked = st0 >= 4;
@@ -532,17 +536,26 @@
     S.heads.push(head); S.log.push({ id: id, k: k, res: res, appr: a.t + (kitId ? " + " + kitD.name.toLowerCase() : ""), slip: !!slip });
     const nm = first(k);
     let line = { win: nm + " pulled it off. Clean. Nobody will ever know.", mixed: nm + " got it done, but not cleanly. There will be questions.", loss: "It went wrong. " + nm + " is out \u2014 just \u2014 and badly shaken." }[res];
-    if (res === "loss" && S.stress[k] >= 5) { loseOfficer(k, "sent home"); line += " The doctor has signed " + nm + " off. They won\u2019t be back this week."; }
+    if (op.abort) line = "You pulled " + nm + " out before it closed in. The case is lost, but " + nm + " walked home.";
+    // how the officer comes back: tired after a hard push, wounded after a loss, burned if a pushed loss went badly
+    S.status = S.status || {}; const st1 = S.status[k];
+    if (res === "loss" && op.push && r > 88) { S.status[k] = "burned"; loseOfficer(k, "cover burned"); line += " Worse: " + nm + "\u2019s face is known now. Their cover is burned for good."; }
+    else if (res === "loss" && !op.abort) S.status[k] = "wounded";
+    else if (op.push) S.status[k] = S.status[k] === "wounded" ? "wounded" : "tired";
+    else if (res === "win" && S.status[k] === "tired") delete S.status[k];
+    if (S.status[k] && S.status[k] !== st1 && S.status[k] !== "burned") line += " " + nm + " comes back " + statusName(k).toLowerCase() + ".";
+    if (res === "loss" && S.stress[k] >= 5 && S.status[k] !== "burned") { loseOfficer(k, "sent home"); line += " The doctor has signed " + nm + " off. They won\u2019t be back this week."; }
     if (id === "defector" && res !== "loss") S.defector = true;
     if (S.day === 1 && S.order.indexOf("sabotage") < 0) S.order.push("sabotage");
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
     const od = function (lab, a0, a1) { return a1 === a0 ? "" : '<span class="' + ((lab === "Stress") === (a1 > a0) ? "down" : "up") + '">' + lab + " " + a0 + "\u2192" + a1 + "</span>"; };
     render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "SUCCESS", mixed: "COMPROMISED", loss: "BLOWN" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
       (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + deltas(ch) +
-      '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
+      '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (op.push ? '<span class="down">Pushed</span>' : "") + (op.abort ? '<span class="up">Pulled out</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
       '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
       "The gauges moved. The papers noticed. " + nm + " will remember this.");
     $("go").onclick = briefing;
+    if (S.status && S.status[k] && S.status[k] !== "burned") MENU.coach("status", "Officers can come back <b>Tired</b> (\u22128%) or <b>Wounded</b> (\u221215%). It shows on their file and fades after a night\u2019s rest.");
   }
 
   // a non-officer case finishing (used by the mole accusation and Day 2 interrogations)
@@ -663,7 +676,7 @@
   function day2State() {
     const n = JSON.parse(JSON.stringify(S));
     n.days = { 1: { grade: gradeOf(), mole: moleText(), defector: S.defector, call: S.call, caught: moleCaught() } };
-    n.day = 2; n.hour = 8; n.used = {}; n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false;
+    n.day = 2; n.hour = 8; n.used = {}; n.status = rest(n.status); n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false;
     n.order = ["courier", "safehouse", "mole2", "exit"]; n.kit = Object.assign({}, diff().kit); n.belief = null; n.call = null;
     n.clues = { cctv: true, hire: true }; n.links = {}; n.unlocked = {}; n.interro = {}; n.seenIntro = false;
     n.heads = S.heads.slice(-2).concat(["Bath: police hunt three after bench collapse"]);
@@ -676,7 +689,7 @@
   function day3State() {
     const n = JSON.parse(JSON.stringify(S));
     n.days = n.days || {}; n.days[2] = { grade: gradeOf(), exit: S.done.exit || "loss", mole: moleText() };
-    n.day = 3; n.hour = 8; n.used = {}; n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false; n.finished = null;
+    n.day = 3; n.hour = 8; n.used = {}; n.status = rest(n.status); n.log = []; n.done = {}; n.ended = false; n.chimed = false; n.screen = "briefing"; n.tips = false; n.finished = null;
     n.order = ["bath", "york", "tail", "cable", "exfil"]; n.kit = Object.assign({}, diff().kit); n.seenIntro = false; n.letters = {}; n.riskSeen = {}; n.deal = null;
     n.heads = S.heads.slice(-2).concat(["Mystery of the woman in green deepens"]);
     n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - 1); });
@@ -764,7 +777,7 @@
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, textSizeHTML: textSizeHTML, bindTextSize: bindTextSize, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, relabel: relabel, title: title, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, relabel: relabel, title: title, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, oddsFor: oddsFor, statusName: statusName, FAST: FAST };
 
   applyTextSize();
   fresh();
