@@ -70,12 +70,18 @@
     if (sh.inset) h += '<img class="inset" src="img/' + sh.inset + '.jpg" alt="">';
     return h + "</div>";
   }
-  function build(id, opts) {
-    const shots = SCENES[id].shots(); let t = 0;
+  // If a recorded voice clip runs past its shot, hold the shot until the clip ends. Re-run at start, when clip lengths are known.
+  function timeShots(shots) {
+    let t = 0;
     shots.forEach(function (s) {
-      // If a recorded voice clip exists and runs past the shot, hold the shot until it ends.
+      if (s.base == null) s.base = s.dur; s.dur = s.base;
       (s.sfx || []).forEach(function (f) { if (f[1] === "voice" && window.VOICE && VOICE.len) { const L = VOICE.len(f[2]); if (L) s.dur = Math.max(s.dur, f[0] + L + 0.4); } });
       s.t0 = t; t += s.dur; s.fired = {}; });
+    return t;
+  }
+  function build(id, opts) {
+    const shots = SCENES[id].shots();
+    const t = timeShots(shots);
     const el = document.createElement("div"); el.className = "cine" + (reduce() ? " still" : "") + (opts.trailer ? " trailer" : ""); el.id = "cine";
     el.setAttribute("role", "dialog"); el.setAttribute("aria-label", SCENES[id].name);
     el.innerHTML = '<div class="cine-stage">' + shots.map(shotHTML).join("") + '</div><div class="lb top"></div><div class="lb bot"></div><div class="cine-cap" aria-live="polite"><small></small><span></span></div>' +
@@ -168,6 +174,7 @@
     if (r.done) r.done();
   }
   function start(r) {
+    r.total = timeShots(r.shots);
     run = r; r.nodes = Array.prototype.slice.call(r.el.querySelectorAll(".shot"));
     r.t0 = clockNow(); r.elapsed = 0;
     if (r.opts.askOnly) { const pa = pendingAsk(r); if (pa) r.elapsed = (pa.t0 + pa.ask.at - 0.6) * 1000; }

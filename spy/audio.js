@@ -82,7 +82,7 @@
     get musicMode() { return mode || want; },
     voice: function (id) { if (window.VOICE) VOICE.play(id); },
     get muted() { return muted; },
-    setMuted: function (m) { muted = !!m; try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (e) {} if (master) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05); },
+    setMuted: function (m) { muted = !!m; try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (e) {} if (master) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05); if (muted && window.VOICE && VOICE.hush) VOICE.hush(); },
     // Westminster-style quarter phrase, then a few deep strikes for the hour
     chime: function (strikes) {
       if (!ctx) return; const t0 = ctx.currentTime + 0.05, n = [329.6, 415.3, 370, 246.9];

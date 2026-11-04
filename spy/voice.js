@@ -24,11 +24,21 @@
     bulletin_end_mixed: { who: B, sub: true, text: B + ". Confused reports from the Varenian border tonight. London neither confirms nor denies a British operation." },
     bulletin_end_loss: { who: B, sub: true, text: B + ". The Varenian Republic has paraded a woman it calls a British spy. The Foreign Office is seeking urgent clarification." }
   };
-  Object.keys(L).forEach(function (k) { L[k].src = L[k].src || ""; });
+  Object.keys(L).forEach(function (k) { L[k].src = L[k].src || "audio/voice/" + k + ".mp3"; });
   // Preload metadata so cutscenes can stretch to a clip's real length (seconds).
   const LEN = {};
   Object.keys(L).forEach(function (k) { if (!L[k].src) return; try { const a = new Audio(); a.preload = "metadata"; a.onloadedmetadata = function () { if (isFinite(a.duration)) LEN[k] = a.duration; }; a.src = L[k].src; } catch (e) {} });
   let cur = null, subT = null;
+  // One reusable element. iOS only lets audio play after a tap, so the first tap unlocks it.
+  function player() { if (!cur) { cur = new Audio(); cur.preload = "auto"; cur.setAttribute("playsinline", ""); } return cur; }
+  function unlock() {
+    document.removeEventListener("pointerdown", unlock, true); document.removeEventListener("touchend", unlock, true);
+    const a = player(); if (a.src && !a.paused) return;
+    a.muted = true; a.src = L.ash_problem.src; const pr = a.play();
+    const prime = a.src; const done = function () { if (a.muted && a.src === prime) a.pause(); a.muted = false; };
+    if (pr && pr.then) pr.then(done, function () { a.muted = false; }); else done();
+  }
+  document.addEventListener("pointerdown", unlock, true); document.addEventListener("touchend", unlock, true);
   function subtitle(o) {
     let el = document.getElementById("subtitle");
     if (!el) { el = document.createElement("div"); el.id = "subtitle"; el.className = "subtitle"; el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite"); document.body.appendChild(el); }
@@ -43,8 +53,9 @@
       const o = L[id]; if (!o) return;
       if (o.sub) subtitle(o);
       if (!o.src || (window.SFX && SFX.muted)) return;
-      try { if (cur) cur.pause(); cur = new Audio(o.src); cur.volume = 0.9; const pr = cur.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+      try { const a = player(); a.pause(); a.muted = false; a.src = o.src; a.currentTime = 0; a.volume = 0.9; const pr = a.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
     },
-    stop: function () { if (cur) cur.pause(); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }
+    hush: function () { if (cur) cur.pause(); },
+    stop: function () { if (cur) { cur.pause(); cur.muted = false; } const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }
   };
 })();
