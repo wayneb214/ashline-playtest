@@ -156,9 +156,9 @@
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (day2 ? '<button class="btn ghost" id="days">Choose a day</button>' : "") +
-      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div><button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
+      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
-    LOOK.place(); LOOK.rain(true); LOOK.night(8);
+    LOOK.place(); LOOK.rain(true); LOOK.night(8); if (window.REPLAY) REPLAY.bindTitle();
     $("go").onclick = saved ? function () { MENU.confirm("Start a new game?", "Your saved game (Day " + (saved.S.day || 1) + ") will be replaced.", "Start again", difficulty); } : difficulty;
     $("helpbtn").onclick = function () { MENU.help(); };
     if (saved) $("continue").onclick = function () { restore(saved); resume(); };
@@ -189,7 +189,7 @@
     let pick = "standard", tips = !store.get(TIPS_DONE);
     const draw = function () {
       render('<div class="card dossier">' + LH + '<div class="kicker" style="margin-top:8px">Before you take the chair</div><h2>How hard a day?</h2>' +
-        Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k]; return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"><div class="t">' + d.name + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
+        Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k], lock = k === "hard" && window.REPLAY && !REPLAY.unlocked(); return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"' + (lock ? " disabled" : "") + '><div class="t">' + d.name + (lock ? " \ud83d\udd12 finish Day 3 to unlock" : "") + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
         '<label class="tipsopt"><input type="checkbox" id="tips"' + (tips ? " checked" : "") + "> Show tips on the first day</label>" + '<div class="kicker" style="margin-top:12px">Text size</div>' + textSizeHTML() + "</div>" +
         '<div class="sticky-go"><button class="btn primary" id="go">Begin \u00b7 ' + D.DIFFICULTY[pick].name + '</button></div><button class="btn ghost" id="back">Back</button>', "You can change this next time you start a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });

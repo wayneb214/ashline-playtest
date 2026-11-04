@@ -15,7 +15,7 @@
   function fill(s, A, k, id) { return s.replace(/\{n\}/g, A.first(k)).replace(/\{w\}/g, A.CASES()[id].where); }
   function run(id, k, a, kit) {
     const A = window.AH, $ = A.$, esc = A.esc, fast = A.FAST || window.__SPY_FAST__;
-    const total = fast ? 1500 : ({ low: 15000, med: 20000, high: 25000 }[a.risk] || 20000), askAt = 0.45, askFor = fast ? 6000 : 6000;
+    const total = fast ? 1500 : ({ low: 15000, med: 20000, high: 25000 }[a.risk] || 20000), askAt = 0.45, askFor = A.S().diff === "hard" ? 4000 : 6000;
     let t = 0, asked = false, chosen = null, left = askFor, logged = 0;
     const beats = [pick(LINES.start, A), pick(LINES.mid, A), null, pick(LINES.mid.filter(function (x) { return x; }), A), pick(LINES.end, A)];
     A.render('<div data-screen="op" data-music="tense"><div class="card opcard"><div class="kicker">Live \u00b7 ' + esc(A.CASES()[id].where) + '</div><h2>' + esc(A.CASES()[id].title) + '</h2>' +

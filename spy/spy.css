@@ -900,3 +900,5 @@ body.paused #view, body.paused #hud { filter: blur(2px) brightness(.7); }
 .hub-paper.fresh { animation: paperin .7s ease-out; }
 @keyframes paperin { from { transform: translateY(30px) rotate(6deg); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .hub-needle line { transition: none; } .hub-lamp.flicker { animation: none; opacity: .3; } .hub-paper.fresh { animation: none; } }
+.endings { text-align: center; font: 12px/1.4 monospace; letter-spacing: .12em; text-transform: uppercase; opacity: .85; margin: 10px 0 4px; }
+.card.appr[disabled] { opacity: .5; }

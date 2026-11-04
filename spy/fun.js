@@ -55,6 +55,7 @@
       if (m.m === "gold") unlock("gold_day");
       if (A().moleCaught()) unlock("mole");
       if (S.day === 3) {
+        if (window.REPLAY) REPLAY.found(S.deal === "deal" ? "traded" : S.done.exfil || "loss");
         if (f.gold[1] && f.gold[2] && f.gold[3]) unlock("all_gold");
         const mn = S.minis || {}; if (mn.cipher === "win" && mn.spot === "win" && mn.lie === "win") unlock("every_code");
         if (!f.hurt) unlock("no_hurt");
