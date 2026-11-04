@@ -193,6 +193,16 @@
     return out.filter(function (x) { return x[1]; });
   }
   const sum = function (l) { return l.reduce(function (t, x) { return t + x[1]; }, 0); };
+  // the finales wait for their hour: the bridge is at dawn (the night passes), Downing Street is in the evening
+  const LOCK = { 5: { id: "swap", before: ["recon", "press"], why: "at dawn, after the day\u2019s work" }, 6: { id: "showdown", before: ["find", "chase"], why: "this evening, once he\u2019s found" } };
+  function locked(id) {
+    const s = S(), L = LOCK[s.day]; if (!L || L.id !== id || s.done[id]) return false;
+    const open = L.before.filter(function (x) { return !s.done[x]; });
+    if (!open.length || s.hour >= 20) return false;
+    return !open.every(function (x) { return x !== "chase" && !A.freeAgents().length; });
+  }
+  function lockWhy(id) { return LOCK[S().day].why; }
+  function dawnClock() { const c = document.getElementById("clock"); if (c) { c.textContent = "05:40"; const b = c.parentNode, sm = b.querySelector("small"); b.classList.remove("warn", "late"); if (sm) sm.textContent = "Dawn"; } }
   function swap() {
     const s = S(), who = s.held;
     if (!s.bridgeSeen) { s.bridgeSeen = true; A.save("briefing"); if (CINE.maybe("bridge", swap)) return; }
@@ -203,7 +213,7 @@
       { k: "bluff", t: "Bluff", d: "Bring an empty car and a confident face. Tell him we have more than we do.", risk: "med", odds: function () { return clampP(34 + base + Math.min(30, ch.length * 10) + keskMod("med")); } },
       { k: "rescue", t: "Rescue", d: "While everyone watches the bridge, a team takes ours from the car. Fast, and loud if it goes wrong.", risk: "high", pm: 45, odds: function () { return clampP(40 + base + keskMod("high")); } }];
     const draw = function () {
-      A.render('<div class="card dossier exfil"><div class="chead"><img src="img/h-bridge.jpg" alt="An iron bridge over a river at dawn, two cars facing each other"></div>' + A.LH + '<span class="stamp corner">DAWN</span><div class="kicker">The Vell bridge \u00b7 dawn in Kessgrad, ' + A.hh(s.hour) + ' in London</div><h2 style="margin-top:8px;padding-right:110px">The bridge at dawn</h2>' +
+      A.render('<div class="card dossier exfil"><div class="chead"><img src="img/h-bridge.jpg" alt="An iron bridge over a river at dawn, two cars facing each other"></div>' + A.LH + '<span class="stamp corner">DAWN</span><div class="kicker">The Vell bridge \u00b7 05:40 \u00b7 Thursday, first light</div><h2 style="margin-top:8px;padding-right:110px">The bridge at dawn</h2>' +
         "<p>Mist on the River Vell. Two cars, one at each end. In the back of Kesk\u2019s, <b>" + (who ? esc(A.AG(who).name) : "our officer") + "</b>. Kesk stands by the bonnet with a flask of coffee, as if this were a picnic.</p>" +
         (helps.length ? '<div class="chips helps">' + helps.map(function (h) { return '<span class="chip ' + (h[1] > 0 ? "risk-low" : "risk-high") + '">' + esc(h[0]) + " " + (h[1] > 0 ? "+" : "\u2212") + Math.abs(h[1]) + "%</span>"; }).join("") + "</div>" : "") + "</div>" +
         '<div class="kicker" style="margin:6px 0">What we can bargain with</div>' + (ch.length ? ch.map(function (c) { return '<button class="card appr chipcard' + (chip === c ? " sel" : "") + '" data-chip="' + c.k + '"><div class="t">' + esc(c.t) + '</div><p style="margin:0">' + esc(c.d) + '</p><div class="chips"><span class="chip risk-low">+' + c.v + "% if traded</span></div></button>"; }).join("") : '<p class="warn-t">Nothing. Days 1 to 3 left us with empty hands: no tall man, no clerk, no LINDEN.</p>') +
@@ -218,12 +228,13 @@
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
       $("back").onclick = A.briefing;
       $("go").onclick = function () { finish(OPTS[sel]); };
+      dawnClock();
     };
     const finish = function (o) {
       if (s.done.swap) return;
       const p = o.odds(), res = roll(p);
       s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[o.risk]++;
-      s.swapHow = o.k; A.advance(2);
+      s.swapHow = o.k; A.advance(24);
       let delta = { win: { safety: 12, service: 8, capital: 6 }, mixed: { safety: 4, capital: -4 }, loss: { safety: -14, capital: -10, service: -6 } }[res];
       if (o.k === "trade") { s.chipUsed = chip.k; delta = Object.assign({}, delta); delta.secrecy = (delta.secrecy || 0) - 6; }
       if (o.k === "rescue" && res === "loss") { delta = Object.assign({}, delta); delta.capital -= 6; }
@@ -329,6 +340,7 @@
   // ---------- the showdown (Day 6) ----------
   function showdown() {
     const s = S(); let sel = null;
+    if (s.hour < 18) { A.advance(18 - s.hour); A.save("briefing"); A.meters(); }
     const OPTS = [
       { k: "quiet", t: "Have him put on the morning plane", d: "Quietly declared unwelcome. No arrest, no cameras. He goes home, and he knows we won.", risk: "low", mod: 10 },
       { k: "turn", t: "Offer him a deal: work for us", d: "The boldest thing you will ever say to a man. If he says yes, the Grey House is ours.", risk: "high", mod: -10 },
@@ -464,5 +476,5 @@
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
   window.AH4 = { cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
-    lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
+    locked: locked, lockWhy: lockWhy, lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
 })();

@@ -44,7 +44,7 @@
     day5: { name: "Day 5 \u00b7 The Bridge", shots: function () { return [
       { img: "phone", dur: 6.5, cam: [1.0, 0, 0, 1.1, 3, -3], inset: "ash", caps: [[0.5, "", "Wednesday. 06:40."], [2.2, "Ash", "They\u2019ve taken one of ours, Chief. At the airport in Kessgrad, this morning."]], sfx: [[0.2, "ring"], [1.8, "stopRing"], [2.2, "voice", "ash_d5_open"]] }]; } },
     bridge: { name: "The bridge at dawn", shots: function () { return [
-      { img: "d5-bridge", dur: 8, cam: [1.02, 0, -2, 1.16, 0, 3], caps: [[0.5, "", "A border bridge. Fog on the water."], [4.2, "", "Two cars. One each end. Nobody wants to go first."]], sfx: [[0.1, "rainUp", true], [4, "heart", 3]] }]; } },
+      { img: "d5-bridge", dur: 8, cam: [1.02, 0, -2, 1.16, 0, 3], caps: [[0.5, "", "05:40. The Vell bridge. Fog on the water."], [4.2, "", "Two cars. One each end. Nobody wants to go first."]], sfx: [[0.1, "rainUp", true], [4, "heart", 3]] }]; } },
     day6: { name: "Day 6 \u00b7 Kesk in London", shots: function () { return [
       { img: "d6-london", dur: 7.5, pan: [20, 65], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "Thursday. London. Rain."], [2.6, "Ash", "He\u2019s here, Chief. Kesk is in London. He landed an hour ago, under another name."]], sfx: [[0.2, "rainUp", true], [0.3, "bigben", 3], [2.6, "voice", "ash_d6_open"]] }]; } },
     end6: { name: "Act 2 ends", shots: function () { const e = window.AH4 ? AH4.ending() : "quiet", ok = e === "knight" || e === "quiet"; return [
