@@ -6,8 +6,8 @@ window.AH_DATA = (function () {
   // Albion House: an invented British overseas intelligence service. The rival is the invented
   // Varenian Republic and its service, the Grey House. Real cities, invented states, firms and people.
   const METERS = [
-    { id: "trust", name: "Public trust" }, { id: "capital", name: "No.10 trust" },
-    { id: "safety", name: "Officer safety" }, { id: "secrecy", name: "Secrecy" }
+    { id: "capital", name: "No.10 trust", txt: "Hale\u2019s faith in you. Opens the bold, signed-off plans." },
+    { id: "service", name: "Service", txt: "Your officers: safe, loyal and unseen. Every point adds to the odds in the field." }
   ];
   const AGENTS = {
     nadia: { name: "Nadia Kowalczyk", short: "Nadia", code: "Linnet", role: "Case officer \u00b7 \u2018Linnet\u2019 \u00b7 runs people", img: "nadia", tense: "nadia-tense", happy: "nadia", look: "a red scarf", note: "Speaks fluent Varenian", clue: "Every blown operation was discussed with someone who could read the Varenian traffic without a translator.", slip: "She quoted a Grey House codeword we never told her.", skill: 4, loyalty: 4, stress: 1, cover: 3, good: ["defector", "leak"] },

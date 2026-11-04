@@ -32,7 +32,7 @@
   function fresh(diff, tips) {
     const keys = Object.keys(D.AGENTS);
     S = { day: 1, diff: diff || "standard", tips: tips !== false, tipSeen: {}, hour: 8,
-      meters: { trust: 55, capital: 55, safety: 60, secrecy: 55 }, order: ["defector", "mole", "leak"], done: {}, used: {}, stress: {}, loyal: {},
+      meters: { capital: 55, service: 58, mood: 55 }, order: ["defector", "mole", "leak"], done: {}, used: {}, stress: {}, loyal: {},
       roster: keys.slice(), lost: {}, pendingRecruit: 0, kit: Object.assign({}, D.DIFFICULTY[diff || "standard"].kit),
       heads: ["Rain over London as the Commons returns"], log: [], belief: null, flashShown: false, defector: false,
       mole: keys[Math.floor(rnd() * keys.length)], accused: null, call: null, porter: false, ended: false, screen: "briefing", chimed: false };
@@ -45,7 +45,9 @@
   function migrate(t) { return t ? t.replace(/"(lena|mira|ren|kite)"/g, function (m, k) { return '"' + OLD_IDS[k] + '"'; }).replace(/\b(Lena Novak|Mira Sol|Ren Okafor|Lena|Mira|Ren|Kite)\b/g, function (m) { return OLD_NAMES[m]; }) : t; }
   const OLD_NAMES = { "Lena Novak": "Nadia Kowalczyk", "Mira Sol": "Priya Lockwood", "Ren Okafor": "Tobias Adeyemi", Lena: "Nadia", Mira: "Priya", Ren: "Toby", Kite: "Ash" };
   function loadJSON(key) { try { const d = JSON.parse(migrate(store.get(key)) || "null"); return d && d.v === 1 && d.S ? d : null; } catch (e) { return null; } }
-  function restore(d) { seed = d.seed; S = d.S; S.chimed = true; }
+  function restore(d) { seed = d.seed; S = d.S; S.chimed = true; twoMeters(S); }
+  // old saves had four gauges: secrecy and safety fold into Service, public trust becomes the hidden mood
+  function twoMeters(st) { const m = st.meters; if (m && m.service == null) { m.service = Math.round(((m.safety || 55) + (m.secrecy || 55)) / 2); m.mood = m.trust == null ? 55 : m.trust; delete m.safety; delete m.secrecy; delete m.trust; } }
   const hh = function (h) { return (h < 10 ? "0" : "") + h + ":00"; };
   const CASES = function () { return S.day === 3 ? D.SITS3 : S.day === 2 ? D.SITS2 : D.SITS1; };
   const diff = function () { return D.DIFFICULTY[S.diff] || D.DIFFICULTY.standard; };
@@ -59,7 +61,7 @@
   // ---------- chrome ----------
   function meters(changes) {
     $("meters").innerHTML = D.METERS.map(function (m) {
-      const v = S.meters[m.id], d = changes && changes[m.id];
+      const v = m.id === "service" ? svc() : S.meters[m.id], d = changes && changes[m.id];
       return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '"><div class="row"><span>' + (m.id === "capital" ? '<b class="pmb">10</b>' : "") + m.name + "</span><span>" + (d ? '<span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span> " : "") + v + '</span></div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
     $("clock").textContent = hh(S.hour); LOOK.night(S.hour);
@@ -68,13 +70,21 @@
     box.classList.toggle("warn", soon <= 2 && soon >= 0); box.classList.toggle("late", soon < 0 || S.hour >= 21);
     box.querySelector("small").textContent = soon < 0 ? "Overdue" : soon <= 2 ? soon + "h left" : S.hour >= 21 ? "Late" : "Day " + S.day;
   }
-  function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
+  // Service = the stored field record plus how the officers feel (loyalty and strain fold in here)
+  function svc() { const r = S.roster || []; const mor = r.reduce(function (a, k) { return a + ((S.loyal[k] == null ? 3 : S.loyal[k]) - 3) * 2 - Math.max(0, (S.stress[k] || 0) - 3) * 2; }, 0); return Math.max(0, Math.min(100, Math.round(S.meters.service + mor))); }
+  function moodHead() { const m = S.meters.mood == null ? 55 : S.meters.mood; return m >= 65 ? "Poll: public warms to the government on security" : m >= 45 ? "Poll: voters shrug at Whitehall spy rows" : m >= 30 ? "Poll: public faith in the secret services slips" : "Poll: voters lose faith in Whitehall\u2019s spies"; }
+  function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
   function render(html, h) {
     LOOK.rain(false); LOOK.fade();
-    $("view").innerHTML = html; window.scrollTo(0, 0); $("hint").textContent = h || "";
+    $("view").innerHTML = relabel(html); window.scrollTo(0, 0); $("hint").textContent = h || "";
     typeAll(); FEEL.thud($("view")); LOOK.seals($("view"));
     document.querySelectorAll("[data-tipx]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); S.tipSeen[b.getAttribute("data-tipx")] = true; b.parentNode.remove(); save(S.screen); }; });
+  }
+  // chips written in the old four-gauge words read as the two meters
+  function relabel(h) {
+    return String(h).replace(/([+\u2212-])(\d+) (Officer safety|Secrecy)/g, function (m, sg, n) { return sg + Math.max(1, Math.round(n * 0.7)) + " Service"; })
+      .replace(/([+\u2212-])\d+ Public trust/g, function (m, sg) { return sg === "+" ? "Public mood up" : "Public mood down"; });
   }
   function ash(text, worried) {
     return '<div class="ash-note card"><img class="portrait" src="' + pic(worried ? "ash-worried" : "ash") + '" alt="Margaret Ashby, Chief of Staff"><div class="note"><div class="who">Ash \u00b7 Chief of Staff</div><span class="tx">' + text + "</span></div></div>";
@@ -114,32 +124,6 @@
       typing.push(id);
       el.addEventListener("click", done, { once: true });
     });
-  }
-
-  // ---------- map: a paper map with pins; routes draw out from London, failures get a red cross ----------
-  // Day 1 positions are % of the map box. Day 2 zooms into Britain and converts image positions.
-  const UKVIEW = { k: 3.2, px: 0.209, py: 0.5 };
-  const uk = function (p) { return [(p[0] * UKVIEW.k - (UKVIEW.k - 1) * UKVIEW.px) * 100, (p[1] * UKVIEW.k - (UKVIEW.k - 0.78) * UKVIEW.py) / 0.78 * 100]; };
-  function pinXY(id) {
-    const s = CASES()[id];
-    if (S.day >= 2) return uk(D.UKPLACES[s.place]);
-    return id === "sabotage" && D.PLACES[S.belief] ? D.PLACES[S.belief] : [s.x, s.y];
-  }
-  function map() {
-    const home = S.day >= 2 ? uk(D.UKPLACES.London) : [30, 52];
-    const pin = function (xy, cls, label) { return '<div class="pin ' + cls + '" style="left:' + xy[0].toFixed(1) + "%;top:" + xy[1].toFixed(1) + '%"><span class="head"></span><span class="needle"></span><span class="x">\u2715</span><span class="lab' + (xy[0] > 62 ? " flip" : "") + '">' + esc(label) + "</span></div>"; };
-    const homeLost = S.order.some(function (id) { return CASES()[id].home && S.done[id] === "loss"; });
-    let pins = pin(home, "home" + (homeLost ? " loss" : ""), "London"), routes = "", n = 0;
-    S.order.forEach(function (id) {
-      const s = CASES()[id]; if (s.home) return;
-      const xy = pinXY(id), r = S.done[id];
-      const label = id === "sabotage" ? (S.belief && S.belief !== "split" ? S.belief : "Bergen?") : S.day >= 2 ? s.place === "Airport" ? "\u2708 Airport" : s.label || s.place : s.where;
-      pins += pin(xy, (r ? "done " + r : "open") + (s.flash && !r ? " flash" : "") + (s.left ? " left" : "") + (s.below ? " below" : ""), label);
-      const mx = (home[0] + xy[0]) / 2, my = Math.min(home[1], xy[1]) - 12;
-      routes += '<path class="route ' + (r || "open") + '" style="animation-delay:' + (n++ * 0.25) + 's" pathLength="100" d="M' + home[0].toFixed(1) + " " + home[1].toFixed(1) + " Q" + mx.toFixed(1) + " " + my.toFixed(1) + " " + xy[0].toFixed(1) + " " + xy[1].toFixed(1) + '"/>';
-    });
-    const style = S.day >= 2 ? ' style="background-size:' + UKVIEW.k * 100 + "% auto;background-position:" + UKVIEW.px * 100 + "% " + UKVIEW.py * 100 + '%"' : "";
-    return '<div class="map' + (S.day >= 2 ? " uk" : "") + '"' + style + ' role="img" aria-label="Paper map with today\u2019s cases pinned"><svg class="routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + routes + "</svg>" + pins + "</div>";
   }
 
   // ---------- title, day select, difficulty, intro ----------
@@ -195,7 +179,7 @@
       '<p>You are the Chief of <strong>Albion House</strong>, Britain\u2019s foreign intelligence service: the people who run Britain\u2019s spies abroad. (It\u2019s invented, but you\u2019ll know the type.) Your office looks across the Thames at Westminster. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, at Number 10, and to nobody else.</p>' +
       '<p>She has just handed you the morning file in her study. \u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +
       '<p>Your Chief of Staff, <strong>Margaret \u201cAsh\u201d Ashby</strong>, runs the building. You have <strong>three officers</strong>, and <strong>one of them is working for the other side</strong>. Watch for small slips.</p>' +
-      '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Each choice moves four gauges: public trust, No.10 trust, officer safety and secrecy.</p>' +
+      '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Watch two gauges: <b>No.10 trust</b>, which opens the bold plans, and <b>Service</b>, your officers\u2019 safety, loyalty and cover, which makes every plan likelier. The public\u2019s mood shows in the papers.</p>' +
       '<button class="btn primary" id="go">Read the morning brief</button></div>');
     $("go").onclick = function () { chrome(true); meters(); ticker(); briefing(); };
   }
@@ -238,7 +222,7 @@
       list += '<button class="card dossier sit' + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : lt > 0 ? "LATE " + lt + "h" : "by " + hh(due)) + "</span></button>";
     });
-    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + map() + list +
+    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + list +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<div class="kitline">Kit locker: ' + kitStock() + "</div>" +
       '<button class="btn ghost" id="endday">Call it a day</button>', warnTxt || "Tap a file to deal with it.");
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { openCase(b.getAttribute("data-sit")); }; });
@@ -323,6 +307,7 @@
     const lt = late(id); if (lt > 0) o -= 10 + lt * 5;
     if (S.day === 3) o += window.AH3.oddsMod(id, k, a);
     o += window.DESK.oddsMod(id);
+    o += Math.round((svc() - 50) / 4); // a strong Service makes every operation likelier
     if (id === "sabotage") { if (S.belief === "split") o -= 12; else if (S.belief !== D.TRUTH) o = Math.min(o, 12); }
     return Math.max(5, Math.min(92, Math.round(o)));
   }
@@ -359,7 +344,7 @@
   function approach(id, k) {
     const s = CASES()[id];
     let sel = null, kit = null;
-    const fmt = function (o) { return Object.keys(o).map(function (m) { return (o[m] > 0 ? "+" : "") + o[m] + " " + mname(m); }).join(", "); };
+    const fmt = function (o) { o = fold(o); delete o.mood; return Object.keys(o).map(function (m) { return (o[m] > 0 ? "+" : "") + o[m] + " " + mname(m); }).join(", "); };
     const draw = function () {
       const rec = recIdx(id, k);
       const opts = s.approaches.map(function (a, i) {
@@ -385,9 +370,19 @@
     draw();
   }
 
+  // the old four-way deltas fold into the two meters: secrecy and safety become Service, public trust is the hidden mood
+  function fold(delta) {
+    const o = {}, add = function (k, v) { if (v) o[k] = (o[k] || 0) + v; };
+    Object.keys(delta || {}).forEach(function (m) { const v = delta[m];
+      if (m === "capital") add("capital", v); else if (m === "service") add("service", v);
+      else if (m === "safety" || m === "secrecy") add("service", v * 0.7); else if (m === "trust") { add("mood", v); add("capital", v * 0.3); } });
+    Object.keys(o).forEach(function (k) { o[k] = Math.round(o[k]); if (!o[k]) delete o[k]; });
+    return o;
+  }
   function apply(delta) {
     const ch = {};
-    Object.keys(delta).forEach(function (m) { const before = S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, before + delta[m])); ch[m] = S.meters[m] - before; });
+    const d2 = fold(delta);
+    Object.keys(d2).forEach(function (m) { const before = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, before + d2[m])); if (m !== "mood" && S.meters[m] !== before) ch[m] = S.meters[m] - before; });
     return ch;
   }
   // the painted vignette for an outcome: case-specific art on success, otherwise by result
@@ -503,7 +498,7 @@
   }
 
   // ---------- end of day ----------
-  function gradeOf() { const v = S.meters, avg = (v.trust + v.capital + v.safety + v.secrecy) / 4; return avg >= 68 ? "A" : avg >= 60 ? "B" : avg >= 50 ? "C" : avg >= 40 ? "D" : "E"; }
+  function gradeOf() { const v = S.meters, avg = (v.capital + svc()) / 2 + ((v.mood == null ? 55 : v.mood) - 55) / 10; return avg >= 68 ? "A" : avg >= 60 ? "B" : avg >= 50 ? "C" : avg >= 40 ? "D" : "E"; }
   const moleCaught = function () { return S.accused === S.mole; };
   function moleText() { return moleCaught() ? "Mole caught: " + D.AGENTS[S.mole].name : S.accused && S.accused !== "none" ? "Wrong officer accused \u2014 mole still free" : "Mole still at large"; }
   function moleLine() {
@@ -647,7 +642,7 @@
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, textSizeHTML: textSizeHTML, bindTextSize: bindTextSize, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, svc: svc, relabel: relabel };
 
   applyTextSize();
   fresh();
