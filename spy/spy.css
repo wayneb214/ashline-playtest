@@ -872,3 +872,16 @@ body.paused #view, body.paused #hud { filter: blur(2px) brightness(.7); }
 .promo .badge.big { animation: pop 1.2s var(--ease) both; }
 .xpbar { height: 8px; background: rgba(0,0,0,.15); border-radius: 4px; overflow: hidden; margin: -4px 0 10px; } .xpbar i { display: block; height: 100%; background: linear-gradient(90deg, #c9a24a, #f0d68a); }
 @media (prefers-reduced-motion: reduce) { .promo .badge.big { animation: none; } }
+/* two calls at once */
+.crunch { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.crunchf { position: relative; text-align: left; border: 2px solid #8c1c13; padding-top: 70px; animation: crunchpulse 1.4s ease-in-out infinite; }
+.crunchf .sithead { position: absolute; inset: 0 0 auto 0; height: 62px; background-size: cover; background-position: center; opacity: .8; }
+.crunchf .urg { position: absolute; top: 8px; right: 8px; background: #8c1c13; color: #fff; font: 700 11px/1 monospace; letter-spacing: .12em; padding: 4px 6px; }
+.crunchf .risk { display: inline-block; margin-top: 6px; font: 700 11px/1.2 monospace; letter-spacing: .08em; text-transform: uppercase; color: #8c1c13; }
+.crunchf .risk.paper { color: #6b5a3a; }
+.crunch .or { text-align: center; font-style: italic; opacity: .7; }
+.crunchres > div { padding: 8px 0; border-bottom: 1px dashed #b9a77f; }
+.crunchres .left { color: #6b2b22; }
+@keyframes crunchpulse { 50% { box-shadow: 0 0 0 3px rgba(140,28,19,.35); } }
+@media (prefers-reduced-motion: reduce) { .crunchf { animation: none; } }
+.crunchf .t { font-weight: 700; margin-bottom: 2px; }

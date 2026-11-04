@@ -238,6 +238,7 @@
     if (S.day === 1 && S.log.filter(function (l) { return l.k; }).length >= 2 && !S.call) return phone();
     if (S.pendingRecruit > 0) return recruit();
     if (window.DESK.interrupt()) return;
+    if (window.CRUNCH && CRUNCH.interrupt()) return;
     if (S.day >= 2 && window.AH3.interrupt()) return;
     if (stuck()) return summary();
     meters(); ticker(); save("briefing");
