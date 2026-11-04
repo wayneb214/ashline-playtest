@@ -35,14 +35,18 @@
     keys.forEach(function (k) { S.stress[k] = D.AGENTS[k].stress; S.loyal[k] = D.AGENTS[k].loyalty; });
   }
   function save(screen) { S.screen = screen; store.set(SAVE, JSON.stringify({ v: 1, seed: seed, S: S })); }
-  function loadJSON(key) { try { const d = JSON.parse(store.get(key) || "null"); return d && d.v === 1 && d.S ? d : null; } catch (e) { return null; } }
+  // saves from before the cast change used the old officer ids; map them on load
+  const OLD_IDS = { lena: "nadia", mira: "priya", ren: "toby", kite: "ash" };
+  function migrate(t) { return t ? t.replace(/"(lena|mira|ren|kite)"/g, function (m, k) { return '"' + OLD_IDS[k] + '"'; }).replace(/\b(Lena Novak|Mira Sol|Ren Okafor|Lena|Mira|Ren|Kite)\b/g, function (m) { return OLD_NAMES[m]; }) : t; }
+  const OLD_NAMES = { "Lena Novak": "Nadia Kowalczyk", "Mira Sol": "Priya Lockwood", "Ren Okafor": "Tobias Adeyemi", Lena: "Nadia", Mira: "Priya", Ren: "Toby", Kite: "Ash" };
+  function loadJSON(key) { try { const d = JSON.parse(migrate(store.get(key)) || "null"); return d && d.v === 1 && d.S ? d : null; } catch (e) { return null; } }
   function restore(d) { seed = d.seed; S = d.S; S.chimed = true; }
   const hh = function (h) { return (h < 10 ? "0" : "") + h + ":00"; };
   const CASES = function () { return S.day === 3 ? D.SITS3 : S.day === 2 ? D.SITS2 : D.SITS1; };
   const diff = function () { return D.DIFFICULTY[S.diff] || D.DIFFICULTY.standard; };
   const dueOf = function (id) { return CASES()[id].due + diff().due; };
   const AG = function (k) { return D.AGENTS[k] || D.RECRUITS[k]; };
-  const first = function (k) { const n = AG(k).name.split(" "); return n[0] === "Major" ? n[2] : n[0]; };
+  const first = function (k) { if (AG(k).short) return AG(k).short; const n = AG(k).name.split(" "); return n[0] === "Major" ? n[2] : n[0]; };
   function advance(h) { S.hour = Math.min(24, S.hour + h); if (window.SFX) SFX.tick(Math.min(6, h * 2)); }
   function late(id) { return Math.max(0, S.hour - dueOf(id)); }
   const clamp5 = function (v) { return Math.max(0, Math.min(5, v)); };
@@ -67,8 +71,8 @@
     typeAll(); FEEL.thud($("view")); LOOK.seals($("view"));
     document.querySelectorAll("[data-tipx]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); S.tipSeen[b.getAttribute("data-tipx")] = true; b.parentNode.remove(); save(S.screen); }; });
   }
-  function kite(text, worried) {
-    return '<div class="kite card"><img class="portrait" src="' + pic(worried ? "kite-worried" : "kite") + '" alt="Kite"><div class="note"><div class="who">Kite \u00b7 Chief of Staff</div><span class="tx">' + text + "</span></div></div>";
+  function ash(text, worried) {
+    return '<div class="ash-note card"><img class="portrait" src="' + pic(worried ? "ash-worried" : "ash") + '" alt="Margaret Ashby, Chief of Staff"><div class="note"><div class="who">Ash \u00b7 Chief of Staff</div><span class="tx">' + text + "</span></div></div>";
   }
   // a first-run tip card; gone once dismissed, and switched off after Day 1
   function tip(key) { return S.tips && !S.tipSeen[key] ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
@@ -84,7 +88,7 @@
     return '<img class="portrait" src="' + pic(a.img) + '" alt="">';
   }
 
-  // typewriter effect for Kite's notes and telegrams; tap to finish. Off with reduced motion.
+  // typewriter effect for Ash's notes and telegrams; tap to finish. Off with reduced motion.
   let typing = [];
   function typeAll() {
     typing.forEach(clearInterval); typing = [];
@@ -184,7 +188,7 @@
       '<div class="card dossier">' + LH + '<span class="stamp corner">SECRET</span><div class="kicker">Personal file \u00b7 For C only</div><h2 style="margin-top:10px">You are \u2018C\u2019.</h2>' +
       '<p>You are the Chief of <strong>Albion House</strong>, Britain\u2019s foreign intelligence service: the people who run Britain\u2019s spies abroad. (It\u2019s invented, but you\u2019ll know the type.) Your office looks across the Thames at Westminster. You answer to the Prime Minister, <strong>Eleanor Hale</strong>, at Number 10, and to nobody else.</p>' +
       '<p>She has just handed you the morning file in her study. \u201cKeep Britain safe, C. And keep it out of the papers.\u201d</p>' +
-      '<p>Your Chief of Staff, <strong>Kite</strong>, runs the building. You have <strong>three officers</strong>, and <strong>one of them is working for the other side</strong>. Watch for small slips.</p>' +
+      '<p>Your Chief of Staff, <strong>Margaret \u201cAsh\u201d Ashby</strong>, runs the building. You have <strong>three officers</strong>, and <strong>one of them is working for the other side</strong>. Watch for small slips.</p>' +
       '<p>The day runs from 08:00 to midnight. Careful plans take longer, bold ones are quick. Every case has a deadline, and it gets harder the longer you leave it. Each choice moves four gauges: public trust, No.10 trust, officer safety and secrecy.</p>' +
       '<button class="btn primary" id="go">Read the morning brief</button></div>');
     $("go").onclick = function () { chrome(true); meters(); ticker(); briefing(); };
@@ -228,7 +232,7 @@
       list += '<button class="card dossier sit' + (done ? " done" : "") + (s.flash && !done ? " flash" : "") + '" data-sit="' + id + '"' + (done || off ? " disabled" : "") + '>' + (HEADS[id] ? '<span class="sithead" style="background-image:url(img/h-' + HEADS[id] + '.jpg)"></span>' : "") + '<span class="num">' + ["I", "II", "III", "IV", "V"][n - 1] + '</span><span><div class="t">' + esc(S.day === 2 ? window.AH2.titleOf(id) : s.title) + '</div><div class="s">' + esc(s.where) + (done ? "" : sub) + '</div></span><span class="dl' + (lt > 0 && !done ? " over" : left <= 2 && !done ? " soon" : "") + '">' +
         (done ? (done === "win" ? "CLOSED" : done === "mixed" ? "PARTIAL" : "FAILED") : lt > 0 ? "LATE " + lt + "h" : "by " + hh(due)) + "</span></button>";
     });
-    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + kite(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + map() + list +
+    render('<div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + " \u00b7 Albion House</div>" + ash(line.text, line.worried) + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : "") + map() + list +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<div class="kitline">Kit locker: ' + kitStock() + "</div>" +
       '<button class="btn ghost" id="endday">Call it a day</button>', warnTxt || "Tap a file to deal with it.");
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { openCase(b.getAttribute("data-sit")); }; });
@@ -268,7 +272,7 @@
     let pick = null;
     const lostNames = Object.keys(S.lost).map(function (k) { return first(k) + " (" + S.lost[k] + ")"; }).join(", ");
     const draw = function () {
-      render('<div class="card dossier">' + LH + '<span class="stamp corner">PERSONNEL</span><div class="kicker" style="margin-top:8px">Personnel \u00b7 the reserve list</div><h2 style="padding-right:110px">We\u2019re a pair of hands short</h2><p>Lost so far: <b>' + esc(lostNames) + "</b>. Kite has three files from the reserve list. Hiring takes an hour.</p></div>" +
+      render('<div class="card dossier">' + LH + '<span class="stamp corner">PERSONNEL</span><div class="kicker" style="margin-top:8px">Personnel \u00b7 the reserve list</div><h2 style="padding-right:110px">We\u2019re a pair of hands short</h2><p>Lost so far: <b>' + esc(lostNames) + "</b>. Ash has three files from the reserve list. Hiring takes an hour.</p></div>" +
         '<div class="agents">' + pool.map(function (k) {
           const a = D.RECRUITS[k];
           return '<button class="card agent recruit' + (pick === k ? " sel" : "") + '" data-r="' + k + '"><img class="portrait" src="' + pic(a.img) + '" alt=""><div style="flex:1;min-width:0"><div class="nm">' + a.name + '</div><div class="role">' + a.role + '</div><div class="traits">' + pips(a.skill, "", "Skill") + pips(a.loyalty, "loyal", "Loyalty") + pips(a.stress, "stress", "Stress") + pips(a.cover, "", "Cover") + '</div><div class="quirk">\u2605 ' + a.quirkTxt + '</div><div class="fnote">File note: ' + a.note + "</div></div></button>";
@@ -290,7 +294,7 @@
     let sel = null;
     const draw = function () {
       render('<div class="kicker">Your judgement \u00b7 the cable threat</div><h2>Two reports. One truth.</h2>' +
-        kite("They can\u2019t both be right. Mira\u2019s man has been good to us before. But he was paid twice this month, and not only by us. The intercept is thin, but it\u2019s their own voice.", true) + tip("judge") +
+        ash("They can\u2019t both be right. Priya\u2019s man has been good to us before. But he was paid twice this month, and not only by us. The intercept is thin, but it\u2019s their own voice.", true) + tip("judge") +
         '<div class="reports">' + D.REPORTS.map(function (r, i) {
           return (i ? '<div class="vs">\u2014 OR \u2014</div>' : "") + '<button class="card report' + (r.alt ? " alt" : "") + (sel === r.id ? " sel" : "") + '" data-r="' + r.id + '"><div class="src"><span>' + r.src + '</span><span class="rel">' + r.grade + '</span></div><div class="q">' + r.q + '</div><div class="chips"><span class="chip">Defend ' + r.id + "</span></div></button>";
         }).join("") +
@@ -363,7 +367,7 @@
         const n = S.kit[key] || 0, on = kit === key;
         return '<button class="kit' + (on ? " on" : "") + '" data-kit="' + key + '"' + (n ? "" : " disabled") + '><span class="ki">' + D.KIT[key].icon + '</span><span class="kn">' + D.KIT[key].name + '</span><span class="kt">' + D.KIT[key].txt + '</span><span class="ks">' + (on ? "Packed" : "\u00d7" + n) + "</span></button>";
       }).join("");
-      render('<div class="step"><i class="on"></i><i class="on"></i></div><div class="kicker">' + esc(s.title) + '</div><div class="kite card" style="align-items:center">' + face(k) + '<div class="note"><div class="who">' + AG(k).name + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just\u2026 not the loud way, if you can help it. And I\u2019m running on empty." : rec >= 0 ? "Standing by, C. If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "Standing by, C. How do you want it played?") + "</span></div></div>" + tip("approach") +
+      render('<div class="step"><i class="on"></i><i class="on"></i></div><div class="kicker">' + esc(s.title) + '</div><div class="ash-note card" style="align-items:center">' + face(k) + '<div class="note"><div class="who">' + AG(k).name + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just\u2026 not the loud way, if you can help it. And I\u2019m running on empty." : rec >= 0 ? "Standing by, C. If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "Standing by, C. How do you want it played?") + "</span></div></div>" + tip("approach") +
         '<div class="kicker" style="margin:4px 0 6px">Kit locker \u00b7 take one item (optional)</div><div class="kits">' + kits + "</div>" + opts +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose an approach" : "Go \u2014 " + esc(s.approaches[sel].t)) + '</button></div><button class="btn ghost" id="back">Send someone else</button>',
         "Step 2 of 2 \u00b7 Careful plans take longer. Bold ones are quick, and can backfire.");
@@ -439,7 +443,7 @@
       const cards = S.roster.map(function (k) { return agentCard(k, "", sel === k, false, "data-m"); }).join("");
       render('<div class="card dossier">' + chead(second ? "mole2" : "mole") + LH + '<span class="stamp corner">EYES ONLY</span><div class="kicker">Albion House \u00b7 by ' + hh(dueOf(id)) + '</div><h2 style="margin-top:8px;padding-right:110px">' + (second ? "The mole, second chance" : "Someone inside is talking") + "</h2><p>" + esc(second ? "Somebody rang the Bath team\u2019s phone from the street outside this building last night. The mole is still here. One more try before they run." : s.brief) + "</p>" +
         '<p class="clue"><b>What we know:</b> ' + esc(D.AGENTS[S.mole].clue) + (second ? " The porter, again: <b>" + esc(D.AGENTS[S.mole].look) + "</b>." : "") + "</p></div>" +
-        kite("Look at their file notes. Think about the porter, and anything odd in the debriefs. If you name the wrong one, we lose a good officer and the real one goes quiet.", true) + tip("accuse") +
+        ash("Look at their file notes. Think about the porter, and anything odd in the debriefs. If you name the wrong one, we lose a good officer and the real one goes quiet.", true) + tip("accuse") +
         '<div class="kicker" style="margin:4px 0 8px">Who do you accuse? (takes 2 hours)</div><div class="agents">' + cards +
         '<button class="card appr' + (sel === "none" ? " sel" : "") + '" data-m="none"><div class="t">Not yet. Keep watching.</div><p style="margin:0">No accusation today. Safer for now, and the leak goes on.</p></button></div>' +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (!sel ? "Choose someone" : sel === "none" ? "Keep watching" : "Accuse " + first(sel)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>',
@@ -457,7 +461,7 @@
     if (who === "none") { res = "mixed"; ch = apply({ secrecy: -6 }); head = "Whitehall denies \u2018mole hunt\u2019 rumours"; line = "You hold your nerve and say nothing. Whoever it is will keep talking tonight."; }
     else if (who === S.mole) {
       res = "win"; ch = apply({ secrecy: 14, capital: 8, safety: 6 }); loseOfficer(who, "detained");
-      head = "Albion House officer quietly detained; Whitehall silent"; line = first(who) + " didn\u2019t argue. Just asked for a cigarette and a lawyer. The leaks stop tonight. <b>Kite will find you a replacement.</b>";
+      head = "Albion House officer quietly detained; Whitehall silent"; line = first(who) + " didn\u2019t argue. Just asked for a cigarette and a lawyer. The leaks stop tonight. <b>Ash will find you a replacement.</b>";
       if (id === "mole2") line += " " + window.AH2.afterCase("mole2", "win");
     } else {
       res = "loss"; ch = apply({ trust: -6, secrecy: -10, safety: -6 }); S.loyal[who] = clamp5(S.loyal[who] - 2); S.stress[who] = clamp5(S.stress[who] + 2);
@@ -504,9 +508,9 @@
   function day1Flash() {
     const extra = S.defector
       ? "The Vienna clerk, in her safe house, has seen the news. Her first words: <b>\u201cVass was only the first name on the list.\u201d</b>"
-      : "A message on Kite\u2019s private line, unsigned: <b>\u201cYou left our clerk behind. Now you\u2019ll know how it feels.\u201d</b>";
+      : "A message on Ash\u2019s private line, unsigned: <b>\u201cYou left our clerk behind. Now you\u2019ll know how it feels.\u201d</b>";
     return '<div class="flash-card" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:47 \u00b7 BATH</span></div><div class="tele">' +
-      "<span class=\"hdr\">TO: C &nbsp;\u00b7&nbsp; FROM: KITE, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 Avon Police report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + moleLine() + "<br><br>" + extra + "<br><br>\u2014 Kite</div></div>";
+      "<span class=\"hdr\">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 Avon Police report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + moleLine() + "<br><br>" + extra + "<br><br>\u2014 Ash</div></div>";
   }
   function summary() {
     if (!S.ended && CINE.maybe({ 1: "bath", 2: "ferry", 3: "end3" }[S.day], summary)) return;
@@ -520,7 +524,7 @@
     }
     meters(); ticker(); save("summary");
     const grade = gradeOf();
-    const verdict = { A: "The Prime Minister is pleased, which worries Kite.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
+    const verdict = { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
     render('<div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
@@ -529,7 +533,7 @@
       }).join("") + (S.call && S.day === 1 ? '<li><span class="portrait dash">\u260e</span><span><b>The call from No.10</b><br><span class="how">' + (S.call.choice === "deny" ? "Denied " : "Stood by ") + first(S.call.k) + "</span></span><span></span></li>" : "") + "</ul></div>" +
       (S.day === 1 ? day1Flash() : S.day === 3 ? window.AH3.flash() : window.AH2.flash()) +
       (S.day === 1 ? '<button class="btn primary" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : S.day === 2 ? '<button class="btn primary" id="day3">Begin Day 3 \u00b7 The Green Coat</button>' : "") +
-      '<button class="btn ' + (S.day < 3 ? "ghost" : "primary") + '" id="paperbtn">Read tomorrow\u2019s front page</button><button class="btn ghost" id="again">New game</button><a class="btn ghost" href="../index.html">Back to Ashline</a>',
+      '<button class="btn ' + (S.day < 3 ? "ghost" : "primary") + '" id="paperbtn">Read tomorrow\u2019s front page</button><button class="btn ghost" id="again">New game</button>',
       S.day === 1 ? "To be continued. Day 2 starts at eight." : S.day === 2 ? "To be continued. Day 3 starts at eight." : "The end of the Green Coat. Day 4 is being written.");
     $("again").onclick = function () { store.del(SAVE); difficulty(); };
     $("paperbtn").onclick = function () { FEEL.tearThen($("flash"), paper); };
@@ -578,7 +582,7 @@
       '<div class="molebanner ' + (d.caught ? "caught" : "free") + '">' + esc(d.mole) + "</div>" +
       '<div class="cols"><div><h3>Spy chief\u2019s long day</h3><ul>' + d.calls.map(function (c) { return "<li><b>" + esc(c.t) + "</b> \u2014 " + esc(c.how) + " <i>" + esc(c.r) + "</i></li>"; }).join("") + '</ul></div><div class="gradebox"><small>Whitehall verdict</small><span>' + d.grade + "</span><small>Albion House</small></div></div>" +
       '<div class="also"><b>Also inside:</b> ' + d.side.map(esc).join(" \u00b7 ") + "</div></div>" +
-      '<button class="btn primary" id="save">Save image</button><p class="saved" id="savedmsg"></p>' + (d.day === 1 && loadJSON(DAY2) ? '<button class="btn ghost" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : "") + '<button class="btn ghost" id="again">New game</button><a class="btn ghost" href="../index.html">Back to Ashline</a>', "Share your front page.");
+      '<button class="btn primary" id="save">Save image</button><p class="saved" id="savedmsg"></p>' + (d.day === 1 && loadJSON(DAY2) ? '<button class="btn ghost" id="day2">Begin Day 2 \u00b7 Pale Hour</button>' : "") + '<button class="btn ghost" id="again">New game</button>', "Share your front page.");
     $("save").onclick = savePaper;
     $("again").onclick = function () { store.del(SAVE); difficulty(); };
     if ($("day2")) $("day2").onclick = function () { restore(loadJSON(DAY2)); save("briefing"); window.AH2.briefingIntro(); };
@@ -636,7 +640,7 @@
 
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
-    render: render, kite: kite, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
+    render: render, ash: ash, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
     briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome };
 
   fresh();

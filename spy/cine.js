@@ -21,14 +21,14 @@
       { img: "thames", dur: 5.5, cam: [1.14, 0, 3, 1.0, 0, -2], caps: [[0.6, "", "London. Midnight."], [3.2, "", "Rain on the river."]], sfx: [[0, "rainUp", true], [0.3, "bigben", 4]] },
       { img: "cab", dur: 4.6, cam: [1.0, -2, 0, 1.12, 2, -3], caps: [[0.5, "", "The South Bank. Albion House."], [2.6, "", "Somebody has come back to work."]], sfx: [[0.1, "engine", 4]] },
       { img: "phone", dur: 5, cam: [1.0, 0, 0, 1.22, 8, -9], caps: [[0.8, "", "One light on. One phone ringing."]], sfx: [[0.4, "ring"]] },
-      { img: "phone", dur: 4.6, cam: [1.22, 8, -9, 1.3, 9, -11], inset: "kite", caps: [[0.4, "Kite \u00b7 Chief of Staff", "Chief, we have a problem."]], sfx: [[0, "stopRing"], [0.3, "stinger"]] }]; } },
+      { img: "phone", dur: 4.6, cam: [1.22, 8, -9, 1.3, 9, -11], inset: "ash", caps: [[0.4, "Margaret \u2018Ash\u2019 Ashby \u00b7 Chief of Staff", "Chief, we have a problem."]], sfx: [[0, "stopRing"], [0.3, "stinger"]] }]; } },
     day1: { name: "Day 1 \u00b7 The Long Day", shots: function () { return [
       { img: "no10", dur: 7, pan: [15, 70], cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 07:10. Downing Street."], [3.6, "Eleanor Hale \u00b7 Prime Minister", "Keep Britain safe, C. And keep it out of the papers."]], sfx: [[0.2, "chime", 2]] }]; } },
     day2: { name: "Day 2 \u00b7 Pale Hour", shots: function () { return [
       { img: "brief", dur: 7, cam: [1.16, 0, 4, 1.02, 0, -2], caps: [[0.5, "", "Thursday. Vass is alive."], [3.4, "", "Three suspects. One night to stop them leaving."]], sfx: [[0.2, "rainUp", true], [0.4, "tele"]] }]; } },
     day3: { name: "Day 3 \u00b7 The Green Coat", shots: function () { return [
       { img: "york", dur: 4.4, pan: [10, 60], cam: [1.05, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Friday. York."]], sfx: [[0.2, "engine", 3]] },
-      { img: "green", dur: 4, cam: [1.12, 0, 3, 1.02, 0, 0], caps: [[0.3, "Kite", "The woman in green isn\u2019t one of theirs, C. She\u2019s ours."]], sfx: [[0.2, "stinger"]] }]; } },
+      { img: "green", dur: 4, cam: [1.12, 0, 3, 1.02, 0, 0], caps: [[0.3, "Ash", "The woman in green isn\u2019t one of theirs, C. She\u2019s ours."]], sfx: [[0.2, "stinger"]] }]; } },
     bath: { name: "Bath, 23:47", shots: function () { return [
       { img: "bath", dur: 9, ask: { id: "bath", at: 7 }, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."], [5.8, "", "He is one of ours."]], sfx: [[0.1, "rainUp", true], [5.6, "stinger"]] }]; } },
     ferry: { name: "Harwich, 23:10", shots: function () { const r = S().done && S().done.exit; return [
@@ -42,7 +42,7 @@
       { card: "Run Britain\u2019s secret war", dur: 2 },
       { img: "cab", dur: 2, cam: [1.0, -2, 0, 1.1, 2, -3], sfx: [[0, "engine", 2]] },
       { ui: "brief", dur: 2.3 },
-      { img: "phone", dur: 2.2, cam: [1.12, 6, -6, 1.28, 9, -11], inset: "kite", caps: [[0.2, "Kite", "Chief, we have a problem."]], sfx: [[0, "ring"], [1.6, "stopRing"]] },
+      { img: "phone", dur: 2.2, cam: [1.12, 6, -6, 1.28, 9, -11], inset: "ash", caps: [[0.2, "Ash", "Chief, we have a problem."]], sfx: [[0, "ring"], [1.6, "stopRing"]] },
       { card: "Every choice has a cost", dur: 2 },
       { ui: "phone", dur: 1.8 },
       { img: "bath", dur: 2.4, cam: [1.04, 0, -3, 1.18, 0, 4], sfx: [[0.3, "stinger"]] },

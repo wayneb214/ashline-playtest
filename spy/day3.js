@@ -111,8 +111,8 @@
     const s = S(); s.riskSeen = s.riskSeen || {}; s.riskSeen[s.day + k] = true; A.save("briefing");
     let sel = null;
     const draw = function () {
-      A.render('<div class="card dossier">' + A.LH + '<span class="stamp corner">MORALE</span><div class="kicker" style="margin-top:8px">Personnel \u00b7 a word from Kite</div><h2 style="padding-right:110px">' + esc(A.first(k)) + " is close to walking</h2></div>" +
-        A.kite(esc(A.first(k)) + " hasn\u2019t said a word all morning, C. Twice they\u2019ve taken calls in the stairwell. Loyalty is at rock bottom. A bitter officer is how leaks start.", true) +
+      A.render('<div class="card dossier">' + A.LH + '<span class="stamp corner">MORALE</span><div class="kicker" style="margin-top:8px">Personnel \u00b7 a word from Ash</div><h2 style="padding-right:110px">' + esc(A.first(k)) + " is close to walking</h2></div>" +
+        A.ash(esc(A.first(k)) + " hasn\u2019t said a word all morning, C. Twice they\u2019ve taken calls in the stairwell. Loyalty is at rock bottom. A bitter officer is how leaks start.", true) +
         '<div class="agents">' + A.agentCard(k, "", false, false, "data-x") + "</div>" +
         '<button class="card appr' + (sel === "talk" ? " sel" : "") + '" data-o="talk"><div class="t">A quiet word in your office</div><p style="margin:0">Listen. Apologise if you need to.</p><div class="chips"><span class="chip time">\u23f1 1h</span><span class="chip risk-low">Loyalty +2 \u00b7 Stress \u22121</span></div></button>' +
         '<button class="card appr' + (sel === "off" ? " sel" : "") + '" data-o="off"><div class="t">Send them home for the day</div><p style="margin:0">Rest, and out of harm\u2019s way. One fewer pair of hands.</p><div class="chips"><span class="chip risk-med">Off duty today</span><span class="chip risk-low">Loyalty +1</span></div></button>' +
@@ -142,13 +142,13 @@
       if (sel === "deal") {
         ch = A.apply({ capital: 14, trust: 4 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] - 1); });
         s.done.exfil = "loss"; s.log.push({ id: "exfil", k: null, res: "loss", appr: "Traded for Tom Archer" });
-        head = "Briton freed by Varenia \u2018on humanitarian grounds\u2019"; txt = "Hale is warm for the first time all week. Kite closes the Green Coat file without a word, and doesn\u2019t look at you.";
+        head = "Briton freed by Varenia \u2018on humanitarian grounds\u2019"; txt = "Hale is warm for the first time all week. Ash closes the Green Coat file without a word, and doesn\u2019t look at you.";
       } else if (sel === "refuse" && missed) {
         ch = A.apply({ capital: -16 }); head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "Nobody answered. Hale tells Kesk\u2019s people no herself, and she is furious about it. <b>No.10 trust \u221216</b>, and the officers never hear you stood up for anyone.";
       } else if (sel === "refuse") {
         ch = A.apply({ capital: -12 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] + 1); });
         head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "\u201cOn your head, C. Again.\u201d The line goes dead. Downstairs, word gets round, and somebody starts making tea for everyone.";
-      } else { ch = A.apply({ capital: 6 }); head = "Hopes rise for Briton held in Varenia"; txt = "\u201cGood. Sensible.\u201d Hale rings off. Kite raises one eyebrow and says nothing."; }
+      } else { ch = A.apply({ capital: 6 }); head = "Hopes rise for Briton held in Varenia"; txt = "\u201cGood. Sensible.\u201d Hale rings off. Ash raises one eyebrow and says nothing."; }
       if (t) txt = "You say nothing for too long. Hale takes it as a no. " + txt;
       s.heads.push(head);
       window.DESK.after(missed ? "MISSED" : { deal: "TRADED", refuse: "REFUSED", lie: "AGREED?" }[sel], sel === "deal" || missed ? "loss" : sel === "refuse" ? "win" : "mixed", "The offer from Kesk", txt, ch, head);
@@ -184,7 +184,7 @@
     if (CINE.maybe("day3", briefingIntro)) return;
     A.render('<figure class="no10 d2fig"><img src="' + pic("h-york") + '" alt="A narrow timbered street in York at dawn, a grey car parked"><figcaption>York \u00b7 Friday 06:40</figcaption></figure>' +
       '<div class="card dossier">' + A.LH + '<span class="stamp corner">GREEN COAT</span><div class="kicker">Day 3 \u00b7 For C only</div><h2 style="margin-top:10px;padding-right:110px">The Green Coat</h2>' +
-      "<p>Kite closes the door. \u201cThe woman in green isn\u2019t one of theirs, C. <strong>She\u2019s ours.</strong> Code name <strong>LINDEN</strong>. Eleven years inside the Grey House.\u201d</p>" +
+      "<p>Ash closes the door. \u201cThe woman in green isn\u2019t one of theirs, C. <strong>She\u2019s ours.</strong> Code name <strong>LINDEN</strong>. Eleven years inside the Grey House.\u201d</p>" +
       "<p>On Wednesday she sat on that bench in Bath to warn Vass, not to hurt him. Last night she missed her check-in. If she\u2019s blown, we have until midnight to bring her out of the <strong>Varenian Republic</strong>.</p>" +
       "<p>New today: officers have <strong>morale</strong>, and remember being overruled. <strong>No.10 trust</strong> opens and closes options. And the man across the border, <strong>Colonel Kesk</strong>, learns how you play.</p>" +
       '<div class="kicker" style="margin-top:6px">What follows you from Days 1 and 2</div>' + followList() +
@@ -342,7 +342,7 @@
         const free = s.roster.filter(function (k) { return !s.used[k]; });
         body = '<div class="kicker" style="margin:6px 0">Who drives?</div><div class="agents">' + free.map(function (k) {
           return A.agentCard(k, banned(k) ? '<div class="fit bad">Won\u2019t drive for you after Wednesday</div>' : '<div class="fit">' + (driverMod(k) >= 0 ? "+" : "") + driverMod(k) + "% at every stage" + (f.call && f.call.choice === "stand" && f.call.k === k ? " \u00b7 owes you" : "") + "</div>", sel === k, banned(k), "data-d");
-        }).join("") + (free.length ? "" : '<button class="card appr' + (sel === "kite" ? " sel" : "") + '" data-d="kite"><div class="t">Kite drives</div><p style="margin:0">Nobody else is free. Kite hasn\u2019t driven abroad since 1998.</p></button>') + "</div>" +
+        }).join("") + (free.length ? "" : '<button class="card appr' + (sel === "ash" ? " sel" : "") + '" data-d="ash"><div class="t">Ash drives</div><p style="margin:0">Nobody else is free. Ash hasn\u2019t driven abroad since 1998.</p></button>') + "</div>" +
           '<div class="kicker" style="margin:6px 0">What car?</div>' +
           '<button class="card appr' + (sel2 === "hire" ? " sel" : "") + '" data-car="hire"><div class="t">A hired estate car, false plates</div><p style="margin:0">Roomy boot. Nobody\u2019s problem if it\u2019s searched.</p></button>' +
           '<button class="card appr' + (sel2 === "dip" ? " sel" : "") + (s.meters.capital < 45 ? " locked" : "") + '" data-car="dip"' + (s.meters.capital < 45 ? " disabled" : "") + '><div class="t">' + (s.meters.capital < 45 ? "\ud83d\udd12 " : "") + 'A diplomatic car</div><p style="margin:0">Guards hate searching them. Needs No.10\u2019s blessing.</p><div class="chips">' + (s.meters.capital < 45 ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 45 (now ' + s.meters.capital + ")</span>" : '<span class="chip pmchip">No.10 signed off</span><span class="chip risk-low">+8% at every stage</span>') + "</div></button>";
@@ -363,7 +363,7 @@
       document.querySelectorAll("[data-car]").forEach(function (b) { b.onclick = function () { draw(sel, b.getAttribute("data-car")); }; });
       if ($("back")) $("back").onclick = A.briefing;
       $("go").onclick = function () {
-        if (st.car) { X.driver = sel === "kite" ? null : sel; X.car = sel2; if (X.driver) s.used[X.driver] = true; X.picks[X.stage] = "ok"; X.notes.push((X.driver ? A.first(X.driver) : "Kite") + " drives the " + (sel2 === "dip" ? "diplomatic car" : "hired estate") + "."); X.stage++; if (STAGES[X.stage].key === "dog" && CINE.maybe("border", function () { draw(null, null); })) return; return draw(null, null); }
+        if (st.car) { X.driver = sel === "ash" ? null : sel; X.car = sel2; if (X.driver) s.used[X.driver] = true; X.picks[X.stage] = "ok"; X.notes.push((X.driver ? A.first(X.driver) : "Ash") + " drives the " + (sel2 === "dip" ? "diplomatic car" : "hired estate") + "."); X.stage++; if (STAGES[X.stage].key === "dog" && CINE.maybe("border", function () { draw(null, null); })) return; return draw(null, null); }
         const o = st.opts[sel], p = odds(o, st);
         s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[o.risk]++;
         if (o.swap) A.apply({ capital: -6 });
@@ -388,7 +388,7 @@
       if (s.deal === "lie" && res !== "loss") { delta = Object.assign({}, delta); delta.capital = (delta.capital || 0) - 20; extra = " <b>At midnight Hale rings again. She knows. \u201cYou lied to me, C.\u201d</b> Archer stays in a Varenian cell."; s.heads.push("PM \u2018misled\u2019 over Varenia talks, say sources"); }
       if (X.driver) { s.stress[X.driver] = A.clamp5(s.stress[X.driver] + (res === "loss" ? 2 : 1)); s.loyal[X.driver] = A.clamp5(s.loyal[X.driver] + (res === "win" ? 1 : res === "loss" ? -1 : 0)); }
       const ch = A.apply(delta);
-      const dn = X.driver ? A.first(X.driver) : "Kite";
+      const dn = X.driver ? A.first(X.driver) : "Ash";
       const body = { win: "Three hours in a boot. At a lay-by in the pine forest on our side, " + dn + " opens it. <b>She climbs out in a green coat two sizes too big and asks for a cup of tea.</b>",
         mixed: "She\u2019s out. " + dn + " isn\u2019t: held at the barrier for questioning, to be expelled in the morning. <b>She is in a British car on the far side, shaking, and alive.</b>",
         loss: "The guards open the boot at the barrier. She is taken back towards Kessgrad in a grey car, quietly, without a scene. " + dn + " is sent home at dawn." }[res] + extra;
@@ -408,7 +408,7 @@
       loss: "LINDEN is back in Kessgrad. A last letter arrives at the front desk, three words in a familiar hand: <b>\u201cBetter luck, C.\u201d</b> Pinned to it, a scrap of green wool.",
       traded: "Tom Archer lands at a London airfield to cameras and flowers. Nobody mentions a woman in green. A letter arrives at midnight: <b>\u201cA pleasure doing business. K.\u201d</b>"
     }[e];
-    return '<div class="flash-card green" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:58 \u00b7 ' + (e === "win" || e === "mixed" ? "THE BORDER" : "LONDON") + '</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: KITE, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + "<br><br>\u2014 Kite</div></div>";
+    return '<div class="flash-card green" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:58 \u00b7 ' + (e === "win" || e === "mixed" ? "THE BORDER" : "LONDON") + '</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + "<br><br>\u2014 Ash</div></div>";
   }
   function paperLead() {
     return {

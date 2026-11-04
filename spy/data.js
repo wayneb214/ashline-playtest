@@ -10,9 +10,9 @@ window.AH_DATA = (function () {
     { id: "safety", name: "Officer safety" }, { id: "secrecy", name: "Secrecy" }
   ];
   const AGENTS = {
-    lena: { name: "Lena Novak", role: "Case officer \u00b7 runs people", img: "lena", tense: "lena-tense", happy: "lena", look: "a red scarf", note: "Speaks fluent Varenian", clue: "Every blown operation was discussed with someone who could read the Varenian traffic without a translator.", slip: "She quoted a Grey House codeword we never told her.", skill: 4, loyalty: 4, stress: 1, cover: 3, good: ["defector", "leak"] },
-    mira: { name: "Mira Sol", role: "Watcher \u00b7 patient, unseen", img: "mira", tense: null, happy: "mira-relief", look: "a green knitted hat", note: "Ran the Rotterdam watch rota", clue: "Every blown operation crossed the Rotterdam watch rota before it went wrong.", slip: "Her report was timed an hour before she says she arrived.", skill: 3, loyalty: 5, stress: 2, cover: 4, good: ["mole", "sabotage"] },
-    ren: { name: "Ren Okafor", role: "Field lead \u00b7 brilliant, worn thin", img: "ren", tense: "ren-strain", happy: "ren", look: "a navy raincoat", note: "Spring leave: Vienna, alone", clue: "Every blown operation went wrong after someone took a quiet spring holiday in Vienna.", slip: "He knew the clerk\u2019s cover name before we\u2019d briefed him.", skill: 5, loyalty: 2, stress: 3, cover: 2, good: ["sabotage", "defector"] }
+    nadia: { name: "Nadia Kowalczyk", short: "Nadia", code: "Linnet", role: "Case officer \u00b7 \u2018Linnet\u2019 \u00b7 runs people", img: "nadia", tense: "nadia-tense", happy: "nadia", look: "a red scarf", note: "Speaks fluent Varenian", clue: "Every blown operation was discussed with someone who could read the Varenian traffic without a translator.", slip: "She quoted a Grey House codeword we never told her.", skill: 4, loyalty: 4, stress: 1, cover: 3, good: ["defector", "leak"] },
+    priya: { name: "Priya Lockwood", short: "Priya", code: "Mouse", role: "Watcher \u00b7 \u2018Mouse\u2019 \u00b7 patient, unseen", img: "priya", tense: "priya-tense", happy: "priya-relief", look: "a green knitted hat", note: "Ran the Rotterdam watch rota", clue: "Every blown operation crossed the Rotterdam watch rota before it went wrong.", slip: "Her report was timed an hour before she says she arrived.", skill: 3, loyalty: 5, stress: 2, cover: 4, good: ["mole", "sabotage"] },
+    toby: { name: "Tobias Adeyemi", short: "Toby", code: "Harrier", role: "Field lead \u00b7 \u2018Harrier\u2019 \u00b7 brilliant, worn thin", img: "toby", tense: "toby-strain", happy: "toby", look: "a navy raincoat", note: "Spring leave: Vienna, alone", clue: "Every blown operation went wrong after someone took a quiet spring holiday in Vienna.", slip: "He knew the clerk\u2019s cover name before we\u2019d briefed him.", skill: 5, loyalty: 2, stress: 3, cover: 2, good: ["sabotage", "defector"] }
   };
   const SITS1 = {
     defector: {
@@ -58,7 +58,7 @@ window.AH_DATA = (function () {
   };
   const PLACES = { Bergen: [49, 33], Rotterdam: [42, 54] };
   const REPORTS = [
-    { id: "Bergen", alt: false, src: "Agent report \u00b7 via Mira", grade: "Usually reliable", q: "\u201cThey go for the Bergen landing station. Tonight, after the shift change. I saw the van myself.\u201d" },
+    { id: "Bergen", alt: false, src: "Agent report \u00b7 via Priya", grade: "Usually reliable", q: "\u201cThey go for the Bergen landing station. Tonight, after the shift change. I saw the van myself.\u201d" },
     { id: "Rotterdam", alt: true, src: "Intercept \u00b7 single source", grade: "Unconfirmed", q: "\u201cLet the English watch the north. The real work is at the Rotterdam hub.\u201d" }
   ];
   const TRUTH = "Rotterdam";

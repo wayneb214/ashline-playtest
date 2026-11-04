@@ -87,13 +87,13 @@
     call({ id: "panic", line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
       text: "C? It\u2019s " + a.first(k) + ". There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?",
       opts: [{ k: "sit", t: "Sit tight. Walk out in the morning.", chips: '<span class="chip risk-low">+4 Secrecy</span><span class="chip risk-high">' + a.first(k) + " loyalty \u22121 \u00b7 stress +1</span>" },
-        { k: "home", t: "Get out now. Kite books you home.", chips: '<span class="chip risk-high">\u22124 Secrecy</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
+        { k: "home", t: "Get out now. Ash books you home.", chips: '<span class="chip risk-high">\u22124 Secrecy</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
       def: "sit", hint: "Officers remember who picked up.",
       answer: function (c, t) {
         let ch; C().panic.choice = c;
         if (c === "home") { ch = a.apply({ secrecy: -4 }); s.loyal[k] = a.clamp5(s.loyal[k] + 1); s.stress[k] = a.clamp5(s.stress[k] - 1); }
         else { ch = a.apply({ secrecy: 4 }); s.loyal[k] = a.clamp5(s.loyal[k] - 1); s.stress[k] = a.clamp5(s.stress[k] + 1); }
-        after(c === "home" ? "COME HOME" : "HOLD", c === "home" ? "win" : "mixed", a.first(k) + " on the line", late(t) + (c === "home" ? "Kite has " + a.first(k) + " on a dawn flight. Somebody abroad will notice the empty room." : a.first(k) + " goes quiet, then: \u201cRight. Fine.\u201d The line clicks. The car is still there at midnight."), ch, null, k);
+        after(c === "home" ? "COME HOME" : "HOLD", c === "home" ? "win" : "mixed", a.first(k) + " on the line", late(t) + (c === "home" ? "Ash has " + a.first(k) + " on a dawn flight. Somebody abroad will notice the empty room." : a.first(k) + " goes quiet, then: \u201cRight. Fine.\u201d The line clicks. The car is still there at midnight."), ch, null, k);
       },
       miss: function () {
         C().panic.choice = "missed"; s.loyal[k] = a.clamp5(s.loyal[k] - 2); s.stress[k] = a.clamp5(s.stress[k] + 1); a.advance(0);
@@ -120,12 +120,12 @@
     const a = A();
     call({ id: "kesk", line: "OPEN LINE \u00b7 INTERNATIONAL \u00b7 NUMBER WITHHELD", img: "kesk", ring: "A foreign exchange. No name.", who: "Colonel Anselm Kesk", say: "Do it",
       text: "Good evening, C. Is it raining in London? It is snowing here. I only rang to say <b>I am looking forward to tonight.</b> Are you?",
-      opts: [{ k: "talk", t: "Keep him talking. Trace the line.", chips: '<span class="chip risk-low">+8% at the barrier if traced</span><span class="chip risk-high">Kite\u2019s team up all night</span>' },
+      opts: [{ k: "talk", t: "Keep him talking. Trace the line.", chips: '<span class="chip risk-low">+8% at the barrier if traced</span><span class="chip risk-high">Ash\u2019s team up all night</span>' },
         { k: "hang", t: "Put the phone down.", chips: '<span class="chip risk-low">+4 Secrecy</span>' }],
       def: "hang", hint: "Kesk learns how you play.", replySecs: 16,
       answer: function (c, t) {
         C().kesk = c; const ch = c === "hang" ? a.apply({ secrecy: 4 }) : {};
-        after(c === "talk" ? "TRACED" : "CLICK", c === "talk" ? "win" : "mixed", "Colonel Kesk", late(t) + (c === "talk" ? "Four minutes on the weather and the price of coal. Kite slides a note across: <b>a guard hut, a mile behind the barrier.</b> +8% at the barrier." : "You put the phone down. It rings again, once, and stops."), ch);
+        after(c === "talk" ? "TRACED" : "CLICK", c === "talk" ? "win" : "mixed", "Colonel Kesk", late(t) + (c === "talk" ? "Four minutes on the weather and the price of coal. Ash slides a note across: <b>a guard hut, a mile behind the barrier.</b> +8% at the barrier." : "You put the phone down. It rings again, once, and stops."), ch);
       },
       miss: function () { C().kesk = "missed"; after("MISSED", "loss", "An international call", "Nobody answered. The switchboard says the caller laughed. <b>He knows we\u2019re rattled:</b> \u22126% at the barrier.", {}); } });
   }
@@ -186,7 +186,7 @@
     ferry: { q: "The ferry is turning for the harbour mouth.", def: "watch", secs: 9,
       opts: [{ k: "follow", t: "Put a boat on its tail", d: "\u22124 No.10 trust \u00b7 +10% in York on Friday" }, { k: "watch", t: "Let it go. Watch the port.", d: "+4 Secrecy" }],
       res: { follow: "A grey launch slips out behind it, lights off.", watch: "Binoculars on the quay. Patience." } },
-    border: { q: "The guard is waving cars through fast. Kite on the radio: \u201cYour call.\u201d", def: "hold", secs: 7,
+    border: { q: "The guard is waving cars through fast. Ash on the radio: \u201cYour call.\u201d", def: "hold", secs: 7,
       opts: [{ k: "drive", t: "Wave us through. Drive on.", d: "+14% with the dog \u00b7 \u22128% at the barrier" }, { k: "hold", t: "Hold it. Let the queue settle.", d: "+6% at the barrier" }],
       res: { drive: "Second gear. Don\u2019t look at the dog.", hold: "Engine off. Breathe." } }
   };

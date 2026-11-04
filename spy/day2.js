@@ -16,7 +16,7 @@
       '<div class="card dossier">' + A.LH + '<span class="stamp corner">PALE HOUR</span><div class="kicker">Day 2 \u00b7 For C only</div><h2 style="margin-top:10px;padding-right:110px">Pale Hour</h2>' +
       "<p>Pieter Vass is alive, just, in a Bath hospital under a police guard. The Prime Minister wants the people who did it, and she wants them <strong>before they leave Britain</strong>.</p>" +
       "<p>Avon Police think it was <strong>three people</strong>: a tall man, a woman in a green coat, and a driver. The ports and airports are open until midnight.</p>" +
-      "<p>New today: the <strong>evidence board</strong> in Kite\u2019s office. Pin each clue to the right suspect. The right links open the best plans for tonight.</p>" +
+      "<p>New today: the <strong>evidence board</strong> in Ash\u2019s office. Pin each clue to the right suspect. The right links open the best plans for tonight.</p>" +
       '<p class="clue"><b>From yesterday:</b> grade ' + esc(s.days[1].grade) + " \u00b7 " + esc(s.days[1].mole) + " \u00b7 " + s.roster.length + " officer" + (s.roster.length === 1 ? "" : "s") + " fit for duty.</p>" +
       '<button class="btn primary" id="go">To the desk</button></div>');
     $("go").onclick = function () { s.seenIntro = true; A.briefing(); };
@@ -55,7 +55,7 @@
       return '<button class="clue-card' + (sel === c ? " sel" : "") + (linked ? " linked" : "") + '" data-c="' + c + '" style="--tilt:' + [-2, 1.5, -1, 2, -1.5, 1][i % 6] + 'deg"' + (linked ? " disabled" : "") + '><span class="pinhead"></span><b>' + cl.name + "</b><span>" + cl.txt + "</span>" + (linked ? '<em>\u2192 ' + D.SUSPECTS[linked].name + "</em>" : "") + "</button>";
     }).join("");
     const unlocked = Object.keys(s.unlocked || {});
-    A.render('<div class="kicker">Kite\u2019s office \u00b7 the evidence board</div>' + A.kite(msg || (sel ? "And who does <b>" + D.CLUES[sel].name.toLowerCase() + "</b> belong to? Tap a face." : "Tap a clue card, then the suspect it belongs to. I\u2019ll run the string."), false) + A.tip("board") +
+    A.render('<div class="kicker">Ash\u2019s office \u00b7 the evidence board</div>' + A.ash(msg || (sel ? "And who does <b>" + D.CLUES[sel].name.toLowerCase() + "</b> belong to? Tap a face." : "Tap a clue card, then the suspect it belongs to. I\u2019ll run the string."), false) + A.tip("board") +
       '<div class="cork" id="cork"><svg class="strings" id="strings" aria-hidden="true"></svg><div class="suspects">' + suspects + '</div><div class="clues">' + clues + "</div></div>" +
       '<div class="unlocks">' + (unlocked.length ? "Unlocked for tonight: " + unlocked.map(function (u) { return "<b>" + (u === "ferry" ? "Quiet intercept at Harwich" : "Take the driver first") + "</b>"; }).join(" \u00b7 ") : "Nothing unlocked yet. Link the right clues to open tonight\u2019s best plans.") + "</div>" +
       '<button class="btn primary" id="back">Back to the desk</button>', "Right links cost nothing. A wrong one wastes an hour.");
@@ -97,7 +97,7 @@
       gives: ["\u201cA tall man paid me in Bath. Cash. Very tall. Didn\u2019t give a name.\u201d", "\u201cThey have a ferry tonight. Three berths. Harwich.\u201d He writes the booking reference on your file."], clue: "ticket", art: "v-airport",
       head: { win: "Man held at London airport \u2018helping police\u2019", mixed: "Airport passenger questioned and released", loss: "Varenian protest over airport \u2018harassment\u2019" } },
     mole2: { who: null, img: null, rounds: ["They sit very straight in the windowless room on the fourth floor.", "You ask who they rang last night.", "You ask what they gave the Grey House.", "Their lawyer is on the stairs."],
-      gives: ["\u201cI never met them. I only ever rang a number.\u201d", "They write the number down. Kite has it traced in minutes: the team leader\u2019s phone."], clue: "phone", art: null,
+      gives: ["\u201cI never met them. I only ever rang a number.\u201d", "They write the number down. Ash has it traced in minutes: the team leader\u2019s phone."], clue: "phone", art: null,
       head: { win: "Albion House insider \u2018co-operating\u2019, say sources", mixed: "Lawyer arrives at Albion House for detained officer", loss: "Detained officer \u2018says nothing\u2019 as hunt goes on" } }
   };
   const RETORT = { friendly: "Your kindness gets a thin smile. \u201cTea won\u2019t help you.\u201d", hard: "Shouting gets nothing but folded arms. \u201cI want my embassy.\u201d", bluff: "\u201cYour file is empty. I can see it from here.\u201d" };
@@ -151,7 +151,7 @@
       loss: "The night ferry cleared the harbour wall at 23:10. On the quay, a hat in a puddle and nobody under it. <b>They\u2019re gone.</b> At nine tomorrow the Varenian ambassador wants to see you, personally, at Downing Street."
     }[exitRes()];
     const mole = caught ? "Upstairs, the mole has asked to see you. Alone. <b>\u201cThere is a fourth name,\u201d</b> they say." : "<b>And somebody inside Albion House rang that ferry office at ten past eleven.</b>";
-    return '<div class="flash-card ferry" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:52 \u00b7 HARWICH</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: KITE, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + "<br><br>" + mole + "<br><br>\u2014 Kite</div></div>";
+    return '<div class="flash-card ferry" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:52 \u00b7 HARWICH</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + "<br><br>" + mole + "<br><br>\u2014 Ash</div></div>";
   }
   function paperLead() {
     return {

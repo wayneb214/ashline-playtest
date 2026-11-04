@@ -78,10 +78,10 @@ p strong { color: inherit; }
 .title .fine { font-size: 11px; color: var(--fog); margin-top: 12px; font-family: var(--type); }
 
 /* deputy line */
-.kite { display: flex; gap: 12px; align-items: flex-start; }
-.kite .portrait { width: 64px; height: 64px; }
-.kite .note { flex: 1; font-size: 15px; line-height: 1.45; }
-.kite .who { font-family: var(--type); font-size: 10.5px; color: var(--oxblood); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 3px; }
+.ash-note { display: flex; gap: 12px; align-items: flex-start; }
+.ash-note .portrait { width: 64px; height: 64px; }
+.ash-note .note { flex: 1; font-size: 15px; line-height: 1.45; }
+.ash-note .who { font-family: var(--type); font-size: 10.5px; color: var(--oxblood); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 3px; }
 
 /* map on the desk */
 .map { position: relative; border-radius: 4px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 14px 30px rgba(0,0,0,.6); aspect-ratio: 1 / .78; background: url(img/map.jpg) 55% 52% / 128% auto no-repeat; }
