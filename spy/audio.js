@@ -145,6 +145,18 @@
     },
     horn: function () { if (!ctx) return; const t = ctx.currentTime; [73, 110].forEach(function (fq) { const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = fq; f.type = "lowpass"; f.frequency.value = 500; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.3); g.gain.setValueAtTime(0.06, t + 1.8); g.gain.linearRampToValueAtTime(0.0001, t + 2.6); o.connect(f).connect(g).connect(master); o.start(t); o.stop(t + 2.7); }); },
     stinger: function () { if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(); o.type = "triangle"; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(40, t + 1.4); env(g, t, 0.01, 0.22, 1.6); o.connect(g).connect(master); o.start(t); o.stop(t + 1.8); },
+    // a rubber stamp hitting a desk: a low thump and a short paper slap
+    stamp: function () { if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12); env(g, t, 0.003, 0.5, 0.18); o.connect(g).connect(master); o.start(t); o.stop(t + 0.3);
+      const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g2 = ctx.createGain(); n.buffer = noiseBuffer(0.12); f.type = "bandpass"; f.frequency.value = 1800; env(g2, t, 0.002, 0.25, 0.08); n.connect(f).connect(g2).connect(master); n.start(t); },
+    // a sheet of paper sliding: filtered noise swept upward
+    paper: function () { if (!ctx) return; const t = ctx.currentTime, n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuffer(0.35); f.type = "bandpass"; f.Q.value = 0.8; f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(3200, t + 0.3); env(g, t, 0.05, 0.09, 0.25); n.connect(f).connect(g).connect(master); n.start(t); },
+    // radio crackle: bursts of band-limited noise
+    crackle: function (sec) { if (!ctx) return; const t = ctx.currentTime, d = sec || 0.6, n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuffer(d); f.type = "bandpass"; f.frequency.value = 2200; f.Q.value = 2; g.gain.setValueAtTime(0.0001, t);
+      for (let i = 0; i < d * 20; i++) g.gain.setValueAtTime(Math.random() < 0.5 ? 0.0001 : 0.03 + Math.random() * 0.05, t + i / 20); g.gain.setValueAtTime(0.0001, t + d); n.connect(f).connect(g).connect(master); n.start(t); n.stop(t + d + 0.05); },
+    // the red phone rumbling on the desk
+    rumble: function () { if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), am = ctx.createOscillator(), ag = ctx.createGain(), g = ctx.createGain(); o.frequency.value = 38; am.frequency.value = 9; ag.gain.value = 0.12; am.connect(ag).connect(g.gain); g.gain.value = 0.12; o.connect(g).connect(master); o.start(t); am.start(t); g.gain.setTargetAtTime(0.0001, t + 0.9, 0.1); o.stop(t + 1.3); am.stop(t + 1.3); },
+    // a beat of silence before a reveal: dip music and rain
+    duck: function (sec) { if (!ctx) return; const t = ctx.currentTime; [mus, amb].forEach(function (b) { b.gain.cancelScheduledValues(t); b.gain.setTargetAtTime(0.0001, t, 0.04); }); setTimeout(levels, (sec || 0.8) * 1000); },
     heart: function (beats) { if (!ctx) return; const t0 = ctx.currentTime; for (let i = 0; i < (beats || 4); i++) [0, 0.22].forEach(function (d, j) { const t = t0 + i * 0.9 + d, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 52; env(g, t, 0.01, j ? 0.12 : 0.2, 0.18); o.connect(g).connect(master); o.start(t); o.stop(t + 0.3); }); }
   };
   window.SFX = api;

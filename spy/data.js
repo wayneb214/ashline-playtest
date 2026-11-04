@@ -146,6 +146,15 @@ window.AH_DATA = (function () {
     clever: { works: "bluff", tell: "He smiles faintly at the thin file in your hand." }
   };
 
-  return { METERS: METERS, AGENTS: AGENTS, SITS1: SITS1, PLACES: PLACES, REPORTS: REPORTS, TRUTH: TRUTH, EMBLEM: EMBLEM,
+  // three traits per officer, shown as badges. risk: plan risk they suit (low/med/high); cases: case ids they suit; v: odds
+  const TRAITS = {
+    macrae: [{ n: "Charmer", risk: "med", v: 8, tx: "People open up to her" }, { n: "Cool head", calm: true, tx: "Strain hurts her odds less" }, { n: "Impatient", risk: "low", v: -6, tx: "Hates the slow way" }],
+    pryce: [{ n: "Invisible", risk: "low", v: 8, tx: "Nobody notices him" }, { n: "Patient", cases: ["mole", "sabotage", "tail", "safehouse"], v: 6, tx: "Waits for the slip" }, { n: "Can\u2019t lie", risk: "high", v: -8, tx: "Bad under pressure" }],
+    hartley: [{ n: "Muscle", risk: "high", v: 8, tx: "Good when it gets rough" }, { n: "Driver", cases: ["defector", "exit", "york", "exfil", "courier"], v: 6, tx: "Knows every back road" }, { n: "Reckless", risk: "low", v: -6, tx: "Bored by careful work" }],
+    ada: [{ n: "Meticulous", risk: "low", v: 10, tx: "Better on careful plans" }, { n: "Analyst", risk: "med", v: 4, tx: "Reads the file twice" }, { n: "Green", risk: "high", v: -6, tx: "New to the field" }],
+    hollis: [{ n: "Unflappable", tx: "Bold plans add no strain" }, { n: "Muscle", risk: "high", v: 6, tx: "Old soldier" }, { n: "Slow", risk: "med", v: -4, tx: "Takes his time" }],
+    sam: [{ n: "Back roads", tx: "Every plan takes 1h less" }, { n: "Driver", cases: ["defector", "exit", "york", "exfil", "courier"], v: 8, tx: "Knows every road" }, { n: "Talker", risk: "low", v: -4, tx: "Can\u2019t sit still" }]
+  };
+  return { TRAITS: TRAITS, METERS: METERS, AGENTS: AGENTS, SITS1: SITS1, PLACES: PLACES, REPORTS: REPORTS, TRUTH: TRUTH, EMBLEM: EMBLEM,
     RECRUITS: RECRUITS, KIT: KIT, DIFFICULTY: DIFFICULTY, TIPS: TIPS, UKPLACES: UKPLACES, SITS2: SITS2, SUSPECTS: SUSPECTS, CLUES: CLUES, TEMPERS: TEMPERS };
 })();

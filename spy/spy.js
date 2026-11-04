@@ -81,11 +81,19 @@
     const mm = /data-music="(\w+)"/.exec(html);
     if (window.SFX) SFX.music(mm ? mm[1] : /data-screen="(officer-pick|approach)"|tailgame|class="card report|data-car=|data-pod|data-m=/.test(html) ? "tense" : "jazz");
     if (window.VOICE) VOICE.stop(); window.scrollTo(0, 0); $("hint").textContent = h || "";
-    typeAll(); FEEL.thud($("view")); LOOK.seals($("view"));
+    typeAll(); reveal(); LOOK.seals($("view"));
     document.querySelectorAll("[data-file]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); officerFile(b.getAttribute("data-file")); }; });
     document.querySelectorAll("[data-case-file]").forEach(function (b) { b.onclick = function () { caseFile(b.getAttribute("data-case-file")); }; });
     const od = $("dossier"); if (od) od.remove();
     document.querySelectorAll("[data-tipx]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); S.tipSeen[b.getAttribute("data-tipx")] = true; b.parentNode.remove(); save(S.screen); }; });
+  }
+  // the stamp reveal: half a second of silence, then the stamp lands with a thud and a heavy buzz
+  function reveal() {
+    const v = $("view"), st = v.querySelector(".stamp.thud"), card = v.querySelector(".card.outcome");
+    if (!st) return;
+    if (!card || FAST || window.__SPY_FAST__) { FEEL.thud(v); if (window.SFX && SFX.stamp) SFX.stamp(); return; }
+    card.classList.add("hold"); if (window.SFX && SFX.duck) SFX.duck(0.9);
+    setTimeout(function () { card.classList.remove("hold"); card.classList.add("landing"); FEEL.thud(v); FEEL.buzz("heavy"); if (window.SFX && SFX.stamp) SFX.stamp(); }, 500);
   }
   // chips written in the old four-gauge words read as the two meters
   function relabel(h) {
@@ -268,7 +276,7 @@
   function officerFile(k) {
     const a = AG(k), st = S.stress[k], v = vetOf(k);
     dossier({ tab: "PERSONNEL", stamp: "STAFF IN CONFIDENCE", kicker: a.role, title: a.name, img: pic(st >= 4 && a.tense ? a.tense : a.img), alt: "Portrait of " + a.name,
-      body: '<p class="fstr">\u2605 ' + esc(strengthOf(k)) + '</p><div class="traits">' + pips(a.skill, "", "Skill") + pips(S.loyal[k], "loyal" + (S.loyal[k] <= 2 ? " high" : ""), "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + "</div>" +
+      body: '<p class="fstr">\u2605 ' + esc(strengthOf(k)) + " " + statusBadge(k) + "</p>" + badges(k) + '<p class="tlist">' + (D.TRAITS[k] || []).map(function (t) { return "<b>" + esc(t.n) + ":</b> " + esc(t.tx); }).join("<br>") + "</p>" + '<div class="traits">' + pips(a.skill, "", "Skill") + pips(S.loyal[k], "loyal" + (S.loyal[k] <= 2 ? " high" : ""), "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + "</div>" +
         "<p><b>Morale:</b> " + morale(k) + (st >= 4 ? " \u00b7 <b>strained</b>, mistakes likelier" : "") + "</p><p><b>File note:</b> " + esc(a.note) + "</p>" + (a.look ? "<p><b>Usually wears:</b> " + esc(a.look) + "</p>" : "") +
         "<p><b>Record:</b> " + (v ? v + " operation" + (v > 1 ? "s" : "") + " closed. Each one adds 4% to their odds (up to 12%)." : "No operations closed yet.") + "</p>" + (S.lost[k] ? "<p><b>Status:</b> " + esc(S.lost[k]) + "</p>" : "") });
   }
@@ -349,21 +357,31 @@
   }
 
   // ---------- odds and time ----------
-  function oddsFor(id, k, a, kitId) {
-    const ag = AG(k);
-    let o = 30 + ag.skill * 6 + (ag.good.indexOf(id) >= 0 ? 12 : 0) + a.mod - S.stress[k] * 4 + ag.cover * 2 + (S.loyal[k] - 3) * 3 + diff().odds;
-    if (ag.quirk === "careful" && a.risk === "low") o += 10;
-    o += Math.min(12, vetOf(k) * 4); // officers who have closed operations are better at the next one
-    if (S.day === 1) o += 6; // the tutorial day is gentle
-    if (kitId) o += D.KIT[kitId].odds || 0;
-    if (k === S.mole && S.accused !== S.mole) o -= 10; // quietly working against you
-    const lt = late(id); if (lt > 0) o -= 10 + lt * 5;
-    if (S.day === 3) o += window.AH3.oddsMod(id, k, a);
-    o += window.DESK.oddsMod(id);
-    o += Math.round((svc() - 50) / 4); // a strong Service makes every operation likelier
-    if (id === "sabotage") { if (S.belief === "split") o -= 12; else if (S.belief !== D.TRUTH) o = Math.min(o, 12); }
-    return Math.max(5, Math.min(92, Math.round(o)));
+  // the odds, with the reasons a player can see. The mole's quiet sabotage is folded into the base, unseen.
+  function oddsParts(id, k, a, kitId) {
+    const ag = AG(k), P = [], add = function (lab, v) { v = Math.round(v); if (v) P.push([lab, v]); };
+    let base = 30 + ag.skill * 6 + a.mod + ag.cover * 2 + diff().odds + (S.day === 1 ? 6 : 0);
+    if (k === S.mole && S.accused !== S.mole) base -= 10;
+    if (ag.good.indexOf(id) >= 0) add("Right for the job", 12);
+    (D.TRAITS[k] || []).forEach(function (t) { if (t.v && ((t.risk && t.risk === a.risk) || (t.cases && t.cases.indexOf(id) >= 0))) add(t.n, t.v); });
+    const calm = (D.TRAITS[k] || []).some(function (t) { return t.calm; });
+    add(S.stress[k] >= 4 ? "Strained" : "Tired", -S.stress[k] * (calm ? 2 : 4));
+    add(S.loyal[k] > 3 ? "Loyal" : "Wavering", (S.loyal[k] - 3) * 3);
+    add("Experience", Math.min(12, vetOf(k) * 4));
+    add("Status: " + statusName(k), statusMod(k));
+    if (kitId) add(D.KIT[kitId].name, D.KIT[kitId].odds || 0);
+    const lt = late(id); if (lt > 0) add("Late", -(10 + lt * 5));
+    if (S.day === 3) add("Day 3 file", window.AH3.oddsMod(id, k, a));
+    add("Earlier choices", window.DESK.oddsMod(id));
+    add("Service", (svc() - 50) / 4);
+    if (window.OPS) OPS.parts(id, k, a, add);
+    let o = base + P.reduce(function (t, p) { return t + p[1]; }, 0);
+    if (id === "sabotage") { if (S.belief === "split") { add("Split teams", -12); o -= 12; } else if (S.belief !== D.TRUTH) { const cap = Math.min(o, 12); add("Wrong site", cap - o); o = cap; } }
+    return { odds: Math.max(5, Math.min(92, Math.round(o))), base: Math.round(base), parts: P };
   }
+  function oddsFor(id, k, a, kitId) { return oddsParts(id, k, a, kitId).odds; }
+  function statusName(k) { const st = (S.status || {})[k]; return st ? { tired: "Tired", wounded: "Wounded" }[st] || "" : ""; }
+  function statusMod(k) { const st = (S.status || {})[k]; return st === "tired" ? -15 : st === "wounded" ? -25 : 0; }
   // the officer's own pick: the approach they rate best. Choosing another overrules them.
   function recIdx(id, k) { let best = -1, bo = -1; CASES()[id].approaches.forEach(function (a, i) { if (lockOf(a)) return; const o = oddsFor(id, k, a, null); if (o > bo) { bo = o; best = i; } }); return best; }
   function lockOf(a) { if (a.needs && !(S.unlocked || {})[a.needs]) return "needs"; if (a.pm && S.meters.capital < a.pm) return "pm"; return ""; }
@@ -377,28 +395,64 @@
     const a = AG(k), st = S.stress[k], v = vetOf(k);
     return '<div class="ocard"><button class="card agent slim' + (sel ? " sel" : "") + (disabled ? " used" : "") + '" ' + attr + '="' + k + '">' + face(k) + '<div style="flex:1;min-width:0"><div class="nm">' + esc(a.name) + (S.used[k] ? " \u00b7 in the field" : "") + (st >= 4 ? ' <span class="strain">Strained</span>' : "") + '</div><div class="str">\u2605 ' + esc(strengthOf(k)) + "</div>" + (v ? '<div class="vet">' + v + " operation" + (v > 1 ? "s" : "") + " closed \u00b7 +" + Math.min(12, v * 4) + "%</div>" : "") + (extra || "") + '</div></button><button type="button" class="filebtn" data-file="' + k + '" aria-label="Open ' + esc(a.name) + '\u2019s file">File</button></div>';
   }
-  // the operation: a big painting, one question, two or three officers to choose from
-  function pickAgent(id, chosen) {
+  // trait badges: three per officer, at a glance
+  function badges(k) { return '<div class="badges">' + (D.TRAITS[k] || []).map(function (t) { return '<span class="badge' + (t.v < 0 ? " neg" : "") + '" title="' + esc(t.tx) + '">' + esc(t.n) + "</span>"; }).join("") + "</div>"; }
+  function statusBadge(k) { const st = (S.status || {})[k]; return st ? '<span class="ostatus s-' + st + '">' + statusName(k).toUpperCase() + "</span>" : ""; }
+  // the odds dial: a brass gauge, the needle at the odds, the reasons underneath
+  function dial(r, label) {
+    const v = r ? r.odds : 0, ang = -90 + v * 1.8;
+    const reasons = r ? r.parts.slice().sort(function (x, y) { return Math.abs(y[1]) - Math.abs(x[1]); }).slice(0, 4).map(function (p) { return '<span class="' + (p[1] > 0 ? "up" : "down") + '">' + (p[1] > 0 ? "+" : "\u2212") + Math.abs(p[1]) + " " + esc(p[0]) + "</span>"; }).join("") : '<span class="mute">' + (label || "Drag an officer onto the case") + "</span>";
+    return '<div class="dial" id="dial" aria-live="polite"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 110 62" class="arc"/><path d="M10 62 A50 50 0 0 1 35 18.7" class="arc bad"/><path d="M85 18.7 A50 50 0 0 1 110 62" class="arc good"/><g class="needle" style="transform:rotate(' + ang + 'deg)"><line x1="60" y1="62" x2="60" y2="18"/></g><circle cx="60" cy="62" r="5" class="hub"/></svg>' +
+      '<div class="dv"><b id="dialv">' + (r ? v + "%" : "\u2014") + '</b><small>odds of success</small></div><div class="reasons" id="dialr">' + reasons + "</div></div>";
+  }
+  function setDial(r, label) { const d = $("dial"); if (d) d.outerHTML = dial(r, label); }
+  function bestFor(id, k) { const i = recIdx(id, k); return i < 0 ? null : oddsParts(id, k, CASES()[id].approaches[i], null); }
+  function officerTile(k, id) {
+    const a = AG(k), fit = id && a.good.indexOf(id) >= 0;
+    return '<div class="otile' + (fit ? " fit" : "") + '" data-a="' + k + '" role="button" tabindex="0" aria-label="Send ' + esc(a.name) + '">' + statusBadge(k) + face(k) + '<div class="onm">' + esc(first(k)) + (a.code ? ' <small>\u2018' + esc(a.code) + "\u2019</small>" : "") + "</div>" + badges(k) +
+      (fit ? '<div class="fit">\u2713 Right person</div>' : "") + '<button type="button" class="filebtn" data-file="' + k + '" aria-label="Open ' + esc(a.name) + '\u2019s file">File</button></div>';
+  }
+  // drag an officer's file onto the case (or just tap it). While a file is held over the case, the dial swings.
+  function dragSend(id, onSend) {
+    const zone = $("dropzone");
+    document.querySelectorAll(".otile[data-a]").forEach(function (t) {
+      const k = t.getAttribute("data-a");
+      let st = null, ghost = null, over = false;
+      const isOver = function (e) { const r = zone.getBoundingClientRect(); return e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom + 20; };
+      t.addEventListener("pointerdown", function (e) { if (e.target.closest(".filebtn")) return; e.preventDefault(); st = [e.clientX, e.clientY]; setDial(bestFor(id, k)); try { t.setPointerCapture(e.pointerId); } catch (er) {} });
+      t.addEventListener("pointermove", function (e) {
+        if (!st) return; const dx = e.clientX - st[0], dy = e.clientY - st[1];
+        if (!ghost && Math.hypot(dx, dy) > 10) { ghost = t.cloneNode(true); ghost.classList.add("ghost"); ghost.removeAttribute("data-a"); document.body.appendChild(ghost); t.classList.add("lifted"); if (window.SFX && SFX.paper) SFX.paper(); }
+        if (ghost) { const r = t.getBoundingClientRect(); ghost.style.left = (r.left + dx) + "px"; ghost.style.top = (r.top + dy) + "px"; ghost.style.width = r.width + "px"; const o = isOver(e); if (o !== over) { over = o; zone.classList.toggle("hot", o); if (o) FEEL.buzz("tap"); } }
+      });
+      const end = function (e, cancel) {
+        if (!st) return; const dragged = !!ghost, hit = dragged && !cancel && isOver(e); st = null;
+        if (ghost) { ghost.remove(); ghost = null; } t.classList.remove("lifted"); zone.classList.remove("hot");
+        if (cancel) return;
+        if (!dragged || hit) { FEEL.buzz("drop"); if (window.SFX && SFX.paper) SFX.paper(); onSend(k); }
+      };
+      t.addEventListener("dragstart", function (e) { e.preventDefault(); });
+      t.addEventListener("pointerup", function (e) { end(e, false); });
+      t.addEventListener("pointercancel", function (e) { end(e, true); });
+      t.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSend(k); } });
+    });
+  }
+  // the operation: the case on top, the officers' files in a tray below
+  function pickAgent(id) {
     const s = CASES()[id];
-    let pick = chosen || null;
     const free = S.roster.filter(function (k) { return !S.used[k]; }).sort(function (x, y) { return (AG(y).good.indexOf(id) >= 0) - (AG(x).good.indexOf(id) >= 0); }).slice(0, 3);
-    const draw = function () {
-      const cards = free.map(function (k) {
-        const fit = AG(k).good.indexOf(id) >= 0;
-        return agentCard(k, fit ? '<div class="fit">\u2713 Right person for this</div>' : "", pick === k, false, "data-a");
-      }).join("");
-      const lt = late(id);
-      render('<div data-screen="officer-pick">' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + "</p></div>" + lesson(id, "agent") + '<h3 class="question">Who do you send?</h3><div class="agents">' + cards + '</div><div class="sticky-go"><button class="btn primary" id="go"' + (pick ? "" : " disabled") + ">" + (pick ? "Send " + first(pick) : "Choose an officer") + '</button></div><button class="linkbtn" id="back">Back to the desk</button></div>',
-        S.day === 1 ? "" : "Each officer has one strength. Pick the one that fits.");
-      document.querySelectorAll("[data-a]").forEach(function (b) { b.onclick = function () { approach(id, b.getAttribute("data-a")); }; });
-      $("go").onclick = function () { approach(id, pick); };
-      $("back").onclick = briefing;
-    };
-    draw();
+    const lt = late(id);
+    render('<div data-screen="officer-pick"><div class="casefile" id="dropzone">' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") +
+      dial(null) + '<h3 class="question">Who do you send?</h3><div class="otray">' + free.map(function (k) { return officerTile(k, id); }).join("") + '</div><button class="linkbtn" id="back">Back to the desk</button></div>',
+      "Drag a file onto the case, or tap it.");
+    dragSend(id, function (k) { approach(id, k); });
+    $("back").onclick = briefing;
+    MENU.coach("traits", "Each officer has <b>three traits</b>. Press and hold a file to see the odds, then drag it onto the case.");
   }
   function approach(id, k) {
     const s = CASES()[id];
-    let sel = null, kit = null, kitOpen = false;
+    let sel = recIdx(id, k), kit = null, kitOpen = false;
+    if (sel < 0) sel = s.approaches.findIndex(function (a) { return !lockOf(a); });
     const draw = function () {
       const rec = recIdx(id, k);
       const opts = s.approaches.map(function (a, i) {
@@ -406,22 +460,25 @@
         const h = hoursFor(k, a, kit), ends = Math.min(24, S.hour + h);
         return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + "</p>" +
           (lk === "pm" ? '<div class="chips"><span class="chip risk-high">Needs No.10 trust ' + a.pm + " (now " + S.meters.capital + ")</span></div>" : locked ? '<div class="chips"><span class="chip risk-high">Locked \u00b7 link the ' + (a.needs === "ferry" ? "ferry booking" : "hire-car receipt") + " on the evidence board</span></div>" :
-            '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '% chance</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (i === rec ? '<span class="chip rec">\u2605 ' + first(k) + "\u2019s pick</span>" : sel === i ? '<span class="chip risk-high">Overrules ' + first(k) + "</span>" : "") + (S.day === 3 ? window.AH3.chips(id, k, a) : "") + "</div>") + "</button>";
+            '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '%</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (i === rec ? '<span class="chip rec">\u2605 ' + first(k) + "\u2019s pick</span>" : sel === i ? '<span class="chip risk-high">Overrules ' + first(k) + "</span>" : "") + (S.day === 3 ? window.AH3.chips(id, k, a) : "") + "</div>") + "</button>";
       }).join("");
       const kits = Object.keys(D.KIT).map(function (key) {
         const n = S.kit[key] || 0, on = kit === key;
         return '<button class="kit' + (on ? " on" : "") + '" data-kit="' + key + '"' + (n ? "" : " disabled") + '><span class="ki">' + D.KIT[key].icon + '</span><span class="kn">' + D.KIT[key].name + '</span><span class="kt">' + D.KIT[key].txt + '</span><span class="ks">' + (on ? "Packed" : "\u00d7" + n) + "</span></button>";
       }).join("");
       const kitRow = S.day === 1 ? "" : '<button type="button" class="kittoggle" id="kitt" aria-expanded="' + kitOpen + '">\ud83e\uddf3 Kit: ' + (kit ? D.KIT[kit].name : "none packed") + ' <span>' + (kitOpen ? "Hide" : "Pack one") + "</span></button>" + (kitOpen ? '<div class="kits">' + kits + "</div>" : "");
-      render('<div data-screen="approach">' + chead(id) + '<div class="ash-note card slimnote">' + face(k) + '<div class="note"><div class="who">' + esc(AG(k).name) + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just not the loud way. I\u2019m running on empty." : rec >= 0 ? "If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "How do you want it played?") + "</span></div></div>" + lesson(id, "approach") +
-        '<h3 class="question">How do they play it?</h3>' + opts + kitRow +
-        '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose a plan" : "Go \u2014 " + esc(s.approaches[sel].t)) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
-        "Careful plans take longer. Bold ones are quick, and can backfire.");
-      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { resolve(id, k, s.approaches[+b.getAttribute("data-i")], kit); }; });
+      const a0 = s.approaches[sel];
+      render('<div data-screen="approach"><div class="ash-note card slimnote">' + face(k) + '<div class="note"><div class="who">' + esc(AG(k).name) + " " + statusBadge(k) + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just not the loud way. I\u2019m running on empty." : rec >= 0 ? "If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "How do you want it played?") + "</span></div></div>" + lesson(id, "approach") +
+        '<h3 class="question">How do they play it?</h3>' + opts + kitRow + (window.OPS ? OPS.controls(id, k) : "") + dial(oddsParts(id, k, a0, kit)) +
+        '<div class="sticky-go"><button class="btn primary sendbtn" id="go">Send ' + esc(first(k)) + " \u00b7 " + esc(a0.t) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
+        "Pick a plan. The dial shows the odds, and why.");
+      document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
       document.querySelectorAll("[data-kit]").forEach(function (b) { b.onclick = function () { const key = b.getAttribute("data-kit"); kit = kit === key ? null : key; draw(); }; });
       if ($("kitt")) $("kitt").onclick = function () { kitOpen = !kitOpen; draw(); };
-      $("go").onclick = function () { resolve(id, k, s.approaches[sel], kit); };
-      $("back").onclick = function () { pickAgent(id, k); };
+      if (window.OPS) OPS.bind(draw);
+      $("go").onclick = function () { (window.OPS ? OPS.run : resolve)(id, k, s.approaches[sel], kit); };
+      $("back").onclick = function () { pickAgent(id); };
+      MENU.coach("dial", "The <b>odds dial</b> shows your chance and the biggest reasons. Change the plan and watch it move.");
     };
     draw();
   }
@@ -480,7 +537,7 @@
     if (S.day === 1 && S.order.indexOf("sabotage") < 0) S.order.push("sabotage");
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
     const od = function (lab, a0, a1) { return a1 === a0 ? "" : '<span class="' + ((lab === "Stress") === (a1 > a0) ? "down" : "up") + '">' + lab + " " + a0 + "\u2192" + a1 + "</span>"; };
-    render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
+    render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "SUCCESS", mixed: "COMPROMISED", loss: "BLOWN" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
       (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + deltas(ch) +
       '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
       '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
