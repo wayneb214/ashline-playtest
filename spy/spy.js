@@ -14,6 +14,11 @@
   const LH = '<div class="lh">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div>';
 
   // ---------- state, save and time ----------
+  // text size: Normal or Large, remembered; applied before the first screen draws
+  const TEXTSIZE = "albion-textsize";
+  function applyTextSize() { document.documentElement.classList.toggle("text-large", store.get(TEXTSIZE) === "large"); }
+  function textSizeHTML() { const l = store.get(TEXTSIZE) === "large"; return '<div class="textsize" role="group" aria-label="Text size"><button type="button" data-ts="normal" aria-pressed="' + !l + '"' + (l ? "" : ' class="on"') + '>Normal text</button><button type="button" data-ts="large" aria-pressed="' + l + '"' + (l ? ' class="on"' : "") + ">Large text</button></div>"; }
+  function bindTextSize(redraw) { document.querySelectorAll("[data-ts]").forEach(function (b) { b.onclick = function () { store.set(TEXTSIZE, b.getAttribute("data-ts")); applyTextSize(); redraw(); }; }); }
   const SAVE = "albion-save-v1", DAY2 = "albion-day2-start", DAY3 = "albion-day3-start", TIPS_DONE = "albion-tips-done";
   const FAST = /[?&]fast=1/.test(location.search);
   const HRS = { low: 4, med: 3, high: 2 };
@@ -122,7 +127,7 @@
   }
   function map() {
     const home = S.day >= 2 ? uk(D.UKPLACES.London) : [30, 52];
-    const pin = function (xy, cls, label) { return '<div class="pin ' + cls + '" style="left:' + xy[0].toFixed(1) + "%;top:" + xy[1].toFixed(1) + '%"><span class="head"></span><span class="needle"></span><span class="x">\u2715</span><span class="lab">' + esc(label) + "</span></div>"; };
+    const pin = function (xy, cls, label) { return '<div class="pin ' + cls + '" style="left:' + xy[0].toFixed(1) + "%;top:" + xy[1].toFixed(1) + '%"><span class="head"></span><span class="needle"></span><span class="x">\u2715</span><span class="lab' + (xy[0] > 62 ? " flip" : "") + '">' + esc(label) + "</span></div>"; };
     const homeLost = S.order.some(function (id) { return CASES()[id].home && S.done[id] === "loss"; });
     let pins = pin(home, "home" + (homeLost ? " loss" : ""), "London"), routes = "", n = 0;
     S.order.forEach(function (id) {
@@ -146,7 +151,7 @@
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "Start a new game" : "Take the chair") + "</button>" +
       (day2 ? '<button class="btn ghost" id="days">Choose a day</button>' : "") +
-      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Cutscenes</button></div>' +
+      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     LOOK.place(); LOOK.rain(true); LOOK.night(8);
     $("go").onclick = difficulty;
@@ -173,10 +178,11 @@
     const draw = function () {
       render('<div class="card dossier">' + LH + '<div class="kicker" style="margin-top:8px">Before you take the chair</div><h2>How hard a day?</h2>' +
         Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k]; return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"><div class="t">' + d.name + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
-        '<label class="tipsopt"><input type="checkbox" id="tips"' + (tips ? " checked" : "") + "> Show tips on the first day</label></div>" +
+        '<label class="tipsopt"><input type="checkbox" id="tips"' + (tips ? " checked" : "") + "> Show tips on the first day</label>" + '<div class="kicker" style="margin-top:12px">Text size</div>' + textSizeHTML() + "</div>" +
         '<div class="sticky-go"><button class="btn primary" id="go">Begin \u00b7 ' + D.DIFFICULTY[pick].name + '</button></div><button class="btn ghost" id="back">Back</button>', "You can change this next time you start a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
+      bindTextSize(draw);
       $("go").onclick = function () { store.del(SAVE); store.del(DAY2); store.del(DAY3); fresh(pick, tips); if (!CINE.maybe("day1", intro)) intro(); };
       $("back").onclick = title;
     };
@@ -640,9 +646,10 @@
 
   // shared with day2.js
   window.AH = { D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
-    render: render, ash: ash, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
+    render: render, ash: ash, textSizeHTML: textSizeHTML, bindTextSize: bindTextSize, tip: tip, face: face, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
     briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome };
 
+  applyTextSize();
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
   else if (!CINE.maybe("open", title, { gate: true })) title();

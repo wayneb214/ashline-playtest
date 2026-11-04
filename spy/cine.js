@@ -239,10 +239,11 @@
   function settings(back) {
     const A = window.AH;
     const draw = function () {
-      A.render('<div class="card dossier">' + A.LH + '<div class="kicker" style="margin-top:8px">Cinema</div><h2>Cutscenes</h2>' +
+      A.render('<div class="card dossier">' + A.LH + '<div class="kicker" style="margin-top:8px">Settings</div><h2>Text size</h2>' + A.textSizeHTML() + '<h2 style="margin-top:18px">Cutscenes</h2>' +
         '<label class="tipsopt"><input type="checkbox" id="cineon"' + (enabled() ? " checked" : "") + "> Play cutscenes as the story reaches them</label>" +
         '<div class="cinelist">' + ORDER.map(function (k) { return '<button class="card appr" data-cine="' + k + '"' + (seen[k] ? "" : " disabled") + '><div class="t">' + (seen[k] ? "\u25b6 " : "\ud83d\udd12 ") + SCENES[k].name + '</div><p style="margin:0">' + (seen[k] ? "Watch again" : "Not seen yet") + "</p></button>"; }).join("") + "</div>" +
         '<button class="btn ghost" id="back">Back</button></div>', "Cutscenes you have seen can be replayed here.");
+      A.bindTextSize(draw);
       A.$("cineon").onchange = function () { store.set(OFF, A.$("cineon").checked ? "0" : "1"); };
       document.querySelectorAll("[data-cine]").forEach(function (b) { b.onclick = function () { play(b.getAttribute("data-cine"), draw, { replay: true }); }; });
       A.$("back").onclick = back;
