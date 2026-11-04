@@ -4,6 +4,9 @@
   "use strict";
   const B = "Thamesmouth Wireless News";
   const L = {
+    nar_open_1: { who: "Narrator", text: "London. Midnight. Rain on the river." },
+    nar_open_2: { who: "Narrator", text: "The South Bank. Albion House. Somebody has come back to work." },
+    nar_open_3: { who: "Narrator", text: "One light on. One phone ringing." },
     ash_problem: { who: "Ash", text: "Chief, we have a problem." },
     pm_keep_safe: { who: "Eleanor Hale", text: "Keep Britain safe, C. And keep it out of the papers." },
     ash_green_ours: { who: "Ash", text: "The woman in green isn\u2019t one of theirs, C. She\u2019s ours." },
@@ -22,6 +25,9 @@
     bulletin_end_loss: { who: B, sub: true, text: B + ". The Varenian Republic has paraded a woman it calls a British spy. The Foreign Office is seeking urgent clarification." }
   };
   Object.keys(L).forEach(function (k) { L[k].src = L[k].src || ""; });
+  // Preload metadata so cutscenes can stretch to a clip's real length (seconds).
+  const LEN = {};
+  Object.keys(L).forEach(function (k) { if (!L[k].src) return; try { const a = new Audio(); a.preload = "metadata"; a.onloadedmetadata = function () { if (isFinite(a.duration)) LEN[k] = a.duration; }; a.src = L[k].src; } catch (e) {} });
   let cur = null, subT = null;
   function subtitle(o) {
     let el = document.getElementById("subtitle");
@@ -31,6 +37,7 @@
   }
   window.VOICE = {
     lines: L,
+    len: function (id) { return LEN[id] || 0; },
     play: function (id) { const self = this; setTimeout(function () { self.now(id); }, 60); },
     now: function (id) {
       const o = L[id]; if (!o) return;

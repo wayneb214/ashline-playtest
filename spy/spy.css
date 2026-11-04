@@ -659,3 +659,7 @@ body.in-cine #rain { opacity: .85; }
 .subtitle.on { opacity: 1; transform: none; }
 .subtitle .sw { display: block; font-family: var(--type); font-size: .8125rem; color: var(--brass-hi); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
 @media (prefers-reduced-motion: reduce) { .subtitle { transition: none; transform: none; } }
+/* audit fixes */
+.card.locked{opacity:1!important;filter:none!important;background:#ece6d6}
+.card.locked .t,.card.locked .s,.card.locked .num,.card.locked .dl{color:#3a3328!important;opacity:1!important}
+.chead.big{box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}
