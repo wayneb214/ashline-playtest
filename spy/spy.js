@@ -1,4 +1,4 @@
-/* Albion House — the core game and Day 1. Prototype. Everything is fictional: the state, the agencies,
+/* Albion House: Spymaster — the core game and Day 1. Everything is fictional: the state, the agencies,
    the companies and the people are invented; only the map is real. No real tradecraft.
    Files: data.js (all content) · feel.js (haptics, stamps, tear-away) · audio.js (sound)
           spy.js (this: state, shared screens, Day 1) · day2.js (Day 2: evidence board, interrogation). */
@@ -40,7 +40,9 @@
     keys.forEach(function (k) { S.stress[k] = D.AGENTS[k].stress; S.loyal[k] = D.AGENTS[k].loyalty; });
   }
   function save(screen) { S.screen = screen; store.set(SAVE, JSON.stringify({ v: 1, seed: seed, S: S })); }
-  // saves from before the cast change used the old officer ids; map them on load
+  // Legacy save tokens only. Earlier casts used these ids and names inside albion-save-v1.
+  // They are rewritten before the save is parsed, so they never reach the screen.
+  // Storage keys stay albion-*; do not rename them.
   const OLD_IDS = { lena: "macrae", mira: "pryce", ren: "hartley", kite: "ash", nadia: "macrae", priya: "pryce", toby: "hartley" };
   function migrate(t) { return t ? t.replace(/"(lena|mira|ren|kite|nadia|priya|toby)"/g, function (m, k) { return '"' + OLD_IDS[k] + '"'; }).replace(/\b(Lena Novak|Mira Sol|Ren Okafor|Nadia Kowalczyk|Priya Lockwood|Tobias Adeyemi|Lena|Mira|Ren|Kite|Nadia|Priya|Toby)\b/g, function (m) { return OLD_NAMES[m]; }) : t; }
   const OLD_NAMES = { "Lena Novak": "Fiona Macrae", "Mira Sol": "Gareth Pryce", "Ren Okafor": "Tom Hartley", "Nadia Kowalczyk": "Fiona Macrae", "Priya Lockwood": "Gareth Pryce", "Tobias Adeyemi": "Tom Hartley", Lena: "Fiona", Mira: "Gareth", Ren: "Tom", Kite: "Ash", Nadia: "Fiona", Priya: "Gareth", Toby: "Tom" };
@@ -151,7 +153,7 @@
   function title() {
     chrome(false);
     const saved = loadJSON(SAVE), day2 = loadJSON(DAY2);
-    render(LOOK.living() + '<div class="title"><div>' + D.EMBLEM + '<h1>Albion House</h1><div class="sub">British Secret Intelligence</div><div class="flagband" aria-hidden="true"></div></div>' +
+    render(LOOK.living() + '<div class="title"><div>' + D.EMBLEM + '<h1>Albion House</h1><div class="sub">Spymaster</div><div class="flagband" aria-hidden="true"></div></div>' +
       '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Six days, one spymaster, and a lot of problems before midnight.</p>' +
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +

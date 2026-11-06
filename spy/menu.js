@@ -80,7 +80,7 @@
     draw();
   }
   function credits(back) {
-    sheet('<div class="kicker">Credits</div><h2>Albion House</h2><p>A work of fiction. Albion House, and every state, firm, service and person in it, is invented. Real places are used only as places.</p>' +
+    sheet('<div class="kicker">Credits</div><h2>Albion House</h2><p class="kicker">Spymaster</p><p>A work of fiction. Albion House, and every state, firm, service and person in it, is invented. Real places are used only as places.</p>' +
       "<p><b>Design, story and code:</b> Wayne Byrne.</p><p><b>Music and sound:</b> original, synthesised live in your device.</p>" +
       "<p><b>Voices:</b> made with Kokoro-82M (Apache 2.0) and Chatterbox (MIT). No real person\u2019s voice was cloned.</p>" +
       "<p><b>Paintings and cutscenes:</b> original artwork made for this game.</p>" +

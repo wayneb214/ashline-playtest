@@ -1,4 +1,4 @@
-/* ALBION HOUSE — spy agency prototype. Le Carré London: ink, bottle green, oxblood, brass, fog, cream paper. */
+/* Albion House: Spymaster. Ink, bottle green, oxblood, brass, fog, cream paper. */
 :root {
   --ink: #0d0f0e; --ink-2: #161a18; --green: #1f3a2f; --green-2: #2c4d3e; --oxblood: #7a1f1f; --oxblood-hi: #a3302b;
   --brass: #c9a24a; --brass-hi: #e8c874; --brass-lo: #8a6d2c; --fog: #9aa3a0; --fog-2: #c9cdc8;
@@ -512,6 +512,7 @@ body.in-cine #rain { opacity: .85; }
 .cine .titleshot .emblem { width: 120px; height: 120px; }
 .cine .titleshot h1 { font: 400 2.875rem/1.1 Georgia, serif; margin: 14px 0 6px; letter-spacing: .04em; }
 .cine .titleshot .sub, .cine .titleshot .soon { font: 600 0.75rem system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #e2c372; }
+.cine .titleshot .sub { letter-spacing: .14em; line-height: 1.45; max-width: 16rem; margin-left: auto; margin-right: auto; }
 .cine .titleshot .soon { margin-top: 26px; color: rgba(255,255,255,.55); }
 .cine .titleshot .flagband { margin: 14px auto; }
 .cine .uishot .ly { filter: blur(6px) brightness(.45); }
@@ -520,7 +521,9 @@ body.in-cine #rain { opacity: .85; }
 .cine-gate { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; text-align: center; background: radial-gradient(ellipse at 50% 40%, #121826, #000 75%); cursor: default; }
 .cine-gate .gt { width: min(86%, 360px); }
 .cine-gate .kick { font: 600 0.75rem system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #e2c372; }
-.cine-gate h1 { font: 400 2.625rem/1.1 Georgia, serif; color: #f3ead2; margin: 12px 0 34px; }
+.cine-gate h1 { font: 400 2.625rem/1.1 Georgia, serif; color: #f3ead2; margin: 12px 0 8px; }
+.cine-gate .sub { font: 600 0.75rem/1.45 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #e2c372; margin: 0 auto 8px; max-width: 16rem; }
+.cine-gate .soon { margin: 0 0 22px; color: rgba(255,255,255,.55); font: 600 0.75rem system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
 .cine-gate .btn { width: 100%; margin-top: 10px; }
 .cine.still .ly, .cine.still .lb, .cine.still .cine-cap { transition: none !important; }
 .cinerow { display: flex; gap: 8px; } .cinerow .btn { flex: 1; font-size: 0.875rem; }

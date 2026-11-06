@@ -75,7 +75,7 @@
   const clockNow = function () { return window.__CINE_CLOCK__ != null ? window.__CINE_CLOCK__ * 1000 : performance.now(); };
   function shotHTML(sh) {
     if (sh.card) return '<div class="shot cardshot"><div class="tagline">' + sh.card + "</div></div>";
-    if (sh.title) return '<div class="shot titleshot"><div class="tt">' + ((window.AH_DATA && AH_DATA.EMBLEM) || "") + '<h1>Albion House</h1><div class="sub">A British spy story</div><div class="flagband" aria-hidden="true"></div><div class="soon">A work of fiction</div></div></div>';
+    if (sh.title) return '<div class="shot titleshot"><div class="tt">' + ((window.AH_DATA && AH_DATA.EMBLEM) || "") + '<h1>Albion House</h1><div class="sub">Spymaster</div><div class="flagband" aria-hidden="true"></div><div class="soon">A work of fiction</div></div></div>';
     if (sh.ui) return '<div class="shot uishot"><div class="ly" style="background-image:url(img/cine/thames-0.jpg)"></div><div class="device"><img src="img/cine/tr-' + sh.ui + '.jpg" alt=""></div></div>';
     let h = '<div class="shot' + (WIDE[sh.img] ? " wide" : "") + '">';
     for (let i = 0; i < 3; i++) h += '<div class="ly l' + i + '" style="background-image:url(img/cine/' + sh.img + "-" + i + (i ? ".webp" : ".jpg") + ')"></div>';
@@ -246,7 +246,7 @@
     wire(r);
     if (opts.gate) { // first launch: one tap to begin, which also unlocks sound (and tilt on iOS)
       const g = document.createElement("div"); g.className = "cine-gate";
-      g.innerHTML = '<div class="gt"><div class="kick">An invented British spy story</div><h1>Albion House</h1><button class="btn primary" id="cine-begin">Tap to begin</button><button class="btn ghost" id="cine-nope">Skip the opening</button></div>';
+      g.innerHTML = '<div class="gt"><h1>Albion House</h1><div class="sub">Spymaster</div><p class="soon">A work of fiction</p><button class="btn primary" id="cine-begin">Tap to begin</button><button class="btn ghost" id="cine-nope">Skip the opening</button></div>';
       r.el.appendChild(g); gated = r;
       g.querySelector("#cine-begin").onclick = function (e) { e.stopPropagation(); if (window.SFX) SFX.unlock(); if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") askTilt(r); g.remove(); gated = null; start(r); };
       g.querySelector("#cine-nope").onclick = function (e) { e.stopPropagation(); gated = null; run = r; finish(true); };

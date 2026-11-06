@@ -1,0 +1,100 @@
+# Codemagic cloud build for Albion House: Spymaster.
+# Signing follows the same Codemagic route as a previous app: an App Store Connect API key
+# integration plus CERTIFICATE_PRIVATE_KEY in the code_signing variable group. The CLI creates
+# or reuses the Apple Distribution certificate and the App Store profile. Nothing is uploaded
+# to Codemagic's "Code signing identities" by this file.
+#
+# This workflow does not start itself. Run it by hand from the Codemagic UI after
+# albion-ios/docs/app-store-readiness.md. Triggering it builds an IPA and, once
+# APP_STORE_APPLE_ID is set, sends that IPA to TestFlight.
+#
+# Do not reuse another app's bundle id, Apple ID, or App Store Connect key name.
+workflows:
+  ios-testflight:
+    name: Albion House iOS → TestFlight
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      # Create a team integration with this exact name. It is not the other app's key.
+      app_store_connect: Albion House App Store Connect key
+    environment:
+      node: 22
+      xcode: latest
+      groups:
+        - code_signing
+      vars:
+        XCODE_PROJECT: albion-ios/ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        # Proposed id. Not registered with Apple until you register it. See the readiness doc.
+        BUNDLE_ID: io.github.wayneb214.albionhouse
+        # Set this in the Codemagic UI after the App Store Connect record exists.
+        # Leave the placeholder until then. The build-number step refuses to continue.
+        APP_STORE_APPLE_ID: SET_AFTER_APP_STORE_CONNECT_RECORD
+    scripts:
+      - name: Install
+        script: |
+          cd "$CM_BUILD_DIR/albion-ios"
+          npm ci
+      - name: Unit tests
+        script: |
+          cd "$CM_BUILD_DIR/albion-ios"
+          npm test
+      - name: Build the game and copy it into the iOS project
+        script: |
+          cd "$CM_BUILD_DIR/albion-ios"
+          npm run ios:sync
+      - name: Check the signing key is set
+        script: |
+          if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
+            echo "CERTIFICATE_PRIVATE_KEY is missing."
+            echo "Add it to the code_signing variable group. It is the Apple Distribution certificate private key (PEM), not a password and not another app's bundle id."
+            echo "See albion-ios/docs/app-store-readiness.md."
+            exit 1
+          fi
+      - name: Set up a keychain for code signing
+        script: keychain initialize
+      - name: Check the bundle id and App Store id are this app's
+        script: |
+          if [ "$BUNDLE_ID" != "io.github.wayneb214.albionhouse" ]; then
+            echo "BUNDLE_ID must be io.github.wayneb214.albionhouse (proposed, register it for this app only)."
+            echo "Refusing to sign a different app. Current value: ${BUNDLE_ID:-<empty>}"
+            exit 1
+          fi
+          case "$APP_STORE_APPLE_ID" in
+            ''|SET_AFTER_APP_STORE_CONNECT_RECORD|*[!0-9]*)
+              echo "APP_STORE_APPLE_ID is not set."
+              echo "Create the Albion House record in App Store Connect for bundle id $BUNDLE_ID."
+              echo "Copy that record's Apple ID (a number) into the Codemagic variable APP_STORE_APPLE_ID."
+              echo "Do not use another app's Apple ID."
+              exit 1
+              ;;
+          esac
+      - name: Fetch or create the distribution certificate and App Store profile
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --strict-match-identifier \
+            --create
+      - name: Add the certificate to the keychain
+        script: keychain add-certificates
+      - name: Use the profile in the Xcode project
+        script: xcode-project use-profiles
+      - name: Build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          case "$LATEST" in ''|*[!0-9]*) LATEST=0 ;; esac
+          NEXT=$((LATEST + 1))
+          perl -pi -e "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $NEXT;/g" "$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
+          echo "Build number $NEXT"
+      - name: Build the .ipa
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
