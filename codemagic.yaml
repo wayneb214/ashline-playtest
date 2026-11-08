@@ -1,21 +1,32 @@
 # Codemagic cloud build for Albion House: Spymaster.
-# Signing follows the same Codemagic route as a previous app: an App Store Connect API key
-# integration plus CERTIFICATE_PRIVATE_KEY in the code_signing variable group. The CLI creates
-# or reuses the Apple Distribution certificate and the App Store profile. Nothing is uploaded
-# to Codemagic's "Code signing identities" by this file.
+# The file must stay at the repository root. Codemagic discovers only
+# codemagic.yaml in that location. The native project is albion-ios/,
+# selected below with working_directory. Do not point the Codemagic app
+# at albion-ios/codemagic.yaml; that file is not used.
 #
-# This workflow does not start itself. Run it by hand from the Codemagic UI after
-# albion-ios/docs/app-store-readiness.md. Triggering it builds an IPA and, once
-# APP_STORE_APPLE_ID is set, sends that IPA to TestFlight.
+# Signing uses an App Store Connect API key integration plus
+# CERTIFICATE_PRIVATE_KEY in the code_signing variable group. The CLI
+# creates or reuses the Apple Distribution certificate and the App Store
+# profile. Nothing is uploaded to Codemagic's "Code signing identities"
+# by this file.
 #
-# Do not reuse another app's bundle id, Apple ID, or App Store Connect key name.
+# This workflow does not start itself. Run it by hand from the Codemagic
+# UI after albion-ios/docs/app-store-readiness.md. A successful run builds
+# an IPA and sends it to TestFlight.
+#
+# Bundle id io.github.wayneb214.albionhouse is registered.
+# App Store Connect Apple ID for this app is 6832206818.
+# Do not reuse another app's bundle id, Apple ID, or integration name.
 workflows:
   ios-testflight:
     name: Albion House iOS → TestFlight
     max_build_duration: 45
     instance_type: mac_mini_m2
+    # npm, tests, and cap sync run here. Paths below are relative to this
+    # directory unless they start with $CM_BUILD_DIR (the repository root).
+    working_directory: albion-ios
     integrations:
-      # Create a team integration with this exact name. It is not the other app's key.
+      # Create a team integration with this exact name. It is not another app's key.
       app_store_connect: Albion House App Store Connect key
     environment:
       node: 22
@@ -23,26 +34,18 @@ workflows:
       groups:
         - code_signing
       vars:
-        XCODE_PROJECT: albion-ios/ios/App/App.xcodeproj
+        # Relative to working_directory (albion-ios).
+        XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
-        # Proposed id. Not registered with Apple until you register it. See the readiness doc.
         BUNDLE_ID: io.github.wayneb214.albionhouse
-        # Set this in the Codemagic UI after the App Store Connect record exists.
-        # Leave the placeholder until then. The build-number step refuses to continue.
-        APP_STORE_APPLE_ID: SET_AFTER_APP_STORE_CONNECT_RECORD
+        APP_STORE_APPLE_ID: "6832206818"
     scripts:
       - name: Install
-        script: |
-          cd "$CM_BUILD_DIR/albion-ios"
-          npm ci
+        script: npm ci
       - name: Unit tests
-        script: |
-          cd "$CM_BUILD_DIR/albion-ios"
-          npm test
+        script: npm test
       - name: Build the game and copy it into the iOS project
-        script: |
-          cd "$CM_BUILD_DIR/albion-ios"
-          npm run ios:sync
+        script: npm run ios:sync
       - name: Check the signing key is set
         script: |
           if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
@@ -56,19 +59,17 @@ workflows:
       - name: Check the bundle id and App Store id are this app's
         script: |
           if [ "$BUNDLE_ID" != "io.github.wayneb214.albionhouse" ]; then
-            echo "BUNDLE_ID must be io.github.wayneb214.albionhouse (proposed, register it for this app only)."
-            echo "Refusing to sign a different app. Current value: ${BUNDLE_ID:-<empty>}"
+            echo "BUNDLE_ID must be io.github.wayneb214.albionhouse."
+            echo "That id is registered for Albion House. Refusing to sign a different app."
+            echo "Current value: ${BUNDLE_ID:-<empty>}"
             exit 1
           fi
-          case "$APP_STORE_APPLE_ID" in
-            ''|SET_AFTER_APP_STORE_CONNECT_RECORD|*[!0-9]*)
-              echo "APP_STORE_APPLE_ID is not set."
-              echo "Create the Albion House record in App Store Connect for bundle id $BUNDLE_ID."
-              echo "Copy that record's Apple ID (a number) into the Codemagic variable APP_STORE_APPLE_ID."
-              echo "Do not use another app's Apple ID."
-              exit 1
-              ;;
-          esac
+          if [ "$APP_STORE_APPLE_ID" != "6832206818" ]; then
+            echo "APP_STORE_APPLE_ID must be 6832206818, the Albion House record in App Store Connect."
+            echo "Do not substitute another app's Apple ID."
+            echo "Current value: ${APP_STORE_APPLE_ID:-<empty>}"
+            exit 1
+          fi
       - name: Fetch or create the distribution certificate and App Store profile
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
@@ -84,15 +85,20 @@ workflows:
           LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           case "$LATEST" in ''|*[!0-9]*) LATEST=0 ;; esac
           NEXT=$((LATEST + 1))
-          perl -pi -e "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $NEXT;/g" "$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
+          perl -pi -e "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $NEXT;/g" \
+            "$CM_BUILD_DIR/albion-ios/$XCODE_PROJECT/project.pbxproj"
           echo "Build number $NEXT"
       - name: Build the .ipa
         script: |
+          # Default ipa output is build/ios/ipa relative to the working directory.
+          # Pin it to an absolute path so the artifact glob below matches.
           xcode-project build-ipa \
-            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --project "$CM_BUILD_DIR/albion-ios/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --ipa-directory "$CM_BUILD_DIR/albion-ios/build/ios/ipa"
     artifacts:
-      - build/ios/ipa/*.ipa
+      # Artifact paths are relative to the repository root, not working_directory.
+      - albion-ios/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
