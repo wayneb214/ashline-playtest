@@ -1,8 +1,8 @@
 # Albion House: Spymaster — App Store readiness
 
-This is a setup checklist, not a submission. Nothing here registers the app, creates an App Store Connect record, starts a cloud build, or uploads a build.
+This is a setup checklist. It does not start a cloud build or upload a build.
 
-The proposed bundle id is `io.github.wayneb214.albionhouse`. It is **not registered** with Apple. Do not ship, and do not point Codemagic at another app's id, until you register this one.
+The bundle id `io.github.wayneb214.albionhouse` is registered. The App Store Connect Apple ID for this app is `6832206818`. Do not point Codemagic at another app's id.
 
 ## What the app actually does
 
@@ -19,7 +19,7 @@ Albion House is a single-player story. It is bundled inside the app and plays wi
 ## What is already in the repo
 
 - `albion-ios/` — Capacitor 8, Node 22, Swift Package Manager. No CocoaPods.
-- `codemagic.yaml` at the repository root — manual `mac_mini_m2` workflow. It installs with `npm ci`, runs tests, packages the web game, syncs iOS, checks `CERTIFICATE_PRIVATE_KEY`, initializes the keychain, fetches the App Store signing files for this bundle id, installs them, bumps the build number, and builds an IPA.
+- `codemagic.yaml` at the repository root. Codemagic reads that filename only from the root, so the file is not inside `albion-ios/`. The workflow sets `working_directory: albion-ios`, then installs with `npm ci`, runs tests, packages the web game, syncs iOS, checks `CERTIFICATE_PRIVATE_KEY`, initializes the keychain, fetches the App Store signing files for this bundle id, installs them, bumps the build number, and builds the IPA. The IPA is written to `albion-ios/build/ios/ipa/` (an absolute path). The artifact pattern is `albion-ios/build/ios/ipa/*.ipa`, which is relative to the repository root, where Codemagic looks for artifacts.
 - The web bundle is produced by `npm run package-web`. It copies `spy/` runtime files only. It leaves out the root Ashline game, `spy/review/`, and images the game never asks for.
 
 The web playtest still lives at the existing GitHub Pages path `ashline-playtest/spy/`. That path is an infrastructure dependency. Do not rename the repository or that URL to make the iOS app.
@@ -28,21 +28,23 @@ The web playtest still lives at the existing GitHub Pages path `ashline-playtest
 
 The workflow uses the same kind of signing as the other shipped app: a Codemagic App Store Connect API-key integration, and one distribution-certificate private key in the team variable group `code_signing`. An active Apple Developer membership is required. A local Mac is not required to run this workflow. This file does not promise any free build minutes.
 
-Do not trigger the workflow until every item below is true. A successful run uploads to TestFlight.
+Do not trigger the workflow until the items below are true. A successful run uploads to TestFlight.
 
-1. Register the explicit App ID `io.github.wayneb214.albionhouse` on your Apple team. Do not reuse another app's id.
-2. Create the App Store Connect record for that bundle id. Its name should be Albion House: Spymaster. Note the numeric Apple ID of that record.
-3. In Codemagic, create a team integration named exactly `Albion House App Store Connect key` (an App Store Connect API key with access to this app). Do not select another app's integration.
+The bundle id and the App Store Connect record already exist. `APP_STORE_APPLE_ID` in `codemagic.yaml` is `6832206818`. Leave that value as it is. The build refuses to continue if the variable is changed.
+
+1. In Codemagic, open the application for this repository (`wayneb214/ashline-playtest`), the whole repository, not a subdirectory.
+2. Set the configuration to the repository-root file `codemagic.yaml`. Codemagic does not discover a YAML file inside `albion-ios/`. If a settings field asks for a configuration path, enter `codemagic.yaml`. Do not enter `albion-ios/codemagic.yaml`.
+3. Create a team integration named exactly `Albion House App Store Connect key`. It is an App Store Connect API key with access to this app. Select that integration for this application. Do not select another app's key.
 4. Confirm the variable group `code_signing` contains `CERTIFICATE_PRIVATE_KEY` (the Apple Distribution certificate private key in PEM). The workflow stops with a setup error if it is missing. Do not put the key in git.
-5. In the workflow variables, set `APP_STORE_APPLE_ID` to the number from step 2. The committed placeholder is `SET_AFTER_APP_STORE_CONNECT_RECORD`. The build refuses to continue while that placeholder, a blank value, or a non-numeric value is set, and it refuses a bundle id other than `io.github.wayneb214.albionhouse`.
-6. Leave automatic builds off. Start `Albion House iOS → TestFlight` by hand.
+5. Do not override `BUNDLE_ID` or `APP_STORE_APPLE_ID` in the Codemagic UI. They are `io.github.wayneb214.albionhouse` and `6832206818`.
+6. Leave automatic builds off. When the items above are done, start `Albion House iOS → TestFlight` by hand.
 
 ## Owner decisions still open
 
 - Home-screen truncation. The display name is the full `Albion House: Spymaster`. iOS may shorten it under the icon. If that looks wrong on a device, choose a shorter `CFBundleDisplayName` (`Albion House` or `Spymaster`).
 - The in-game title roundel still draws a star over a stylised flag shield. The app icon does not. It is the bottle-green roundel and brass star from that mark, with the shield left out. Say if the in-game shield should change too.
 - iPhone only (`TARGETED_DEVICE_FAMILY = 1`), portrait only. iPad is not a target.
-- The rate-this-game control stays hidden until `APP_STORE_ID` in `spy/review.js` is set to this app's id. Leave it empty until the App Store record exists.
+- The rate-this-game control stays hidden. `APP_STORE_ID` in `spy/review.js` is still empty. The App Store Connect number for a later change, if you want that button, is `6832206818`.
 
 ## Not verified here
 
