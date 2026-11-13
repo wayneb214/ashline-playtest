@@ -1,4 +1,4 @@
-/* crunch.js: twice in the game, two urgent calls land at once and only one duty team is free.
+/* crunch.js: on Days 2 and 5, two urgent calls land at once and only one duty team is free.
    You choose; the file you leave goes worse (never graphic). One file is clearly about a person's safety. */
 (function () {
   "use strict";
@@ -8,11 +8,6 @@
         left: { capital: -4, service: -10 }, head: "Dover: woman \u2018helping police\u2019 after port alert" },
       { id: "taxi", img: "fleet", t: "A minister\u2019s case left in a taxi", s: "Embarrassing papers, mostly diary dates. A reporter is sniffing.",
         left: { capital: -6 }, head: "Minister\u2019s lost papers turn up at newspaper" } ] },
-    3: { at: 14, files: [
-      { id: "press", img: "fleet", t: "A journalist is asking about Bath", s: "She has half a story and a deadline at six.",
-        left: { capital: -6 }, head: "Paper hints at \u2018secret Bath operation\u2019" },
-      { id: "ferry", img: "harwich", t: "Our courier stopped at the night ferry", s: "His papers won\u2019t hold if they check twice. Get him clear.", good: true,
-        left: { capital: -4, service: -10 }, head: "Ferry passenger held for questioning at Harwich" } ] },
     5: { at: 11, files: [
       { id: "family", img: "fleet", t: "Our held officer\u2019s family has visitors", s: "Two men in a grey car outside the house in Croydon. The children are home.", good: true,
         left: { capital: -4, service: -10 }, head: "Croydon: police called to \u2018suspicious car\u2019" },
@@ -26,6 +21,7 @@
   }
   function interrupt() {
     const A = window.AH, S = A.S(), p = due(S); if (!p) return false;
+        if (window.VOICE) VOICE.play("cue_crunch");
         A.render('<div data-screen="crunch" data-music="tense"><div class="card dossier"><div class="kicker">' + A.hh(S.hour) + " \u00b7 two calls at once</div><h2>One duty team left</h2>" +
       A.ash("Two lines lit at once, C. Every officer is committed. I can send the duty team to <b>one</b> of these. The other will go worse.", true) +
       '<div class="crunch">' + p.files.map(card).join('<div class="or">or</div>') + "</div></div></div>", "Pick one. The file you leave will slip.");
@@ -43,7 +39,7 @@
     const word = { win: "Handled", mixed: "Partly handled", loss: "Went wrong" }[res];
     A.render('<div data-screen="crunch-result"><div class="card dossier"><div class="kicker">Two calls \u00b7 what happened</div>' +
       '<div class="crunchres"><div><b>' + word + ":</b> " + f.t + A.deltas(ch) + '</div><div class="left"><b>Left alone:</b> ' + o.t + "<br><i>\u201c" + o.head + "\u201d</i>" + A.deltas(ch2) + "</div></div>" +
-      A.ash(f.good ? "Right call. People before paper." : "The papers will keep. I hope the other one does.", !f.good) +
+      (window.VOICE ? (VOICE.play(f.good ? "crunch_good" : "crunch_bad"), "") : "") + A.ash(f.good ? "Right call. People before paper." : "The papers will keep. I hope the other one does.", !f.good) +
       '<button class="btn primary" id="go">Back to the desk</button></div></div>');
     A.meters(); A.save("briefing");
     A.$("go").onclick = A.briefing;

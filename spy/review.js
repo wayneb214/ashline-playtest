@@ -6,20 +6,33 @@
    On the web both are no-ops, so playtesters never see anything broken. */
 (function () {
   "use strict";
-  const APP_STORE_ID = "";   // set when the App Store listing exists
+  const APP_STORE_ID = "6832206818";
   const FLAG = "albion-review-asked", FORCE = /[?&]rate=1/.test(location.search);
   const native = function () { return !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()); };
   const canRate = function () { return FORCE || (native() && APP_STORE_ID !== ""); };
-  function openReviewPage() { if (!APP_STORE_ID) return false; window.open("https://apps.apple.com/app/id" + APP_STORE_ID + "?action=write-review", "_blank"); return true; }
+  // Opens outside the web view. On iPhone, itms-apps goes to the App Store review sheet.
+  // window.open("_system") is handed to the system by Capacitor; a location change would stay in the app.
+  function openReviewPage() {
+    if (!APP_STORE_ID) return false;
+    const q = "/app/id" + APP_STORE_ID + "?action=write-review";
+    if (native()) { window.open("itms-apps://apps.apple.com" + q, "_system"); return true; }
+    window.open("https://apps.apple.com" + q, "_blank", "noopener"); return true;
+  }
+  // the Rate buttons only appear once a day has been played through (no asking before they have played)
+  const PLAYED = "albion-played";
+  function played() { try { return FORCE || !!localStorage.getItem(PLAYED); } catch (e) { return false; } }
+  function markPlayed() { try { localStorage.setItem(PLAYED, "1"); } catch (e) {} }
+  function rateHTML(id) { if (!played()) return ""; return '<button type="button" class="btn ghost ratebtn" id="' + id + '">\u2605 Rate this game</button>'; }
+  function bindRate(id) { const b = document.getElementById(id); if (b) b.onclick = function () { openReviewPage(); }; }
   // the system prompt; never throws, never waits, never asks twice
   function requestReview() {
     try { if (localStorage.getItem(FLAG)) return false; } catch (e) { return false; }
     if (!native()) return false;
     try { localStorage.setItem(FLAG, "1"); } catch (e) {}
-    try { const P = Capacitor.Plugins && Capacitor.Plugins.InAppReview; if (P && P.requestReview) P.requestReview().catch(function () {}); } catch (e) {}
+    try { const P = window.NATIVE ? NATIVE.plug("InAppReview") : Capacitor.Plugins && Capacitor.Plugins.InAppReview; if (P && P.requestReview) P.requestReview().catch(function () {}); } catch (e) {}
     return true;
   }
   // called after a stamp lands: only a win, only outside cutscenes
   function happyMoment(res) { if (res !== "win" || document.body.classList.contains("in-cine")) return; setTimeout(function () { if (!document.body.classList.contains("in-cine") && !window.AH_PAUSED) requestReview(); }, 1800); }
-  window.REVIEW = { canRate: canRate, openReviewPage: openReviewPage, requestReview: requestReview, happyMoment: happyMoment };
+  window.REVIEW = { played: played, markPlayed: markPlayed, rateHTML: rateHTML, bindRate: bindRate, canRate: canRate, openReviewPage: openReviewPage, requestReview: requestReview, happyMoment: happyMoment };
 })();

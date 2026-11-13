@@ -13,14 +13,15 @@
   window.addEventListener("pagehide", autosave);
 
   // ---------- a small modal sheet ----------
+  // swaps the sheet only: going Pause > Settings must not un-pause the game or restart a held voice line
   function sheet(html, cls) {
-    close();
+    const old = $("sheet"); if (old) old.remove();
     const d = document.createElement("div"); d.id = "sheet"; d.className = "sheet-bg" + (cls ? " " + cls : ""); d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true");
     d.innerHTML = '<div class="sheet">' + html + "</div>"; document.body.appendChild(d);
     requestAnimationFrame(function () { d.classList.add("in"); });
     return d;
   }
-  function close() { const d = $("sheet"); if (d) d.remove(); window.AH_PAUSED = false; document.body.classList.remove("paused"); }
+  function close() { const d = $("sheet"); if (d) d.remove(); window.AH_PAUSED = false; document.body.classList.remove("paused"); if (window.VOICE && VOICE.unhold) VOICE.unhold(); }
   function confirm(title, txt, yes, onYes, back) {
     sheet('<h2>' + title + "</h2><p>" + txt + '</p><button class="btn danger" id="cf-yes">' + yes + '</button><button class="btn ghost" id="cf-no">Cancel</button>');
     $("cf-yes").onclick = function () { close(); onYes(); };
@@ -30,12 +31,12 @@
   // ---------- the pause menu ----------
   function open() {
     window.AH_PAUSED = true; document.body.classList.add("paused");
-    if (window.VOICE) VOICE.hush();
+    if (window.VOICE) VOICE.hold(); // paused mid-line: it carries on from the same word when you resume
     const m = window.SFX && SFX.muted;
     sheet('<div class="kicker">Paused \u00b7 Day ' + A().S().day + " \u00b7 " + A().hh(A().S().hour) + "</div><h2>Albion House</h2>" +
       '<button class="btn primary" id="mn-resume">Resume</button>' +
       '<button class="btn ghost" id="mn-sound">' + (m ? "\ud83d\udd07 Sound is off \u00b7 turn on" : "\ud83d\udd0a Sound is on \u00b7 turn off") + "</button>" +
-      '<button class="btn ghost" id="mn-settings">Settings</button><button class="btn ghost" id="mn-help">Help &amp; FAQ</button>' + (window.FUN ? '<button class="btn ghost" id="mn-ach">\u2605 Achievements</button>' : "") + (window.REVIEW && REVIEW.canRate() ? '<button class="btn ghost" id="mn-rate">\u2b50 Rate this game</button>' : "") +
+      '<button class="btn ghost" id="mn-settings">Settings</button><button class="btn ghost" id="mn-help">Help &amp; FAQ</button>' + (window.FUN ? '<button class="btn ghost" id="mn-ach">\u2605 Achievements</button>' : "") + (window.REVIEW && REVIEW.canRate() && REVIEW.played() ? '<button class="btn ghost" id="mn-rate">\u2b50 Rate this game</button>' : "") +
       '<button class="btn ghost" id="mn-title">Title screen</button><button class="btn danger" id="mn-restart">Restart day</button>' +
       '<p class="fine">Your game saves itself after every move.</p>', "menu");
     window.AH_PAUSED = true; document.body.classList.add("paused");
@@ -43,7 +44,7 @@
     $("mn-sound").onclick = function () { if (window.SFX) { SFX.unlock(); SFX.setMuted(!SFX.muted); } A().muteBtn(); open(); };
     $("mn-settings").onclick = function () { settings(open); };
     $("mn-help").onclick = function () { help(open); };
-    if ($("mn-ach")) $("mn-ach").onclick = function () { FUN.screen(open); };
+    if ($("mn-ach")) $("mn-ach").onclick = function () { FUN.open(open); };
     if ($("mn-rate")) $("mn-rate").onclick = function () { REVIEW.openReviewPage(); };
     $("mn-title").onclick = function () { autosave(); close(); A().title(); };
     $("mn-restart").onclick = function () { confirm("Restart Day " + A().S().day + "?", "You go back to 08:00 this morning. Everything you did today is lost.", "Restart the day", A().restartDay, open); };
@@ -56,25 +57,32 @@
     const draw = function () {
       const rd = PREFS.get("reduce"), rdNow = rd == null ? "auto" : rd ? "on" : "off";
       sheet('<div class="kicker">Settings</div><h2>Sound</h2>' +
-        seg("mode", [["all", "All"], ["music", "Music only"], ["effects", "Effects only"], ["off", "Off"]], window.SFX && SFX.muted ? "off" : PREFS.get("mode")) +
-        slider("music", "Music") + slider("amb", "Rain &amp; Big Ben") + slider("voice", "Voices") + slider("fx", "Effects &amp; taps") +
+        seg("mode", [["all", "Music, voices &amp; effects"], ["nomusic", "No music"], ["off", "Off"]], window.SFX && SFX.muted ? "off" : PREFS.get("mode")) +
+        slider("music", "Music") + slider("voice", "Voices") + slider("fx", "Effects &amp; taps") +
         (PREFS.canBuzz() ? "<h2>Haptics</h2>" + seg("hap", [["1", "On"], ["0", "Off"]], PREFS.get("haptics") ? "1" : "0") : "") +
+        "<h2>Text size</h2>" + seg("ts", [["std", "Standard"], ["lg", "Larger"]], PREFS.get("text") === "lg" ? "lg" : "std") +
+        '<p class="fine">Larger is the default. Standard is a little smaller, and never under 14px.</p>' +
         "<h2>Motion</h2>" + seg("rd", [["auto", "Device (" + (FEEL.deviceReduce ? "reduced" : "full") + ")"], ["off", "Full motion"], ["on", "Reduced"]], rdNow) +
         '<p class="fine">Reduced motion shows still paintings instead of moving cutscenes.</p>' +
-        "<h2>Text size</h2>" + A().textSizeHTML() +
-        "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") +
+        
+        (window.REVIEW && REVIEW.rateHTML && REVIEW.played() ? "<h2>Enjoying it?</h2>" + REVIEW.rateHTML("mn-rate") : "") + "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") +
+        (document.body.classList.contains("on-title") && A().canReplayDay && A().canReplayDay() ? '<h2>Replay a day</h2><button class="btn ghost" id="st-days">Replay a day</button>' : "") +
         (window.CINE ? '<h2>Cutscenes</h2><button class="btn ghost" id="st-cine">Cutscenes and replays</button>' : "") +
+        (window.HOWTO ? '<h2>How to play</h2><button class="btn ghost" id="st-howto">How to play</button>' : "") +
         '<h2>About</h2><button class="btn ghost" id="st-credits">Credits</button><p class="fine privacy">No accounts, no tracking. Saves stay on this device.</p>' +
         '<button class="btn primary" id="st-back">Done</button>', "settings");
       if (back === open) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
       document.querySelectorAll("[data-vol]").forEach(function (r) { r.oninput = function () { PREFS.set(r.getAttribute("data-vol"), r.value / 100); }; r.onchange = function () { if (window.SFX) SFX.tick(1); }; });
       document.querySelectorAll("[data-mode]").forEach(function (b) { b.onclick = function () { const m = b.getAttribute("data-mode"); if (window.SFX) { SFX.unlock(); SFX.setMuted(m === "off"); } if (m !== "off") PREFS.set("mode", m); A().muteBtn(); draw(); }; });
       document.querySelectorAll("[data-hap]").forEach(function (b) { b.onclick = function () { PREFS.set("haptics", b.getAttribute("data-hap") === "1"); FEEL.buzz("stamp"); draw(); }; });
+      document.querySelectorAll("[data-ts]").forEach(function (b) { b.onclick = function () { PREFS.set("textSet", true); PREFS.set("text", b.getAttribute("data-ts")); draw(); }; });
       document.querySelectorAll("[data-rd]").forEach(function (b) { b.onclick = function () { const v = b.getAttribute("data-rd"); PREFS.set("reduce", v === "auto" ? null : v === "on"); draw(); }; });
+      if (window.REVIEW && REVIEW.bindRate) REVIEW.bindRate("mn-rate");
       document.querySelectorAll("[data-tips]").forEach(function (b) { b.onclick = function () { PREFS.set("tips", b.getAttribute("data-tips") === "1"); draw(); }; });
-      A().bindTextSize(draw);
       if ($("st-cine")) $("st-cine").onclick = function () { const wasPlay = inPlay(), s = A().S(); close(); CINE.settings(function () { if (wasPlay) A().resumeScreen(); else A().title(); }); };
       $("st-credits").onclick = function () { credits(draw); };
+      if ($("st-howto")) $("st-howto").onclick = function () { close(); HOWTO.show(function () { settings(back); }, false); };
+      if ($("st-days")) $("st-days").onclick = function () { close(); A().daySelect(); };
       $("st-back").onclick = function () { close(); if (back) back(); };
     };
     draw();
@@ -96,24 +104,29 @@
     ["Is any of this real?", "No. Every service, state, firm and person is invented."]
   ];
   function help(back) {
-    sheet('<div class="kicker">Help &amp; FAQ</div><h2>How to play</h2>' + FAQ.map(function (q) { return "<details><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; }).join("") + '<button class="btn primary" id="hp-back">Back</button>', "settings");
+    sheet('<div class="kicker">Help &amp; FAQ</div><h2>How to play</h2>' + (window.HOWTO ? '<button type="button" class="btn ghost" id="hp-howto">How to play \u00b7 the briefing</button>' : "") + FAQ.map(function (q) { return "<details><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; }).join("") + '<button class="btn primary" id="hp-back">Back</button>', "settings");
     if (back === open) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     $("hp-back").onclick = function () { close(); if (back) back(); };
+    if ($("hp-howto")) $("hp-howto").onclick = function () { close(); HOWTO.show(function () { help(back); }, false); };
   }
 
   // ---------- one-time coach marks: a short tip the first time a mechanic appears ----------
   const CKEY = "albion-coach";
   let seenC = {}; try { seenC = JSON.parse(localStorage.getItem(CKEY) || "{}"); } catch (e) {}
   const coachQ = [];
+  let coachOn = "";
   function coach(key, html) {
     if (seenC[key] || !PREFS.get("tips") || /[?&]nocoach=1/.test(location.search)) return;
-    if ($("coach")) { if (!coachQ.some(function (q) { return q[0] === key; })) coachQ.push([key, html]); return; }
+    // one tip per screen: anything else waits until the next time its trigger fires on a new screen
+    const scr = document.querySelector("#view [data-screen]"), here = (scr ? scr.getAttribute("data-screen") : "") + "|" + (window.AH && AH.S && AH.S() ? AH.S().day + ":" + AH.S().hour : "");
+    if ($("coach") || coachOn === here) return;
+    coachOn = here;
     seenC[key] = 1; try { localStorage.setItem(CKEY, JSON.stringify(seenC)); } catch (e) {}
     const old = $("coach"); if (old) old.remove();
     const c = document.createElement("div"); c.id = "coach"; c.className = "coach"; c.setAttribute("role", "status");
     c.innerHTML = "<b>New</b><span>" + html + '</span><button type="button" aria-label="Dismiss tip">Got it</button>';
     document.body.appendChild(c); requestAnimationFrame(function () { c.classList.add("on"); });
-    let gone = false; const go = function () { if (gone) return; gone = true; c.classList.remove("on"); setTimeout(function () { c.remove(); const n = coachQ.shift(); if (n) coach(n[0], n[1]); }, 300); };
+    let gone = false; const go = function () { if (gone) return; gone = true; c.classList.remove("on"); setTimeout(function () { c.remove(); }, 300); };
     c.querySelector("button").onclick = function (e) { e.stopPropagation(); go(); }; setTimeout(go, 9000);
   }
 

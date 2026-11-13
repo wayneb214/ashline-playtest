@@ -51,7 +51,9 @@
 
   // fade through black between screens
   function fade() {
-    if (reduce()) return; const f = $("fade"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+    if (reduce()) return; const f = $("fade"); if (!f) return; f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+    // guaranteed exit: the dip to black clears even if the animation is frozen or animationend never comes
+    clearTimeout(fade.t); fade.t = setTimeout(function () { f.classList.remove("go"); }, 600);
   }
 
   // living title: line up the overlays with the painting under background-size: cover
@@ -76,7 +78,18 @@
     });
   }
 
-  window.LOOK = { rain: rain, night: night, fade: fade, place: place, living: living, seals: seals };
+  // each day's light and weather: a light tint plus a few CSS particles (transforms and opacity only).
+  // D1 rain on the window, D2 station haze, D3 country night, D4 cafe morning, D5 dawn river, D6 Westminster traffic glow.
+  let dayOn = 0;
+  function day(d) {
+    d = Math.max(1, Math.min(6, d || 1)); document.body.setAttribute("data-look", "d" + d);
+    const el = $("daylook"); if (!el || dayOn === d) return; dayOn = d;
+    let h = "";
+    for (let i = 0; i < 14; i++) h += '<i style="--x:' + (Math.random() * 100).toFixed(1) + "%;--y:" + (Math.random() * 100).toFixed(1) + "%;--d:" + (-Math.random() * 12).toFixed(2) + "s;--s:" + (0.6 + Math.random() * 0.8).toFixed(2) + ";--t:" + (8 + Math.random() * 8).toFixed(1) + 's"></i>';
+    el.innerHTML = '<b class="dl-tint"></b>' + h;
+  }
+
+  window.LOOK = { rain: rain, night: night, fade: fade, place: place, living: living, seals: seals, day: day };
   function boot() { grain(); if (/[?&]still=1/.test(location.search)) document.body.classList.add("still"); }
   if (document.readyState !== "loading") boot(); else document.addEventListener("DOMContentLoaded", boot);
 })();

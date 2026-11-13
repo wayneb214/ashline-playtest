@@ -4,17 +4,17 @@
   "use strict";
   const KEY = "albion-ach", GC_PREFIX = "albionhouse.ach.";
   const ACH = [
-    ["first_win", "First stamp", "Close a case with a clean SUCCESS."],
+    ["first_win", "First stamp", "Close a case with a clean CLOSED stamp."],
     ["clean_day", "Clean sheet", "Finish a day without a single failed case."],
     ["gold_day", "Gold standard", "Earn a Gold rating for a day."],
     ["all_gold", "Triple gold", "Gold on all three days of one game."],
-    ["codebreaker", "Codebreaker", "Crack the Heath postcard first time."],
-    ["eagle_eye", "Eagle eye", "Spot the tail in both photos."],
+    ["codebreaker", "Codebreaker", "Crack Kesk\u2019s postcard first time."],
+    ["eagle_eye", "Eagle eye", "Spot the watcher in both photos."],
     ["lie_detector", "Lie detector", "Catch both lies in the York stories."],
-    ["every_code", "Cracked every code", "Win all three hands-on cases in one game."],
+    ["every_code", "Cracked every code", "Win all three hands-on puzzles in one game."],
     ["mole", "Mole catcher", "Name the mole correctly."],
-    ["no_hurt", "Nobody hurt", "Finish the game with no officer wounded, burned or lost."],
-    ["trust", "Never lost No.10", "Finish the game without No.10 trust ever dropping below 40/100."],
+    ["no_hurt", "Nobody hurt", "Finish Act 1 with no officer wounded, burned or lost."],
+    ["trust", "Never lost No.10", "Finish Act 1 without No.10 trust ever dropping below 40/100."],
     ["home", "Home before midnight", "Bring the woman in the green coat home clean."],
     ["leak", "Who showed him the door", "Find the Day 4 leak."],
     ["bridge", "Across the bridge", "Bring your held officer home clean on Day 5."],
@@ -23,11 +23,29 @@
   ];
   let got = {}; try { got = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
   const A = function () { return window.AH; };
-  function toast(html, cls) {
-    const t = document.createElement("div"); t.className = "toast " + (cls || ""); t.setAttribute("role", "status"); t.innerHTML = html;
+  // One pop-up at a time: toasts queue, wait while a cutscene, sheet or coach mark is up, and dock over the ticker
+  // (the one band with nothing to tap), so they never cover the report or a control.
+  const TQ = []; let tBusy = false;
+  const blocked = function () { return document.body.classList.contains("in-cine") || !!document.querySelector(".cine, .cine-gate, .sheet-bg, .coach, .epi"); };
+  function toast(html, cls) { if (TQ.some(function (q) { return q[0] === html; })) return; TQ.push([html, cls]); pump(); }
+  function pump() {
+    if (tBusy || !TQ.length) return;
+    if (blocked()) { setTimeout(pump, 600); return; }
+    tBusy = true; const q = TQ.shift();
+    const t = document.createElement("div"); t.className = "toast " + (q[1] || ""); t.setAttribute("role", "status"); t.innerHTML = q[0];
     const host = document.getElementById("toasts") || (function () { const h = document.createElement("div"); h.id = "toasts"; document.body.appendChild(h); return h; })();
-    host.appendChild(t); requestAnimationFrame(function () { t.classList.add("on"); });
-    setTimeout(function () { t.classList.remove("on"); setTimeout(function () { t.remove(); }, 400); }, 3600);
+    // dock inside the top bar, right of the menu button: only the meters sit there, and nothing there is tappable
+    const hud = document.getElementById("hud"), mb = document.getElementById("menu"), m = mb && !hud.classList.contains("hidden") ? mb.getBoundingClientRect() : null;
+    if (m && m.width) { const hr = hud.getBoundingClientRect(); host.style.top = Math.max(2, m.top - 4) + "px"; host.style.left = Math.round(m.right + 8) + "px"; host.style.right = "8px"; host.style.maxWidth = "none"; host.style.margin = "0"; host.classList.add("docked"); host.style.setProperty("--band", Math.round(hr.bottom - m.top + 2) + "px"); }
+    else { const tk = document.querySelector(".ticker"), r = tk && tk.getBoundingClientRect(); host.style.top = (r && r.height ? Math.max(0, r.top) : 8) + "px"; host.style.left = host.style.right = host.style.maxWidth = host.style.margin = ""; host.classList.remove("docked"); }
+    host.appendChild(t);
+    // Larger text can make a docked toast taller than the top bar, spilling over the page; drop the description then
+    if (host.classList.contains("docked") && host.getBoundingClientRect().top + t.offsetTop + t.offsetHeight > hud.getBoundingClientRect().bottom + 1) t.classList.add("short");
+    requestAnimationFrame(function () { t.classList.add("on"); });
+    setTimeout(function () { t.classList.remove("on"); setTimeout(function () { t.remove(); tBusy = false; setTimeout(pump, 250); }, 350); }, q[1] === "ach" ? 3200 : 2800);
+  }
+  function askReview() {
+    if (window.REVIEW && REVIEW.requestReview && !document.body.classList.contains("in-cine")) REVIEW.requestReview(); // once ever, native only
   }
   function unlock(id) {
     if (got[id]) return; const a = ACH.filter(function (x) { return x[0] === id; })[0]; if (!a) return;
@@ -52,7 +70,8 @@
   function event(type, d) {
     const S = A().S(); if (!S) return; const f = rec(S); track(S);
     if (type === "case" && d.res === "win") unlock("first_win");
-    if (type === "mini" && d.res === "win") unlock({ cipher: "codebreaker", spot: "eagle_eye", lie: "lie_detector" }[d.id]);
+    if (type === "mini" && d.res === "win") { unlock({ proof: "codebreaker", faces: "eagle_eye", lie: "lie_detector" }[d.id]); f.mwin = f.mwin || {}; f.mwin[d.id] = 1; if (f.mwin.proof && f.mwin.faces && f.mwin.lie) unlock("every_code"); }
+    if (type === "day" && window.REVIEW) REVIEW.markPlayed();
     if (type === "day" && !f.days[S.day]) {
       f.days[S.day] = 1; const m = medal(S); f.gold[S.day] = m.m === "gold";
       if (!S.log.some(function (l) { return l.res === "loss"; })) unlock("clean_day");
@@ -61,22 +80,27 @@
       if (S.day === 3) {
         if (window.REPLAY) REPLAY.found(S.deal === "deal" ? "traded" : S.done.exfil || "loss");
         if (f.gold[1] && f.gold[2] && f.gold[3]) unlock("all_gold");
-        const mn = S.minis || {}; if (mn.cipher === "win" && mn.spot === "win" && mn.lie === "win") unlock("every_code");
         if (!f.hurt) unlock("no_hurt");
         if (f.minTrust >= 40) unlock("trust");
         if (S.done.exfil === "win") unlock("home");
+        // ask for a rating once, after the Act 1 ending, and only after a good night (native plugin only; nothing on the web)
+        if (S.deal !== "deal" && (S.done.exfil === "win" || S.done.exfil === "mixed")) setTimeout(askReview, 4000);
       }
-      if (S.day === 6 && window.AH4) { const e = AH4.ending(); if (window.REPLAY) REPLAY.found("a2_" + e); if (e === "knight") unlock("knight"); if (S.days && S.days[1] && S.days[5]) unlock("six"); }
+      if (S.day === 6 && window.AH4) { const e = AH4.ending(); if (window.REPLAY) REPLAY.found("a2_" + e); if (window.NATIVE && A().gradeScore) NATIVE.gcScore(Math.round(A().gradeScore() * 100)); if (e === "knight") unlock("knight"); if (S.days && S.days[1] && S.days[5]) unlock("six"); }
     }
   }
   function screen(back) {
     const n = ACH.filter(function (a) { return got[a[0]]; }).length;
     MENU.sheet('<div class="kicker">Achievements \u00b7 ' + n + " of " + ACH.length + '</div><h2>Your record</h2><ul class="achs">' + ACH.map(function (a) {
       return '<li class="' + (got[a[0]] ? "got" : "") + '"><span class="ai" aria-hidden="true">' + (got[a[0]] ? "\u2605" : "\u2606") + "</span><span><b>" + a[1] + "</b><small>" + a[2] + "</small></span></li>"; }).join("") +
-      '</ul><p class="fine">Saved on this device.</p><button class="btn primary" id="ach-back">Back</button>', "settings");
+      '</ul><p class="fine">Saved on this device.</p>' + (gcReady() ? '<button class="btn" id="ach-gc">Open Game Center</button>' : '') + '<button class="btn primary" id="ach-back">Back</button>', "settings");
     if (back) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     document.getElementById("ach-back").onclick = function () { MENU.close(); if (back) back(); };
+    const g = document.getElementById("ach-gc"); if (g) g.onclick = function () { NATIVE.gcShow(); };
   }
+  // the Achievements button: Apple's Game Center screen when signed in, our own list otherwise
+  function gcReady() { return !!(window.NATIVE && NATIVE.gcReady && NATIVE.gcReady()); }
+  function open(back) { if (gcReady() && NATIVE.gcShow()) return; screen(back); }
 
   // ---------- officers who grow: XP from successes, a new trait at each threshold ----------
   const XPAT = [2, 5, 8];
@@ -99,6 +123,6 @@
     document.getElementById("promo-ok").onclick = function () { MENU.close(); promo(); };
     MENU.coach("promo", "Officers earn <b>XP</b> from successes. At 2, 5 and 8 XP they gain a new trait that lifts their odds.");
   }
-  const FUN = window.FUN = { traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, toast: toast, unlock: unlock, got: function () { return got; },
+  const FUN = window.FUN = { traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
     onUnlock: function (gcId) { const P = window.Capacitor && Capacitor.Plugins; if (P && P.GameCenter && P.GameCenter.reportAchievement) P.GameCenter.reportAchievement({ id: gcId, percent: 100 }).catch(function () {}); } };
 })();

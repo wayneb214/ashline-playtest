@@ -36,7 +36,7 @@
     const stopAll = function () { if (rt) rt.stop(); if (bz) clearInterval(bz); sfx("stopRing"); };
     sfx("ring"); buzz("ring"); bz = setInterval(function () { buzz("ring"); }, 3000);
     const ringSecs = timer(o.ringSecs || 14);
-    a.render('<div class="phone card desk" id="phone" data-call="' + o.id + '"><div class="lh">' + o.line + '</div><div class="pm"><img src="' + a.pic(o.img) + '" alt=""></div><div class="ringing">\u260e ' + o.ring + "</div>" +
+    a.render('<div class="phone card desk" id="phone" data-call="' + o.id + '"><div class="lh">' + o.line + '</div><div class="gphone" aria-hidden="true"><img src="img/green-phone.jpg" alt=""><span class="gp-arc a1"></span><span class="gp-arc a2"></span></div><div class="ringing">\u260e ' + o.ring + "</div>" +
       '<div class="swipe" id="swipe"><div class="swipe-fill" id="swipefill"></div><span class="swipe-tx">Swipe to answer \u2192</span><button class="knob" id="answer" type="button" aria-label="Answer the phone">\u260e</button></div>' +
       (ringSecs ? '<div class="ringbar" aria-hidden="true"><i id="ringbar"></i></div>' : "") + "</div>" +
       '<button class="btn ghost" id="letring">Let it ring</button>', "Swipe the receiver across, or tap it, to answer." + (ringSecs ? " It won\u2019t ring forever." : ""));
@@ -55,20 +55,26 @@
     knob.addEventListener("pointerup", function () { if (x0 == null) return; x0 = null; if (dx > maxX() * 0.7) answer(); else { knob.style.transform = ""; a.$("swipefill").style.width = ""; } });
     knob.addEventListener("click", function () { if (!dragged) answer(); });
     function talk() {
-      if (window.VOICE) VOICE.play("call_" + o.id);
-      let sel = null, tt = null;
-      const secs = timer(o.replySecs || 20);
-      const commit = function (k, timedOut) { if (state !== "talk") return; state = "done"; if (tt) tt.stop(); C().calls = C().calls || {}; C().calls[o.id] = { k: k, late: !!timedOut }; o.answer(k, !!timedOut); };
+      const vid = o.voice || "call_" + o.id;
+      if (window.SFX && SFX.roomTone) SFX.roomTone(true);
+      if (window.VOICE) VOICE.play(vid);
+      let sel = null, tt = null, listening = true;
+      const secs = 0; // no reply clock: a call waits for your answer (Wayne: it must never answer for you)
+      const commit = function (k, timedOut) { if (state !== "talk") return; state = "done"; if (window.SFX && SFX.roomTone) SFX.roomTone(false); if (tt) tt.stop(); C().calls = C().calls || {}; C().calls[o.id] = { k: k, late: !!timedOut }; o.answer(k, !!timedOut); };
+      let first = true; // the caller's portrait slides in once, when you pick up
       const draw = function () {
-        a.render('<div class="phone card call desk" id="phone" data-call="' + o.id + '"><div class="lh">' + o.line + " \u00b7 " + a.hh(S().hour) + '</div><div class="pm"><img src="' + a.pic(o.img) + '" alt=""></div>' +
-          '<div class="note"><div class="who">' + o.who + '</div><span class="tx">' + o.text + "</span></div>" + (secs ? '<div class="replybar" aria-hidden="true"><i id="replybar"></i></div><div class="replyhint">Answer before the line goes quiet' + "</div>" : "") + "</div>" +
+        a.render('<div class="phone card call desk" id="phone" data-call="' + o.id + '"><div class="lh">' + o.line + " \u00b7 " + a.hh(S().hour) + '</div><div class="pm' + (first && !reduce() ? " slidein" : "") + '"><img src="' + a.pic(o.img) + '" alt=""></div>' +
+          '<div class="note"><div class="who">' + o.who + '</div><span class="tx">' + o.text + "</span>" + (o.note ? '<span class="callnote">' + o.note + "</span>" : "") + "</div>" + (secs ? '<div class="replybar" aria-hidden="true"><i id="replybar"></i></div><div class="replyhint" id="replyhint">' + (listening ? "Listening\u2026" : "Answer before the line goes quiet") + "</div>" : "") + "</div>" +
           o.opts.map(function (p) { return '<button class="card appr' + (sel === p.k ? " sel" : "") + '" data-c="' + p.k + '"><div class="t">' + p.t + '</div><div class="chips">' + p.chips + "</div></button>"; }).join("") +
           '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? o.say || "Tell them" : "What do you say?") + "</button></div>", o.hint || "There is no right answer. Only a choice.");
         document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); commit(sel, false); }; });
         a.$("go").onclick = function () { commit(sel, false); };
+        first = false;
       };
       draw();
-      tt = countdown(secs, "replybar", function () { commit(sel || o.def, true); });
+      // the reply clock only starts once the caller has finished speaking
+      const start = function () { if (state !== "talk" || !a.$("replybar")) return; listening = false; const h = a.$("replyhint"); if (h) h.textContent = "Answer before the line goes quiet"; tt = countdown(secs, "replybar", function () { commit(sel || o.def, true); }); };
+      if (window.VOICE && VOICE.after) VOICE.after(vid, start); else start();
     }
   }
   // the outcome card after a call
@@ -85,7 +91,7 @@
     const a = A(), s = S(), used = s.log.filter(function (l) { return l.k && s.roster.indexOf(l.k) >= 0; }).map(function (l) { return l.k; });
     const k = used.filter(function (x) { return !s.call || x !== s.call.k; }).slice(-1)[0] || used.slice(-1)[0] || s.roster[0];
     C().panic = { k: k };
-    call({ id: "panic", line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
+    call({ id: "panic", voice: "call_panic_" + k, line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
       text: "C? It\u2019s " + a.first(k) + ". There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?",
       opts: [{ k: "sit", t: "Sit tight. Walk out in the morning.", chips: '<span class="chip risk-low">+4 Secrecy</span><span class="chip risk-high">' + a.first(k) + " loyalty \u22121 \u00b7 stress +1</span>" },
         { k: "home", t: "Get out now. Ash books you home.", chips: '<span class="chip risk-high">\u22124 Secrecy</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
@@ -93,8 +99,8 @@
       answer: function (c, t) {
         let ch; C().panic.choice = c;
         if (c === "home") { ch = a.apply({ secrecy: -4 }); s.loyal[k] = a.clamp5(s.loyal[k] + 1); s.stress[k] = a.clamp5(s.stress[k] - 1); }
-        else { ch = a.apply({ secrecy: 4 }); s.loyal[k] = a.clamp5(s.loyal[k] - 1); s.stress[k] = a.clamp5(s.stress[k] + 1); }
-        after(c === "home" ? "COME HOME" : "HOLD", c === "home" ? "win" : "mixed", a.first(k) + " on the line", late(t) + (c === "home" ? "Ash has " + a.first(k) + " on a dawn flight. Somebody abroad will notice the empty room." : a.first(k) + " goes quiet, then: \u201cRight. Fine.\u201d The line clicks. The car is still there at midnight."), ch, null, k);
+        else { ch = a.apply({ secrecy: 4 }); s.loyal[k] = a.clamp5(s.loyal[k] - 1); s.stress[k] = a.clamp5(s.stress[k] + 1); if (window.VOICE) VOICE.play("react_panic_sit_" + k); }
+        after(c === "home" ? "COME HOME" : "HOLD", c === "home" ? "win" : "mixed", a.first(k) + " on the line", late(t) + (c === "home" ? "Ash has " + a.first(k) + " on a dawn flight. Somebody abroad will notice the empty room." : a.first(k) + " goes quiet, then: \u201cRight then. Fine. I\u2019ll sit tight.\u201d The line clicks. The car is still there at midnight."), ch, null, k);
       },
       miss: function () {
         C().panic.choice = "missed"; s.loyal[k] = a.clamp5(s.loyal[k] - 2); s.stress[k] = a.clamp5(s.stress[k] + 1); a.advance(0);
@@ -104,13 +110,13 @@
   // Day 2: No.10 asks about Bath
   function haleCall() {
     const a = A();
-    call({ id: "hale2", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-phone", ring: "The Prime Minister for you, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
+    call({ id: "hale2", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-worried", ring: "The Prime Minister for you, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
       text: "C. The man on the bench in Bath. The Courier says he was one of ours. <b>Was he?</b> I need to know before I stand up in the House.",
       opts: [{ k: "truth", t: "Tell her the truth", chips: '<span class="chip risk-low">+8 No.10 trust</span><span class="chip risk-high">\u22126 Secrecy</span>' },
         { k: "deny", t: "\u201cNever heard of him, Prime Minister.\u201d", chips: '<span class="chip risk-low">+4 Secrecy</span><span class="chip risk-high">\u22124 No.10 trust</span>' }],
       def: "deny", hint: "No.10 trust opens and closes options.",
       answer: function (c, t) {
-        C().hale2 = c; const ch = a.apply(c === "truth" ? { capital: 8, secrecy: -6 } : { capital: -4, secrecy: 4 });
+        C().hale2 = c; if (window.VOICE) VOICE.play("react_hale2_" + c); const ch = a.apply(c === "truth" ? { capital: 8, secrecy: -6 } : { capital: -4, secrecy: 4 });
         after(c === "truth" ? "TOLD" : "DENIED", c === "truth" ? "win" : "mixed", "The call from No.10", late(t) + (c === "truth" ? "A long breath. \u201cThank you for not lying to me, C.\u201d" : "\u201cI see.\u201d She doesn\u2019t sound like she does."), ch);
       },
       miss: function () { C().hale2 = "missed"; const ch = a.apply({ capital: -8 }); S().heads.push("PM \u2018unable to reach\u2019 spy chief, say aides");
@@ -120,7 +126,7 @@
   function keskCall() {
     const a = A();
     call({ id: "kesk", line: "OPEN LINE \u00b7 INTERNATIONAL \u00b7 NUMBER WITHHELD", img: "kesk", ring: "A foreign exchange. No name.", who: "Colonel Anselm Kesk", say: "Do it",
-      text: "Good evening, C. Is it raining in London? It is snowing here. I only rang to say <b>I am looking forward to tonight.</b> Are you?",
+      text: "Good evening, C. Is it raining in London? It is snowing here. <b>I will be at the border myself tonight.</b> Bring a warm coat. Green, perhaps. Are you looking forward to it?",
       opts: [{ k: "talk", t: "Keep him talking. Trace the line.", chips: '<span class="chip risk-low">+8% at the barrier if traced</span><span class="chip risk-high">Ash\u2019s team up all night</span>' },
         { k: "hang", t: "Put the phone down.", chips: '<span class="chip risk-low">+4 Secrecy</span>' }],
       def: "hang", hint: "Kesk learns how you play.", replySecs: 16,
@@ -181,32 +187,47 @@
 
   // ---------- timed choices inside cutscenes ----------
   const ASKS = {
-    bath: { q: "Our man is down. The ambulance is two minutes out.", def: "away", secs: 9,
+    bath: { q: "Our man is down. The ambulance is two minutes out.", voice: "ask_bath", def: "away", secs: 9,
       opts: [{ k: "doctor", t: "Send our doctor in with it", d: "\u22126 Secrecy \u00b7 Vass may talk: +10% on the ferry tomorrow" }, { k: "away", t: "Stay out of sight", d: "+4 Secrecy" }],
       res: { doctor: "Our doctor rides in the back. Vass grips her hand.", away: "Our people melt into the rain." } },
-    ferry: { q: "The ferry is turning for the harbour mouth.", def: "watch", secs: 9,
-      opts: [{ k: "follow", t: "Put a boat on its tail", d: "\u22124 No.10 trust \u00b7 +10% in York on Friday" }, { k: "watch", t: "Let it go. Watch the port.", d: "+4 Secrecy" }],
-      res: { follow: "A grey launch slips out behind it, lights off.", watch: "Binoculars on the quay. Patience." } },
-    border: { q: "The guard is waving cars through fast. Ash on the radio: \u201cYour call.\u201d", def: "hold", secs: 7,
+    // the ask matches how Harwich went: the same two choices (+10% in York, or +4 Secrecy), worded for what is in front of you
+    ferry: function (r) {
+      const York = "\u22124 No.10 trust \u00b7 +10% in York on Friday", Sec = "+4 Secrecy";
+      if (r === "win") return { q: "Two held at the gangway. The woman in green wasn\u2019t aboard.", voice: "ask_ferry_win", def: "watch", secs: 9,
+        opts: [{ k: "follow", t: "Search the ferry before it sails", d: York }, { k: "watch", t: "Let it sail, watch who meets it at the other end", d: Sec }],
+        res: { follow: "Officers go cabin by cabin. A York address turns up on a manifest.", watch: "It sails on time. Our people wait at the other end." },
+        why: "Day 2 \u00b7 You searched the ferry before it sailed: +10% in York." };
+      if (r === "mixed") return { q: "Two still aboard; the ferry is turning for the harbour mouth.", voice: "ask_ferry_mixed", def: "watch", secs: 9,
+        opts: [{ k: "follow", t: "Put a boat on its tail", d: York }, { k: "watch", t: "Let it go, watch the port", d: Sec }],
+        res: { follow: "A grey launch slips out behind it, lights off.", watch: "Binoculars on the quay. Patience." },
+        why: "Day 2 \u00b7 A boat followed the ferry: +10% in York." };
+      return { q: "The ferry has cleared the harbour wall.", voice: "ask_ferry_loss", def: "watch", secs: 9,
+        opts: [{ k: "follow", t: "Send a fast launch after it", d: York }, { k: "watch", t: "Let it go, watch the port", d: Sec }],
+        res: { follow: "A fast launch bounces out past the wall, lights off.", watch: "Binoculars on the quay. Patience." },
+        why: "Day 2 \u00b7 A fast launch chased the ferry: +10% in York." };
+    },
+    border: { q: "The guard is waving cars through fast. Ash on the radio: \u201cYour call.\u201d", voice: "ask_border", def: "hold", secs: 7,
       opts: [{ k: "drive", t: "Wave us through. Drive on.", d: "+14% with the dog \u00b7 \u22128% at the barrier" }, { k: "hold", t: "Hold it. Let the queue settle.", d: "+6% at the barrier" }],
       res: { drive: "Second gear. Don\u2019t look at the dog.", hold: "Engine off. Breathe." } }
   };
-  function askOf(id) { return ASKS[id] || null; }
+  // the ferry ask depends on how Harwich went; once answered it remembers that, so Day 3 reads the same words
+  function askOf(id) { const a = ASKS[id], was = C().asks && C().asks[id]; return typeof a === "function" ? a(was && was.r ? was.r : (S().done || {}).exit || "loss") : a || null; }
   function asked(id) { return !!(C().asks && C().asks[id]); }
   function choose(id, k, timedOut) {
-    const a = A(); C().asks = C().asks || {}; C().asks[id] = { k: k, late: !!timedOut };
+    const a = A(); C().asks = C().asks || {}; const r0 = (S().done || {}).exit || "loss"; C().asks[id] = { k: k, late: !!timedOut, r: id === "ferry" ? r0 : undefined };
     let ch = {};
     if (id === "bath") ch = a.apply(k === "doctor" ? { secrecy: -6 } : { secrecy: 4 });
     if (id === "ferry") ch = a.apply(k === "follow" ? { capital: -4 } : { secrecy: 4 });
     if (Object.keys(ch).length) a.meters(ch);
     a.save(S().screen || "briefing");
-    return ASKS[id].res[k];
+    return askOf(id).res[k];
   }
   const pick = function (id) { return C().asks && C().asks[id] ? C().asks[id].k : null; };
 
   // ---------- what the choices are worth ----------
   function oddsMod(id) {
     const s = S(); let o = 0;
+    if (s.day === 1 && id === "leak" && s.pm0 === "free") o += 6; // the free hand you asked the Prime Minister for
     if (s.day === 2 && id === "exit" && pick("bath") === "doctor") o += 10;
     if (s.day === 3 && id === "york" && pick("ferry") === "follow") o += 10;
     return o;
@@ -225,7 +246,7 @@
   function follows() {
     const c = C(), out = [];
     if (pick("bath") === "doctor") out.push({ g: 1, t: "Day 1 \u00b7 Our doctor rode with Vass. He talked on Thursday." });
-    if (pick("ferry") === "follow") out.push({ g: 1, t: "Day 2 \u00b7 A boat followed the ferry: +10% in York." });
+    if (pick("ferry") === "follow") out.push({ g: 1, t: askOf("ferry").why });
     if (c.panic && c.panic.choice === "missed") out.push({ g: 0, t: "Day 1 \u00b7 You missed " + A().first(c.panic.k) + "\u2019s call. They remember." });
     if (c.hale2 === "missed") out.push({ g: 0, t: "Day 2 \u00b7 You missed the Prime Minister\u2019s call." });
     return out;

@@ -20,13 +20,13 @@
   // ---------- the cases ----------
   D.SITS4 = {
     watch: { kind: "officer", art: "v-york", title: "Who is watching us?", where: "Lambeth, London", place: "London", home: true, due: 12, pen: { secrecy: -8 },
-      brief: "If Kesk knows this address, someone is watching the front door. Find them, and find out what they saw first.",
+      brief: "If Kesk knows this address, someone is watching the door. Find them, and what they saw.",
       approaches: [ap("A week of patience in a café window", "Tea, a newspaper, and every face that passes twice.", 10, "low", 0, { secrecy: 8, safety: 4 }, { secrecy: -2 }, { secrecy: -8 }),
         ap("Photograph everyone who stops", "A long lens from the roof. Quick, and a little obvious.", 4, "med", 1, { secrecy: 6 }, { secrecy: -4 }, { secrecy: -10, trust: -4 }),
         ap("Walk up and ask him the time", "Rattle him and see where he runs.", 0, "high", 2, { secrecy: 4, capital: 4 }, { trust: -4 }, { safety: -8, secrecy: -8 })],
       head: { win: "Quiet week on the Albert Embankment", mixed: "Photographer seen on Lambeth rooftop", loss: "Scuffle outside government building in Lambeth" } },
     manchester: { kind: "officer", art: "v-manchester", title: "The trade delegation", where: "Manchester", place: "Manchester", due: 15, pen: { capital: -8 },
-      brief: "A Varenian trade delegation is at a Manchester hotel to sign a deal the Chancellor badly wants. One of its interpreters is a Grey House officer. Find out who he is meeting, and don't spoil the deal.",
+      brief: "A Varenian trade delegation is in Manchester to sign a deal the Chancellor wants. One interpreter is Grey House. Find who he meets, and don't spoil the deal.",
       approaches: [ap("A seat at the hotel bar", "One of ours, a good book and the next table.", 8, "low", 0, { secrecy: 6, capital: 4 }, { secrecy: -2 }, { capital: -6 }),
         ap("Join the delegation as a translator", "Paperwork through the Board of Trade. Close, and on the record.", 6, "med", 1, { capital: 8, secrecy: 2 }, { capital: -4 }, { capital: -12, trust: -4 }),
         ap("Search his room during the dinner", "Twenty minutes and a borrowed key card.", 0, "high", 2, { secrecy: 8, capital: 2 }, { capital: -6 }, { capital: -14, trust: -6 })],
@@ -36,13 +36,13 @@
   };
   D.SITS5 = {
     recon: { kind: "officer", art: "v-bridge", title: "Walk the bridge", where: "The Vell bridge, Varenian border", place: "Varenia", due: 13, pen: { safety: -8 },
-      brief: "Kesk has picked the place: an old iron bridge over the River Vell, on the line between the Republic and its neighbour. Somebody should walk it before dawn tomorrow, and count the cars.",
+      brief: "Kesk has picked an old iron bridge over the River Vell, on the Varenian border. Walk it before tomorrow\u2019s dawn and count the cars.",
       approaches: [ap("Birdwatchers on the far bank", "Binoculars, flasks and a very dull afternoon.", 10, "low", 0, { safety: 6, secrecy: 4 }, { safety: -2 }, { safety: -8 }),
         ap("A charity cycle ride across it", "A dozen British cyclists in matching shirts. One of them is counting.", 4, "med", 1, { safety: 4, trust: 4 }, { trust: -2 }, { safety: -6, trust: -6 }),
         ap("Under the bridge in a canoe", "Look at the girders, the mines, the boats. Wet and bold.", 0, "high", 2, { safety: 10 }, { safety: -4 }, { safety: -12 })],
       head: { win: "Tourists enjoy quiet day on the Vell", mixed: "Varenian border guards stop British cyclists", loss: "\u2018Canoeist\u2019 held near Varenian border" } },
     press: { kind: "officer", title: "Keep it off the front page", where: "Fleet Street, London", place: "London", home: true, due: 16, pen: { capital: -10 },
-      brief: "The Evening Bugle knows a British officer is being held in Kessgrad. If it runs the name tonight, the swap is off. Somebody has to talk the editor down, or out-run him.",
+      brief: "The Evening Bugle knows a British officer is held in Kessgrad. If it runs the name tonight, the swap is off. Talk the editor down, or out-run him.",
       approaches: [ap("Lunch with the editor", "Old friends, a long lunch, and a promise of the full story in thirty years.", 8, "low", 0, { capital: 6, trust: 4 }, { capital: -2 }, { capital: -8 }),
         ap("A formal request from the Cabinet Office", "Polite, official, and copied to his lawyers.", 6, "med", 1, { capital: 8 }, { trust: -4 }, { capital: -10, trust: -6 }),
         ap("Feed him a bigger story", "A juicy rumour about a minister\u2019s dog. True, mostly.", 0, "high", 2, { capital: 4, secrecy: 6 }, { trust: -6 }, { trust: -10, capital: -8 })],
@@ -52,7 +52,7 @@
   };
   D.SITS6 = {
     find: { kind: "officer", art: "v-london", title: "Find Kesk", where: "Somewhere in London", place: "London", home: true, due: 12, pen: { secrecy: -8 },
-      brief: "Kesk landed at an airport outside London an hour ago, on a passport that says he sells tractors. He has a hotel, a driver and a day of meetings. We need to know where he sleeps.",
+      brief: "Kesk landed an hour ago on a passport that says he sells tractors. He has a hotel, a driver and a day of meetings. Find where he sleeps.",
       approaches: [ap("Check every taxi rank and hotel desk", "Slow, patient legwork with a photograph.", 10, "low", 0, { secrecy: 8 }, { secrecy: -2 }, { secrecy: -8 }),
         ap("Ask the airport police for the CCTV", "Quick, but it goes through a lot of hands.", 6, "med", 1, { secrecy: 4, capital: 4 }, { capital: -4 }, { capital: -8, secrecy: -6 }),
         ap("Follow his driver from the airport", "Fast, close, and he may notice.", 0, "high", 2, { secrecy: 10 }, { safety: -4 }, { safety: -10, secrecy: -8 })],
@@ -126,13 +126,14 @@
     if (s.done.watch && s.done.watch !== "loss") out.push("From the watcher in the caf\u00e9: <b>" + esc(nm(inno[0])) + "</b> " + why[0] + ".");
     if (s.done.manchester && s.done.manchester !== "loss") out.push("From the Manchester hotel: <b>" + esc(nm(inno[1])) + "</b> " + why[1] + ".");
     if (c.ink) out.push("From the hidden ink: <b>" + esc(nm(inno[2])) + "</b> " + why[2] + ".");
+    else if (c.faces) out.push("From the caf\u00e9 photos: <b>" + esc(nm(inno[2])) + "</b> " + why[2] + ".");
     return out;
   }
   function cleared() {
     const s = S(), inno = suspects(s).filter(function (k) { return k !== s.leakWho; }), c = s.clues4 || {}, out = {};
     if (s.done.watch && s.done.watch !== "loss") out[inno[0]] = 1;
     if (s.done.manchester && s.done.manchester !== "loss") out[inno[1]] = 1;
-    if (c.ink) out[inno[2]] = 1;
+    if (c.ink || c.faces) out[inno[2]] = 1;
     return out;
   }
   function leakCase() {
@@ -146,8 +147,8 @@
       }).join("");
       A.render('<div class="card dossier"><div class="chead"><img src="img/h-letter.jpg" alt=""></div>' + A.LH + '<span class="stamp corner">EYES ONLY</span><div class="kicker">Albion House \u00b7 by ' + A.hh(A.dueOf("leak")) + '</div><h2 style="margin-top:8px;padding-right:110px">' + c.title + "</h2>" +
         "<p>Kesk\u2019s letter came to <b>this building</b>. Our address is on no list. Somebody here saw it written down and passed it on, carelessly or not. It isn\u2019t treason yet. It will be, if we don\u2019t stop it.</p>" +
-        '<p class="clue"><b>What we know (' + cl.length + " of 3):</b><br>" + (cl.length ? cl.join("<br>") : "Nothing yet. The caf\u00e9 watch, the Manchester job and the hidden ink in Kesk\u2019s letter can each clear somebody.") + "</p></div>" +
-        A.ash(cl.length >= 3 ? "Three people cleared, Chief. That leaves one." : "We can guess now, or wait for more. A wrong name costs us a good officer\u2019s trust.", cl.length < 3) +
+        '<p class="clue"><b>What we know (' + cl.length + " of 3):</b><br>" + (cl.length ? cl.join("<br>") : "Nothing yet. The caf\u00e9 watch, the Manchester job, and the hidden ink or the caf\u00e9 photos can each clear somebody.") + "</p></div>" +
+        (window.VOICE ? (VOICE.once(cl.length >= 3 ? "ash_leak4_three" : "ash_leak4_wait"), "") : "") + A.ash(cl.length >= 3 ? "Three people cleared, Chief. That leaves one." : "We can guess now, or wait for more. A wrong name costs us a good officer\u2019s trust.", cl.length < 3) +
         '<div class="kicker" style="margin:4px 0 8px">Who saw the address first? (takes 1 hour)</div><div class="agents">' + cards + "</div>" +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Name " + esc(nm(sel).split(",")[0]) : "Choose someone") + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "Each clue clears one person.");
       document.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-m"); draw(); }; });
@@ -190,6 +191,7 @@
     if (s.done.press) out.push({ win: ["Nothing in the papers", 8], mixed: ["A rumour in a rival paper", 0], loss: ["It\u2019s on the front page", -15] }[s.done.press]);
     if (A.late("swap")) out.push(["Late", -(10 + A.late("swap") * 5)]);
     if (s.crunch && s.crunch[5] && s.crunch[5].sensible) out.push(["The duty team kept the family safe", 6]);
+    const pf = (s.minis || {}).proof; if (pf) out.push({ win: ["Kesk\u2019s postcard decoded", 8], mixed: ["Half the postcard decoded", 3], loss: ["The postcard went unread", 0] }[pf]);
     return out.filter(function (x) { return x[1]; });
   }
   const sum = function (l) { return l.reduce(function (t, x) { return t + x[1]; }, 0); };
@@ -274,7 +276,7 @@
       let sel = null;
       const draw = function () {
         A.render('<div class="step x4">' + LEGS.map(function (z, j) { return '<i class="' + (j <= X.leg ? "on" : "") + '"></i>'; }).join("") + '</div><div class="card dossier exfil"><div class="chead"><img src="img/h-london.jpg" alt=""></div>' + A.LH + '<span class="stamp corner">LEG ' + (X.leg + 1) + '</span><div class="kicker">Across London \u00b7 ' + A.hh(s.hour) + '</div><h2 style="margin-top:8px;padding-right:110px">' + leg.t + "</h2><p>" + leg.d + "</p></div>" +
-          '<div class="kicker" style="margin:6px 0">Who takes this leg? Each person runs once.</div><div class="agents">' + free.map(function (k) {
+          '<div class="kicker" data-avoid style="margin:6px 0">Who takes this leg? Each person runs once.</div><div class="agents">' + free.map(function (k) {
             return A.agentCard(k, '<div class="fit' + (leg.best === k ? "" : " meh") + '">' + legOdds(leg, k) + "% to keep him in sight" + (leg.best === k ? " \u00b7 \u2713 their kind of ground" : "") + "</div>", sel === k, false, "data-p");
           }).join("") + (free.length ? "" : '<button class="card appr' + (sel === "ash" ? " sel" : "") + '" data-p="ash"><div class="t">Ash goes herself</div><p style="margin:0">' + legOdds(leg, "ash") + "% \u00b7 Ash hasn\u2019t run for a bus since 1987.</p></button>") + "</div>" +
           '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Go" : "Choose who") + "</button></div>", "Put each person on the ground that suits them.");
@@ -296,7 +298,7 @@
     const twoCalls = function () {
       X.call = true;
       A.render('<div data-screen="twocalls" data-music="tense"><div class="card dossier"><div class="kicker">' + A.hh(s.hour) + " \u00b7 mid-chase \u00b7 two calls at once</div><h2>Both lines, both urgent</h2>" +
-        A.ash("Chief, the Foreign Secretary is on one line and the river police are on the other. I can put you through to <b>one</b>.", true) +
+        (window.VOICE ? (VOICE.once("ash_a2_lines"), "") : "") + A.ash("Chief, the Foreign Secretary is on one line and the river police are on the other. I can put you through to <b>one</b>.", true) +
         '<div class="crunch"><button class="card dossier crunchf" data-c="fs"><span class="urg">URGENT</span><div class="t">The Foreign Secretary</div><div class="s">She wants to know why there are men running across Southwark. Answer and No.10 stays calm.</div></button><div class="or">or</div>' +
         '<button class="card dossier crunchf" data-c="river"><span class="urg">URGENT</span><div class="t">The river police</div><div class="s">They can hold the river bus at the next pier for three minutes. Nobody else will ask them.</div></button></div></div></div>', "The one you don\u2019t take goes worse.");
       if (window.SFX) SFX.tele(); FEEL.buzz("ring");
@@ -308,19 +310,19 @@
     };
     // the last leg: C on foot, three corners
     const lanes = function (leg) {
-      let i = 0, heat = 0, busy = false, timer = null;
+      let i = 0, heat = 0, busy = false, timer = null; const hist = [];
       const limit = FEEL.reduce ? 0 : ({ easy: 4200, standard: 3000, hard: 2200 }[s.diff] || 3000);
       const corner = function () {
         const w = Math.floor(A.rnd() * 3); let b = Math.floor(A.rnd() * 2); if (b >= w) b++;
         const cur = { w: w, b: b, safe: 3 - w - b }; window.__TAIL__ = cur; busy = false;
         let html = ""; for (let L = 0; L < 3; L++) html += '<button class="lane" data-l="' + L + '"><span class="arr">' + ["\u25c0", "\u25b2", "\u25b6"][L] + '</span><span class="ln">' + ["Left", "Straight on", "Right"][L] + '</span><span class="what ' + (L === w ? "watch" : L === b ? "dead" : "clear") + '">' + (L === w ? "\ud83d\udc41 Kesk\u2019s driver, engine running" : L === b ? "\u26d4 A police cordon" : "Rain, and the grey coat ahead") + "</span></button>";
-        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + " \u00b7 corner " + (i + 1) + ' of 3</span><span class="heat">Heat ' + heat + '</span></div>' + (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') + '<div class="tg-lanes">' + html + '</div><div class="tg-msg" id="tgmsg">Stay on him. Pick the clear street.</div></div>', "Pick the clear street before the bar runs out.");
+        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + '</span></div>' + (window.AH3 && AH3.tgTrack ? AH3.tgTrack(3, i, hist, heat, 6) : "") + (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') + '<div class="tg-lanes">' + html + '</div><div class="tg-msg" id="tgmsg">Stay on him. Pick the clear street.</div></div>', "Pick the clear street before the bar runs out.");
         document.querySelectorAll("[data-l]").forEach(function (b2) { b2.onclick = function () { pick(+b2.getAttribute("data-l"), cur); }; });
         if (limit) { const bar = $("tgbar"); requestAnimationFrame(function () { bar.style.transitionDuration = limit + "ms"; bar.classList.add("run"); }); timer = setTimeout(function () { pick(-1, cur); }, limit); }
       };
       const pick = function (L, cur) {
         if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer);
-        const ok = L === cur.safe; if (!ok) heat += L === cur.w ? 2 : 1;
+        const ok = L === cur.safe; if (!ok) heat += L === cur.w ? 2 : 1; hist.push(ok ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow");
         const m = $("tgmsg"); m.textContent = ok ? "Clear. The grey coat turns into Whitehall." : "Wrong turn. You double back."; m.className = "tg-msg " + (ok ? "ok" : "bad"); FEEL.buzz(ok ? "tap" : "loss");
         setTimeout(function () { i++; if (i >= 3) { window.__TAIL__ = null; A.advance(1); X.score += heat <= 1 ? 2 : heat <= 3 ? 1 : 0; X.notes.push("C on foot, heat " + heat); X.leg++; step(); } else corner(); }, FEEL.reduce || window.__SPY_FAST__ ? 150 : 650);
       };
@@ -381,9 +383,10 @@
       const ch = missed ? A.apply({ capital: -8 }) : A.apply(eff);
       if (k === "honest") s.roster.forEach(function (x) { s.loyal[x] = A.clamp5(s.loyal[x] + 1); });
       const txt = missed ? "Nobody answered. Hale\u2019s private secretary writes it down." : { careful: "\u201cGood.\u201d The line clicks.", firm: "A long pause. \u201cThen be quick about it.\u201d", yes: "\u201cI\u2019ll hold you to that, C.\u201d", honest: "\u201cAt least you\u2019re honest.\u201d Downstairs, somebody hears you said it.", tonight: "\u201cMidnight, then.\u201d", letter: "She doesn\u2019t open the drawer. \u201cLet\u2019s hope I never need to.\u201d" }[k];
+      if (!missed && window.VOICE) VOICE.play("react_pm_" + k);
       window.DESK.after(missed ? "MISSED" : "NOTED", missed ? "loss" : "mixed", "The call from No.10", (timed ? "You hesitate. " : "") + txt, ch, null);
     };
-    window.DESK.call({ id: "pm_d" + day, line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-phone", ring: "The Prime Minister, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
+    window.DESK.call({ id: "pm_d" + day, line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: (A.S().meters.capital >= 60 ? "pm-calm" : A.S().meters.capital < 40 ? "pm-stern" : "pm-worried"), ring: "The Prime Minister, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
       text: T.text, opts: T.opts, def: T.opts[0].k, replySecs: 25, hint: "No.10 trust opens and closes options.", answer: function (k, t) { settle(k, t, false); }, miss: function () { settle(null, false, true); } });
   }
   function interrupt() {
@@ -402,9 +405,9 @@
     if (CINE.maybe("day" + s.day, briefingIntro)) return;
     const d = s.day, held = s.held ? A.AG(s.held).name : null;
     const T = {
-      4: { img: "h-letter", cap: "Albion House \u00b7 Tuesday 07:50", stamp: "QUIET", body: "<p>A week has passed. Ash puts a cream envelope on your desk with two fingers, as if it might bite. <b>\u201cHand-delivered, Chief. To this address.\u201d</b></p><p>Nobody outside a short list knows where Albion House is. Somebody on that list has been careless. Find out who, keep the Manchester trade talks alive, and see who is watching the front door.</p><p>New: <b>clues clear suspects</b>. Each case you win today rules one person out.</p>", go: "Open the envelope" },
-      5: { img: "h-bridge", cap: "Kessgrad \u00b7 Wednesday 06:10", stamp: "HELD", body: "<p><b>\u201cThey\u2019ve taken one of ours, Chief.\u201d</b> " + (held ? esc(held) + ", the officer you sent out most, was" : "One of ours was") + " picked up at the airport in Kessgrad at dawn. You won\u2019t have them today.</p><p>By tonight Kesk will name his price. Everything you did in Days 1 to 3 is now something to bargain with, or a gap where it should be.</p>", go: "Read the brief" },
-      6: { img: "h-london", cap: "London \u00b7 Thursday 08:00", stamp: "HERE", body: "<p><b>\u201cHe\u2019s here, Chief. Kesk is in London.\u201d</b> He landed an hour ago, under another name, and he has an appointment in Downing Street this evening.</p><p>Today you use everyone: four legs of a chase across the city, and one decision at Number 10." +  (s.heldAway ? " <b>" + esc(A.first(s.held)) + " is still in Kessgrad.</b>" : "") + "</p>", go: "Open his letter" }
+      4: { img: "h-letter", cap: "Albion House \u00b7 Tuesday 07:50", stamp: "QUIET", body: "<p>A week later, Ash puts a cream envelope on your desk. <b>\u201cHand-delivered, Chief. To this address.\u201d</b></p><p>Few people know where Albion House is. One of them has been careless. Find who, keep the Manchester talks alive, and see who is watching the door.</p><p>New: <b>each case you win rules out one suspect</b>.</p>", go: "Open the envelope" },
+      5: { img: "h-bridge", cap: "Kessgrad \u00b7 Wednesday 06:10", stamp: "HELD", body: "<p><b>\u201cThey\u2019ve taken one of ours, Chief.\u201d</b> " + (held ? esc(held) + ", the officer you sent out most, was" : "One of ours was") + " picked up at the airport in Kessgrad at dawn. You won\u2019t have them today.</p><p>By dawn Kesk will name his price. Everything you did in Days 1 to 3 is now something to bargain with.</p>", go: "Read the brief" },
+      6: { img: "h-london", cap: "London \u00b7 Thursday 08:00", stamp: "HERE", body: "<p><b>\u201cHe\u2019s here, Chief. Kesk is in London.\u201d</b> He landed under another name, with an appointment in Downing Street tonight.</p><p>Today you use everyone: a chase across the city, then one decision at Number 10." +  (s.heldAway ? " <b>" + esc(A.first(s.held)) + " is still in Kessgrad.</b>" : "") + "</p>", go: "Open his letter" }
     }[d];
     A.render('<figure class="no10 d2fig"><img src="img/' + T.img + '.jpg" alt=""><figcaption>' + T.cap + '</figcaption></figure><div class="card dossier">' + A.LH + '<span class="stamp corner">' + T.stamp + '</span><div class="kicker">Day ' + d + " \u00b7 For C only</div><h2 style=\"margin-top:10px;padding-right:110px\">" + NAMEOF[d] + "</h2>" + T.body + followList() + '<button class="btn primary" id="go">' + T.go + "</button></div>");
     $("go").onclick = function () {
@@ -426,7 +429,7 @@
   function followStrip() { const f = follows(); return '<details class="followstrip"><summary>What follows you \u00b7 ' + f.filter(function (x) { return x.g; }).length + " good, " + f.filter(function (x) { return !x.g; }).length + " bad</summary>" + followList() + "</details>"; }
   function line(gone) {
     const s = S(), n = s.log.length, C = cases(s.day);
-    if (gone.length) return { text: "We ran out of time on <b>" + gone.map(function (id) { return C[id].title.toLowerCase(); }).join(" and ") + "</b>. It\u2019s gone, Chief.", worried: true };
+    if (gone.length) return { text: "We ran out of time on <b>" + gone.map(function (id) { return C[id] ? C[id].title.toLowerCase() : "that file"; }).join(" and ") + "</b>. It\u2019s gone, Chief.", worried: true };
     if (s.day === 4) return n ? { text: "Every case we win clears somebody. The leak file is open whenever you\u2019re ready, Chief: " + clueList().length + " of 3 cleared so far.", worried: false } : { text: "Morning, Chief. Somebody is watching the front door, and the Manchester delegation is in its hotel. <b>Win those and we can work out who showed Kesk our door.</b>", worried: false };
     if (s.day === 5) return s.done.swap ? { text: A.benchLine(), worried: false } : { text: "Walk the bridge, keep the Bugle quiet, then dawn. " + (chips().length ? "We hold " + chips().length + " card" + (chips().length > 1 ? "s" : "") + " from last week." : "<b>We hold nothing to trade.</b>"), worried: !chips().length };
     return n ? { text: s.done.chase ? "He\u2019s heading for Number 10. So are we." : "Now we chase. Put everyone on the ground that suits them.", worried: true } : { text: "Find where he sleeps first, Chief. Then we follow him all the way to Downing Street.", worried: false };
@@ -475,6 +478,6 @@
   function bulletinId() { const s = S(); if (s.day === 4) return "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
-  window.AH4 = { cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
+  window.AH4 = { ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
     locked: locked, lockWhy: lockWhy, lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
 })();

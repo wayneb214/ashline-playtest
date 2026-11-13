@@ -11,15 +11,8 @@
   // ---------- content ----------
   D.UKPLACES.York = [0.31, 0.445]; D.UKPLACES.NorthSea = [0.385, 0.47]; D.UKPLACES.Varenia = [0.437, 0.5];
   D.SITS3 = {
-    bath: { kind: "officer", title: "What the bench was for", where: "Bath", place: "Bath", due: 11, left: true,
-      brief: "The bench in Bath was never a crime scene. It was a dead drop. The woman in green sat there on Wednesday to warn Vass, not to hurt him, and he collapsed before he could read what she taped under the slats. The bench is in an Avon Police store. Kesk has a man in Bath who wants it first.",
-      approaches: [
-        { t: "Ask Avon Police for a quiet look", d: "A friendly sergeant, a cup of tea, ten minutes alone with the bench.", mod: 10, risk: "low", stress: 0, win: { trust: 6, secrecy: 6 }, mixed: { secrecy: -2 }, loss: { secrecy: -8 } },
-        { t: "A warrant from the Home Office", d: "Paperwork that opens the store. Slower, and people will read it.", mod: 6, risk: "med", stress: 1, win: { capital: 6, secrecy: 4 }, mixed: { capital: -4 }, loss: { capital: -8, trust: -4 } },
-        { t: "Lift it tonight before Kesk\u2019s man does", d: "A van, overalls and a story about council repairs.", mod: 0, risk: "high", stress: 2, win: { secrecy: 10 }, mixed: { safety: -4 }, loss: { safety: -10, trust: -6 } }],
-      head: { win: "Bath bench removed for \u2018repairs\u2019", mixed: "Police confirm \u2018item\u2019 found under Bath bench", loss: "Break-in at Avon Police store" } },
     york: { kind: "officer", art: "v-york", title: "The York address", where: "York", place: "York", due: 14,
-      brief: "The address from the ferry cabin is a terraced house in York: her fallback. If she isn\u2019t there, her way out is. Years ago we wrote her an escape plan, code-named SPARE KEY. It should be in the airing cupboard.",
+      brief: "Her note from the Bath bench and the ferry cabin both point to a terraced house in York: her fallback. Part one: two local watchers disagree about what they saw. Part two: send someone for her escape plan, SPARE KEY, in the airing cupboard.",
       approaches: [
         { t: "Watch the house first", d: "Two hours across the road with a flask before anyone knocks.", mod: 8, risk: "low", stress: 0, win: { secrecy: 8, safety: 4 }, mixed: { secrecy: -2 }, loss: { safety: -8 } },
         { t: "Knock as the gas board", d: "Clipboard, lanyard, \u2018we\u2019ve had reports of a smell\u2019.", mod: 6, risk: "med", stress: 1, win: { secrecy: 6, trust: 2 }, mixed: { trust: -2 }, loss: { trust: -6, secrecy: -6 } },
@@ -28,7 +21,7 @@
     tail: { kind: "tail", title: "Shake the watchers", where: "Westminster, London", place: "London", home: true, due: 16,
       head: { win: "Westminster: nothing to report", mixed: "Man \u2018seen running\u2019 near Parliament", loss: "Foreign \u2018tourists\u2019 photograph Albion House staff" } },
     cable: { kind: "cable", art: "v-cabletap", title: "The listening pod", where: "North Sea", place: "NorthSea", label: "North Sea", due: 19,
-      brief: "The Grey House talks to its border posts over the Kestrel Line, a seabed cable nobody admits exists. A listening pod on it tonight would let us hear Kesk hunting for her.",
+      brief: "The Grey House talks to its border posts over the Kestrel Line, a seabed cable nobody admits exists. A pod on it tonight lets us hear Kesk hunting her.",
       head: { win: "Survey ship \u2018finds nothing\u2019 off the coast", mixed: "Fishing boat reports \u2018naval activity\u2019", loss: "Varenia complains of \u2018interference\u2019 with its cable" } },
     exfil: { kind: "exfil", title: "The Green Coat", where: "Kessgrad, Varenian Republic", place: "Varenia", label: "To Varenia \u203a", due: 22, flash: true, left: true,
       head: { win: "Quiet night at the Varenian border", mixed: "British driver held at Varenian border", loss: "Varenia: \u2018state traitor\u2019 caught at border" } }
@@ -70,12 +63,12 @@
   function keskMod(risk) { return fav() && risk === fav() ? -keskHit() : 0; }
   function oddsMod(id, k, a) {
     let o = keskMod(a.risk);
-    if (id === "bath") o += flags().clerk ? 15 : -10;
+    if (id === "york") { const lr = (S().minis || {}).lie; o += lr === "win" ? 8 : lr === "mixed" ? 3 : lr === "loss" ? -6 : 0; }
     return o;
   }
   function chips(id, k, a) {
     let h = keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : "";
-    if (id === "bath") h += flags().clerk ? '<span class="chip risk-low">Vienna clerk +15%</span>' : '<span class="chip risk-high">No clerk \u221210%</span>';
+    if (id === "york") { const lr = (S().minis || {}).lie; if (lr) h += lr === "loss" ? '<span class="chip risk-high">Believed the wrong watcher \u22126%</span>' : '<span class="chip risk-low">The right watcher +' + (lr === "win" ? 8 : 3) + "%</span>"; }
     return h;
   }
   function letterText(n) {
@@ -97,7 +90,7 @@
   function letter(n, then) {
     const s = S(); s.letters = s.letters || {}; s.letters[n] = true; A.save("briefing");
     const L = letterText(n);
-    if (window.VOICE) VOICE.play("kesk_letter_" + n);
+    if (window.VOICE) { if (n === 0 && VOICE.seq) { const f0 = flags(), seq = ["kl0_open"]; if (!f0.caught) seq.push("kl0_upstairs"); if (f0.exit === "win") seq.push("kl0_exit_win"); else if (f0.exit === "loss") seq.push("kl0_exit_loss"); seq.push("kl_habit_" + (L.st || "none")); if (L.st) seq.push("kl_counter_" + L.st); VOICE.seq(seq); } else VOICE.play("kesk_letter_" + n); }
     if (window.SFX) SFX.tele();
     A.render('<div class="kletter card" id="kletter"><div class="kl-top"><img class="portrait" src="' + pic("kesk") + '" alt="Colonel Kesk"><div><div class="kl-from">From the desk of</div><div class="kl-name">' + KESK + '</div><div class="kl-role">Director \u00b7 the Grey House</div></div></div>' +
       '<div class="kl-body"><p>My dear C,</p><p>' + esc(L.body) + "</p>" + (n === 1 ? window.DESK.inkHTML("kesk") : "") + '<p class="kl-sig">K.</p></div>' +
@@ -113,7 +106,7 @@
     let sel = null;
     const draw = function () {
       A.render('<div class="card dossier">' + A.LH + '<span class="stamp corner">MORALE</span><div class="kicker" style="margin-top:8px">Personnel \u00b7 a word from Ash</div><h2 style="padding-right:110px">' + esc(A.first(k)) + " is close to walking</h2></div>" +
-        A.ash(esc(A.first(k)) + " hasn\u2019t said a word all morning, C. Twice they\u2019ve taken calls in the stairwell. Loyalty is at rock bottom. A bitter officer is how leaks start.", true) +
+        (window.VOICE ? (VOICE.once("ash_d3_bitter"), "") : "") + A.ash(esc(A.first(k)) + " hasn\u2019t said a word all morning, C. Twice they\u2019ve taken calls in the stairwell. Loyalty is at rock bottom. A bitter officer is how leaks start.", true) +
         '<div class="agents">' + A.agentCard(k, "", false, false, "data-x") + "</div>" +
         '<button class="card appr' + (sel === "talk" ? " sel" : "") + '" data-o="talk"><div class="t">A quiet word in your office</div><p style="margin:0">Listen. Apologise if you need to.</p><div class="chips"><span class="chip time">\u23f1 1h</span><span class="chip risk-low">Loyalty +2 \u00b7 Stress \u22121</span></div></button>' +
         '<button class="card appr' + (sel === "off" ? " sel" : "") + '" data-o="off"><div class="t">Send them home for the day</div><p style="margin:0">Rest, and out of harm\u2019s way. One fewer pair of hands.</p><div class="chips"><span class="chip risk-med">Off duty today</span><span class="chip risk-low">Loyalty +1</span></div></button>' +
@@ -154,7 +147,7 @@
       s.heads.push(head);
       window.DESK.after(missed ? "MISSED" : { deal: "TRADED", refuse: "REFUSED", lie: "AGREED?" }[sel], sel === "deal" || missed ? "loss" : sel === "refuse" ? "win" : "mixed", "The offer from Kesk", txt, ch, head);
     };
-    window.DESK.call({ id: "deal", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-phone", ring: "The Prime Minister again, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
+    window.DESK.call({ id: "deal", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-worried", ring: "The Prime Minister again, C.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
       text: "C. An offer, through the back door. Colonel Kesk will release <b>Tom Archer</b>, the lorry driver they\u2019ve held for six weeks, if we \u201cforget a woman in a green coat\u201d. I don\u2019t know who she is, and I don\u2019t want to. Do we have a deal?",
       opts: [{ k: "deal", t: "Take the deal. Leave her there.", chips: '<span class="chip">+14 No.10 trust</span><span class="chip risk-high">The Green Coat is called off</span><span class="chip risk-high">Every officer loyalty \u22121</span>' },
         { k: "refuse", t: "Refuse. We bring our people home.", chips: '<span class="chip risk-high">\u221212 No.10 trust</span><span class="chip risk-low">Every officer loyalty +1</span>' },
@@ -167,14 +160,11 @@
   function interrupt() {
     const s = S();
     s.riskSeen = s.riskSeen || {};
-    const bitter = s.roster.filter(function (k) { return s.loyal[k] <= 1 && !s.used[k] && !s.riskSeen[s.day + k]; })[0];
+    const bitter = s.day !== 3 && s.roster.filter(function (k) { return s.loyal[k] <= 1 && !s.used[k] && !s.riskSeen[s.day + k]; })[0];
     if (bitter) { riskEvent(bitter); return true; }
     if (s.day !== 3) return false;
     const n = s.log.length;
     if (n >= 2 && !s.deal && !s.done.exfil) { dealCall(); return true; }
-    s.letters = s.letters || {};
-    if (n >= 1 && !s.letters[1]) { letter(1); return true; }
-    if (n >= 3 && !s.letters[3]) { letter(3); return true; }
     return false;
   }
 
@@ -186,22 +176,21 @@
     A.render('<figure class="no10 d2fig"><img src="' + pic("h-york") + '" alt="A narrow timbered street in York at dawn, a grey car parked"><figcaption>York \u00b7 Friday 06:40</figcaption></figure>' +
       '<div class="card dossier">' + A.LH + '<span class="stamp corner">GREEN COAT</span><div class="kicker">Day 3 \u00b7 For C only</div><h2 style="margin-top:10px;padding-right:110px">The Green Coat</h2>' +
       "<p>Ash closes the door. \u201cThe woman in green isn\u2019t one of theirs, C. <strong>She\u2019s ours.</strong> Code name <strong>LINDEN</strong>. Eleven years inside the Grey House.\u201d</p>" +
-      "<p>On Wednesday she sat on that bench in Bath to warn Vass, not to hurt him. Last night she missed her check-in. If she\u2019s blown, we have until midnight to bring her out of the <strong>Varenian Republic</strong>.</p>" +
-      "<p>New today: officers have <strong>morale</strong>, and remember being overruled. <strong>No.10 trust</strong> opens and closes options. And the man across the border, <strong>Colonel Kesk</strong>, learns how you play.</p>" +
+      "<p>On Wednesday she sat on that bench in Bath to warn Vass, not to hurt him. " + (flags().clerk ? "Overnight the Vienna clerk\u2019s codebook read what she taped under the slats: <strong>\u2018Vass is not the target. I am. Come for me.\u2019</strong> It names a house in York." : "Kesk\u2019s man got to the bench first, but the ferry cabin gave us a house in York.") + " Last night she missed her check-in. We have until midnight to bring her out of the <strong>Varenian Republic</strong>.</p>" +
+      "<p>New: officers have <strong>morale</strong>. <strong>No.10 trust</strong> opens and closes options. And <strong>Colonel Kesk</strong> learns how you play.</p>" +
       '<div class="kicker" style="margin-top:6px">What follows you from Days 1 and 2</div>' + followList() +
       '<button class="btn primary" id="go">Open the envelope on your desk</button></div>');
-    $("go").onclick = function () { s.seenIntro = true; A.save("briefing"); letter(0, A.briefing); };
+    $("go").onclick = function () { s.seenIntro = true; s.bathNote = flags().clerk; A.save("briefing"); letter(0, A.briefing); };
   }
   function line(gone) {
     const s = S(), n = s.log.length;
     if (gone.length) return { text: "We ran out of time on <b>" + gone.map(function (id) { return D.SITS3[id].title.toLowerCase(); }).join(" and ") + "</b>. It\u2019s gone, C.", worried: true };
-    if (!n) return { text: "Morning, C. Start in Bath: whatever she taped under that bench, Kesk\u2019s man wants it too. York by two. And somebody has to walk her plan across London without a tail.", worried: false };
+    if (!n) return { text: "Morning, C. York first: her note points there. Then walk her plan across London without a tail, and get a pod on the Kestrel Line.", worried: false };
     if (s.deal === "deal") return { text: "Archer lands tonight. The Green Coat file is closed. " + A.benchLine(), worried: true };
     if (!s.done.exfil && s.hour >= 18) return { text: "She walks past the signal spot at seven, Kessgrad time. The car must be at the border by ten. <b>Everything else can wait.</b>", worried: true };
     return { text: A.benchLine(), worried: false };
   }
   function afterCase(id, res) {
-    if (id === "bath") return res === "loss" ? "Kesk\u2019s man got to the store first." : "Under the slats, a cigarette paper in her hand: <b>\u2018Vass is not the target. I am. Come for me.\u2019</b>";
     if (id === "york") return res === "loss" ? "Kesk\u2019s people were there first. We\u2019ll run SPARE KEY from memory (\u221215% on the signal)." : "In the airing cupboard, SPARE KEY, untouched. <b>The signal is a man with a green shopping bag.</b>";
     return "";
   }
@@ -228,9 +217,20 @@
     if ($("skip")) $("skip").onclick = function () { A.advance(1); tailEnd(0, true); };
     $("back").onclick = A.briefing;
   }
+  // the street game's round display: one stop per corner (clear, spotted, dead end, too slow), then the heat gauge
+  const TGK = { ok: ["\u2713", "Clear"], watch: ["\ud83d\udc41", "Spotted +2"], dead: ["\u26d4", "Dead end +1"], slow: ["\u23f1", "Too slow +1"] };
+  function tgTrack(n, i, hist, heat, max) {
+    let t = "";
+    for (let k = 0; k < n; k++) { const h = hist[k]; t += '<li class="tgs ' + (h ? h : k === i ? "now" : "todo") + '" title="' + (h ? TGK[h][1] : k === i ? "This corner" : "To come") + '"><span>' + (h ? TGK[h][0] : k + 1) + "</span></li>"; }
+    let g = ""; for (let p = 0; p < max; p++) g += '<i class="' + (p < heat ? "on" : "") + '"></i>';
+    const last = hist[i - 1];
+    return '<div class="tg-round"><div class="tg-head"><span>Corner ' + Math.min(n, i + 1) + " of " + n + '</span><span class="tg-heat">Heat <b>' + heat + '</b><span class="hp" aria-hidden="true">' + g + "</span></span></div>" +
+      '<ol class="tg-track" aria-label="Corners: ' + hist.filter(function (h) { return h === "ok"; }).length + " clear of " + hist.length + '">' + t + "</ol>" +
+      (last ? '<div class="tg-last ' + (last === "ok" ? "ok" : "bad") + '">Last corner: ' + TGK[last][1] + "</div>" : "") + "</div>";
+  }
   function tailGame() {
     const s = S(), N = 6, limit = FEEL.reduce ? 0 : ({ easy: 4200, standard: 3000, hard: 2200 }[s.diff] || 3000);
-    let i = 0, heat = startHeat(), timer = null, cur = null, busy = false;
+    let i = 0, heat = startHeat(), timer = null, cur = null, busy = false; const hist = [];
     const corner = function () {
       const w = Math.floor(A.rnd() * 3); let b = Math.floor(A.rnd() * 2); if (b >= w) b++;
       cur = { w: w, b: b, safe: 3 - w - b }; window.__TAIL__ = cur; busy = false;
@@ -238,8 +238,7 @@
       const dead = ["Scaffolding, no way through", "Locked gates", "Roadworks, fenced off"][Math.floor(A.rnd() * 3)];
       let lanes = "";
       for (let L = 0; L < 3; L++) lanes += '<button class="lane" data-l="' + L + '"><span class="arr">' + ARROW[L] + '</span><span class="ln">' + LANES[L] + '</span><span class="what ' + (L === w ? "watch" : L === b ? "dead" : "clear") + '">' + (L === w ? "\ud83d\udc41 " + cue : L === b ? "\u26d4 " + dead : "Rain, and nobody") + "</span></button>";
-      let pips = ""; for (let p = 0; p < 5; p++) pips += '<i class="' + (p < heat ? "on" : "") + '"></i>';
-      A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>Corner ' + (i + 1) + " of " + N + '</span><span class="heat">Heat <span class="hp">' + pips + "</span></span></div>" +
+      A.render('<div class="tailgame" id="tailgame">' + tgTrack(N, i, hist, heat, 6) +
         (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') +
         '<div class="tg-lanes">' + lanes + '</div><div class="tg-msg" id="tgmsg">' + (i ? "" : "Swipe or tap the clear street.") + "</div></div>", limit ? "Pick the clear street before the bar runs out." : "No timer with reduced motion. Take your time.");
       document.querySelectorAll("[data-l]").forEach(function (b2) { b2.onclick = function () { pick(+b2.getAttribute("data-l")); }; });
@@ -253,6 +252,7 @@
     const pick = function (L) {
       if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer);
       let msg, cls;
+      hist.push(L === cur.safe ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow");
       if (L === cur.safe) { msg = "Clear. Nobody turns."; cls = "ok"; FEEL.buzz("tap"); }
       else if (L === cur.w) { heat += 2; msg = "He saw you. A cough, a newspaper folded."; cls = "bad"; FEEL.buzz("loss"); }
       else if (L === cur.b) { heat += 1; msg = "Dead end. You double back, past them."; cls = "bad"; FEEL.buzz("loss"); }
@@ -308,7 +308,7 @@
     list.push(f.caught ? ["Mole caught", 10] : ["Mole still free", -10]);
     if (s.done.tail) list.push({ win: ["Clean streets", 10], mixed: ["Partly seen", 0], loss: ["Followed in London", -15] }[s.done.tail]);
     if (s.done.cable) list.push({ win: ["Listening pod", 10], mixed: ["Faint pod", 5], loss: ["No pod", 0] }[s.done.cable]);
-    if (s.done.bath && s.done.bath !== "loss") list.push(["Her note from Bath", 5]);
+    if (s.bathNote) list.push(["Her note from Bath", 5]);
     if (A.late("exfil")) list.push(["Late", -(10 + A.late("exfil") * 5)]);
     return list.filter(function (x) { return x[1]; });
   }
@@ -420,5 +420,5 @@
     }[ending()];
   }
 
-  window.AH3 = { briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
+  window.AH3 = { tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
 })();

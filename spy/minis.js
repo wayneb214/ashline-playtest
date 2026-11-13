@@ -1,42 +1,52 @@
-/* minis.js: three short hands-on cases (20–40 s), one a day. All invented; the code is a toy shift cipher.
-   Day 1 · cipher: turn the dial until the intercept reads. Day 2 · spot: tap the face that is in both photos.
-   Day 3 · lie: two watchers' stories, three clues; tap the one that can't be true. */
+/* minis.js: three short hands-on puzzles (20–40 s). All invented; the code is a toy shift cipher.
+   Day 3 · lie: two watchers' stories; tap the one that can't be true. It is the first half of the York case, not a case of its own.
+   Day 4 · faces ("Faces at the window"): tap the face that is in both photos. A win clears a suspect on the leak board.
+   Day 5 · proof ("Proof of life"): turn the dial until Kesk's postcard reads. A win helps at the bridge. */
 (function () {
   "use strict";
   const REW = { win: { capital: 4, service: 5 }, mixed: { capital: 1, service: 2 }, loss: { capital: -3, service: -3 } };
   const CASES = {
-    1: { cipher: { kind: "mini", title: "A coded postcard", where: "Dead letter box, Hampstead Heath", due: 23, home: true, pen: { service: -4 },
-      head: { win: "Heath postcard \u2018just a holiday note\u2019, say police", mixed: "Odd postcards found on Hampstead Heath", loss: "Grey House code \u2018sent under Whitehall\u2019s nose\u2019" } } },
-    2: { spot: { kind: "mini", title: "Who followed the courier?", where: "Paddington and Bristol", due: 18, pen: { service: -5 },
-      head: { win: "Bristol station: man questioned over \u2018tailing\u2019", mixed: "Tail spotted in Bristol, then lost", loss: "Courier\u2019s shadow walks free in Bristol" } } },
-    3: { lie: { kind: "mini", title: "Two stories from York", where: "York", due: 20, pen: { service: -5 },
-      head: { win: "York: watcher\u2019s tale \u2018didn\u2019t add up\u2019", mixed: "York trail goes half cold", loss: "York trail goes cold for Albion House" } } }
+    4: { faces: { kind: "mini", title: "Faces at the window", where: "Lambeth, London", place: "London", home: true, due: 17, pen: { secrecy: -5 },
+      head: { win: "Lambeth caf\u00e9 regular \u2018helping police\u2019", mixed: "Photographer seen outside government building", loss: "Albion House visitor \u2018never identified\u2019" } } },
+    5: { proof: { kind: "mini", title: "Proof of life", where: "A postcard from Kessgrad", place: "Varenia", home: true, due: 19, pen: { safety: -5 },
+      head: { win: "Varenia: detained Briton \u2018in good health\u2019", mixed: "Family of held Briton receive postcard", loss: "No word from Briton held in Kessgrad" } } }
   };
-  const AT = { 1: ["cipher", 99], 2: ["spot", 1], 3: ["lie", 2] };
-  const HEAD = { cipher: "signal", spot: "bristol", lie: "york" };
+  // where each puzzle sits in the day's order (index)
+  const AT = { 4: ["faces", 2], 5: ["proof", 2] };
+  const HEAD = { proof: "signal", faces: "fleet", lie: "york" };
   const STAMP = { win: "CRACKED", mixed: "PARTLY", loss: "MISSED" };
-  function addCases(D) { Object.assign(D.SITS1, CASES[1]); Object.assign(D.SITS2, CASES[2]); if (D.SITS3) Object.assign(D.SITS3, CASES[3]); }
+  function addCases(D) { if (D.SITS4) Object.assign(D.SITS4, CASES[4]); if (D.SITS5) Object.assign(D.SITS5, CASES[5]); }
   // put today's mini case on the desk (also upgrades saves from before it existed)
   function inject(S) {
     addCases(window.AH.D);
     const a = AT[S.day]; if (!a || S.order.indexOf(a[0]) >= 0) return;
-    if (S.day === 1 && S.order.indexOf("sabotage") < 0) return; // Day 1: after the four lessons
     S.order.splice(Math.min(a[1], S.order.length), 0, a[0]);
   }
   function done(id, res, appr, body) {
-    const A = window.AH, ch = A.apply(REW[res]); A.advance(1);
-    const S = A.S(); S.minis = S.minis || {}; S.minis[id] = res;
+    const A = window.AH, S = A.S(); S.minis = S.minis || {}; S.minis[id] = res;
+    if (id === "lie") return yorkNext(res, body);
+    const ch = A.apply(REW[res]); A.advance(1);
+    if (id === "faces" && res !== "loss") { S.clues4 = S.clues4 || {}; S.clues4.faces = true; }
     A.finishCase(id, res, null, appr, A.CASES()[id].head[res], ch, STAMP[res], body, "", "Back to the desk when you\u2019re ready.");
     if (window.FUN) FUN.event("mini", { id: id, res: res });
   }
+  // York, part one: the two watchers. The result changes the odds for part two, the officer at the house.
+  function yorkNext(res, body) {
+    const A = window.AH; if (window.FUN) FUN.event("mini", { id: "lie", res: res });
+    if (window.SFX && SFX.stamp) SFX.stamp(); if (window.VOICE) VOICE.play("mini_lie_" + res);
+    A.render('<div data-screen="york-half"><div class="card outcome ' + res + '"><span class="stamp thud">' + STAMP[res] + '</span><div class="kicker">The York address \u00b7 part one of two</div><h2>Two stories from York</h2><p>' + body + '</p>' +
+      '<div class="chips"><span class="chip ' + (res === "loss" ? "risk-high" : "risk-low") + '">' + { win: "+8% at the York house", mixed: "+3% at the York house", loss: "\u22126% at the York house" }[res] + "</span></div></div>" +
+      '<button class="btn primary" id="go">Part two: who goes to the house?</button></div>', "Now pick who goes to the York house.");
+    A.$("go").onclick = function () { A.openCase("york"); };
+  }
   function shell(id, kicker, html, hint) {
-    const A = window.AH;
-    A.render('<div data-screen="mini-' + id + '" data-music="tense"><div class="card dossier mini"><div class="kicker">' + kicker + "</div><h2>" + A.esc(A.CASES()[id].title) + "</h2>" + html + '</div><button class="linkbtn" id="back">Back to the desk</button></div>', hint);
+    const A = window.AH, t = id === "lie" ? "The York address" : A.CASES()[id].title;
+    A.render('<div data-screen="mini-' + id + '" data-music="tense"><div class="card dossier mini"><div class="kicker">' + kicker + "</div><h2>" + A.esc(t) + "</h2>" + html + '</div><button class="linkbtn" id="back">Back to the desk</button></div>', hint);
     A.$("back").onclick = A.briefing;
   }
 
   // ---------- Day 1: the dial cipher ----------
-  const MSG = "PARCEL GOES TO BATH TONIGHT VALE";
+  const MSG = "OLD MILL BY THE VELL BRIDGE VALE";
   const enc = function (t, k) { return t.replace(/[A-Z]/g, function (c) { return String.fromCharCode(65 + (c.charCodeAt(0) - 65 + k + 26) % 26); }); };
   function cipher() {
     const A = window.AH, S = A.S(); S.mini = S.mini || {};
@@ -44,8 +54,8 @@
     let turn = 0, wrong = 0;
     const draw = function () {
       const plain = enc(code, -turn);
-      shell("cipher", "Hands-on \u00b7 about 30 seconds",
-        '<p class="mini-p">A postcard from a Grey House courier. Every letter is shifted along the alphabet by the same number. Turn the dial until it reads. <b>Their couriers always sign off <span class="mono">VALE</span>.</b></p>' +
+      shell("proof", "Hands-on \u00b7 about 30 seconds",
+        '<p class="mini-p">Kesk sent a postcard \u201cfrom our friend\u201d. A line is in Grey House code: every letter shifted by the same number. <b>It always ends <span class="mono">VALE</span>.</b></p>' +
         '<div class="cipher"><div class="ct mono" aria-label="Coded text">' + code + '</div><div class="pt mono" aria-live="polite">' + plain + "</div>" +
         '<div class="strip mono" aria-hidden="true">' + "VALE".split("").map(function (c) { return "<span>" + enc(c, key) + "\u2192" + c + "</span>"; }).slice(0, wrong).join("") + "</div>" +
         '<div class="dialrow"><button class="btn ghost" id="cm" aria-label="Turn back one">\u25c0</button><span class="shift mono">Shift ' + turn + '</span><button class="btn ghost" id="cp" aria-label="Turn on one">\u25b6</button></div></div>' +
@@ -54,14 +64,14 @@
       A.$("cm").onclick = function () { turn = (turn + 25) % 26; if (window.SFX && SFX.tick) SFX.tick(1); draw(); };
       A.$("cp").onclick = function () { turn = (turn + 1) % 26; if (window.SFX && SFX.tick) SFX.tick(1); draw(); };
       A.$("lock").onclick = function () {
-        if (turn === key) return done("cipher", wrong ? "mixed" : "win", "Cracked the shift" + (wrong ? " on the second go" : ""), "It reads: <b>\u201cParcel goes to Bath tonight.\u201d</b> Ash circles <b>Bath</b> twice and rings the night desk.");
+        if (turn === key) return done("proof", wrong ? "mixed" : "win", "Cracked the shift" + (wrong ? " on the second go" : ""), "It reads: <b>\u201cOld mill by the Vell bridge.\u201d</b> That\u2019s where they\u2019re holding ours. <b>Better odds at dawn.</b>");
         wrong++; FEEL.buzz("loss");
-        if (wrong >= 2) return done("cipher", "loss", "Couldn\u2019t crack it", "The postcard goes to the codebreakers, who crack it by morning: <b>\u201cParcel goes to Bath tonight.\u201d</b> Too late to matter.");
+        if (wrong >= 2) return done("proof", "loss", "Couldn\u2019t crack it", "The codebreakers crack it by morning: <b>\u201cOld mill by the Vell bridge.\u201d</b> Too late to help.");
         draw();
       };
     };
     draw();
-    MENU.coach("mini-cipher", "Hands-on case: turn the dial with \u25c0 \u25b6 until the bottom line reads as English, then lock it. One wrong guess is forgiven.");
+    MENU.coach("mini-proof", "Turn the dial with \u25c0 \u25b6 until the bottom line reads as English, then lock it. One wrong guess is forgiven.");
   }
 
   // ---------- Day 2: spot the tail ----------
@@ -70,7 +80,12 @@
     const hat = f.h === "trilby" ? '<path d="M7 9h18M11 9c0-5 10-5 10 0" stroke="#111" stroke-width="3" fill="#222"/>' : f.h === "cap" ? '<path d="M10 9c0-5 12-5 12 0h4" stroke="#333" stroke-width="3" fill="#444"/>' : "";
     const bag = f.b === "case" ? '<rect x="22" y="32" width="10" height="9" rx="1" fill="#3a2814" stroke="#e8d9b8" stroke-width=".8"/>' : f.b === "brolly" ? '<path d="M28 18v34a2 2 0 0 1-4 0" stroke="#e8d9b8" stroke-width="2.4" fill="none"/>' : "";
     const svg = '<svg viewBox="0 0 32 64" aria-hidden="true"><circle cx="16" cy="12" r="5" fill="#d9c3a5"/>' + hat + '<path d="M9 19h14l3 28H6z" fill="' + COATS[f.c] + '"/><path d="M11 47v14M21 47v14" stroke="#1b1b1b" stroke-width="3"/>' + bag + "</svg>";
+    // painted figures: one oil-painted body per coat colour, with a painted hat and bag layered on
+    const COATN = ["crimson", "navy", "grey", "mustard"], HATN = { trilby: "trilby", cap: "flat cap" }, BAGN = { "case": "briefcase", brolly: "umbrella" };
+    const art = '<span class="pf"><img class="pf-body" src="img/faces/coat' + f.c + '.webp" alt="">' + (f.h !== "none" ? '<img class="pf-hat pf-' + f.h + '" src="img/faces/' + f.h + '.webp" alt="">' : "") + (f.b !== "none" ? '<img class="pf-bag pf-' + f.b + '" src="img/faces/' + f.b + '.webp" alt="">' : "") + "</span>";
+    const desc = COATN[f.c] + " coat" + (HATN[f.h] ? ", " + HATN[f.h] : ", no hat") + (BAGN[f.b] ? ", " + BAGN[f.b] : "");
     const st = 'style="left:' + f.x + '%"';
+    if (window.__FACES_SVG__ !== true) return tap ? '<button class="fig" data-fig="' + i + '" ' + st + ' aria-label="Person ' + (i + 1) + ": " + desc + '">' + art + "</button>" : '<span class="fig" ' + st + ' role="img" aria-label="' + desc + '">' + art + "</span>";
     return tap ? '<button class="fig" data-fig="' + i + '" ' + st + ' aria-label="Person ' + (i + 1) + '">' + svg + "</button>" : '<span class="fig" ' + st + ">" + svg + "</span>";
   }
   function spotRound(rnd) {
@@ -87,10 +102,10 @@
     const A = window.AH; let round = 0, hits = 0;
     const draw = function () {
       const R = spotRound(A.rnd);
-      shell("spot", "Hands-on \u00b7 round " + (round + 1) + " of 2",
-        '<p class="mini-p">Gareth\u2019s camera caught the courier twice. <b>Someone is in both photos.</b> Tap them in the second one. Same coat, same hat, same bag.</p>' +
-        '<div class="photo"><img src="img/h-fleet.jpg" alt="Paddington, 09:12"><small>1 \u00b7 Paddington, 09:12</small>' + R.a.map(function (f, i) { return fig(f, i, false); }).join("") + "</div>" +
-        '<div class="photo tap"><img src="img/h-bristol.jpg" alt="Bristol, 11:40"><small>2 \u00b7 Bristol, 11:40 \u00b7 tap one</small>' + R.b.map(function (f, i) { return fig(f, i, true); }).join("") + "</div>", "Who is in both photos? Tap them in photo 2.");
+      shell("faces", "Hands-on \u00b7 round " + (round + 1) + " of 2",
+        '<p class="mini-p">The caf\u00e9 watch photographed the front door twice. <b>Someone is in both.</b> Tap them in photo 2: same coat, hat and bag.</p>' +
+        '<div class="photo"><img src="img/h-fleet.jpg" alt="Lambeth, Monday 08:40"><small>1 \u00b7 Monday, 08:40</small>' + R.a.map(function (f, i) { return fig(f, i, false); }).join("") + "</div>" +
+        '<div class="photo tap"><img src="img/h-london.jpg" alt="Lambeth, Thursday 18:15"><small>2 \u00b7 Thursday, 18:15 \u00b7 tap one</small>' + R.b.map(function (f, i) { return fig(f, i, true); }).join("") + "</div>", "Who is in both photos? Tap them in photo 2.");
       document.querySelectorAll("[data-fig]").forEach(function (b) {
         b.onclick = function () {
           const ok = +b.getAttribute("data-fig") === R.ans; if (ok) hits++;
@@ -100,13 +115,13 @@
           setTimeout(function () {
             if (++round < 2) return draw();
             const res = hits === 2 ? "win" : hits ? "mixed" : "loss";
-            done("spot", res, "Spotted " + hits + " of 2", { win: "Same man, both cities. Gareth follows him to a car hire desk. <b>We have his name by lunch.</b>", mixed: "One right, one wrong. Gareth follows the right man as far as the taxi rank, then loses him.", loss: "Wrong faces. The real tail walks out of Temple Meads unbothered." }[res]);
+            done("faces", res, "Spotted " + hits + " of 2", { win: "Same man, both days. He buys a pint for someone on the staff every Friday. <b>One more name cleared for the leak file.</b>", mixed: "One right, one wrong. Enough to clear one name, not enough to follow him.", loss: "Wrong faces. The watcher walks off along the Embankment." }[res]);
           }, FEEL.reduce ? 500 : 1100);
         };
       });
     };
     draw();
-    MENU.coach("mini-spot", "Hands-on case: compare the two photos. One person is in both. Tap them in the <b>second</b> photo.");
+    MENU.coach("mini-faces", "Compare the two photos. One person is in both. Tap them in the <b>second</b> photo.");
   }
 
   // ---------- Day 3: which story is the lie? ----------
@@ -122,8 +137,8 @@
     const A = window.AH; let round = 0, hits = 0;
     const draw = function () {
       const L = LIES[round], flip = A.rnd() < 0.5, opts = flip ? [["f", L.f], ["t", L.t]] : [["t", L.t], ["f", L.f]];
-      shell("lie", "Hands-on \u00b7 round " + (round + 1) + " of 2",
-        '<p class="mini-p">Two local watchers, two stories. <b>One of them wasn\u2019t there.</b> Check the clues and tap the story that can\u2019t be true.</p>' +
+      shell("lie", "Part one \u00b7 round " + (round + 1) + " of 2",
+        '<p class="mini-p">Before anyone knocks: two local watchers, two stories. <b>One wasn\u2019t there.</b> Tap the story the clues rule out.</p>' +
         '<ul class="clues">' + L.clues.map(function (c) { return "<li>" + c + "</li>"; }).join("") + "</ul>" +
         opts.map(function (o) { return '<button class="card appr story" data-lie="' + o[0] + '"><p style="margin:0">' + o[1] + '</p></button>'; }).join(""), "Tap the story that is the lie.");
       document.querySelectorAll("[data-lie]").forEach(function (b) {
@@ -144,5 +159,5 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () { addCases(window.AH_DATA); });
-  window.MINI = { inject: inject, open: function (id) { ({ cipher: cipher, spot: spot, lie: lie })[id](); }, HEAD: HEAD };
+  window.MINI = { inject: inject, open: function (id) { ({ proof: cipher, faces: spot, lie: lie })[id](); }, HEAD: HEAD };
 })();

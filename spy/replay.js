@@ -9,9 +9,9 @@
   const unlocked = function () { return ALL.slice(0, 4).some(function (e) { return get()[e]; }); };
   function titleHTML() {
     const n = ALL.filter(function (e) { return get()[e]; }).length;
-    return '<div class="endings">Endings found: ' + n + " of " + ALL.length + "</div>" + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
+    return (window.ENDINGS ? '<button class="btn ghost endings" id="gallery">\u2756 Endings \u00b7 ' + n + " of " + ALL.length + " found</button>" : '<div class="endings">Endings found: ' + n + " of " + ALL.length + "</div>") + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
   }
-  function bindTitle() { const b = document.getElementById("whatif"); if (b) b.onclick = function () { scene(0, 0); }; }
+  function bindTitle() { const b = document.getElementById("whatif"); if (b) b.onclick = function () { scene(0, 0); }; const g = document.getElementById("gallery"); if (g) g.onclick = function () { ENDINGS.gallery(window.AH.title); }; }
 
   // the bonus day: Vass never left Vienna. Three calls; each choice is careful (+1) or rash (0).
   const SCENES = [
@@ -36,8 +36,9 @@
     const A = window.AH, good = score >= 2, e = good ? "wi_good" : "wi_bad"; found(e);
     A.render('<div data-screen="whatif-end"><div class="card dossier"><div class="kicker">Bonus day \u00b7 ending</div><img class="vignette" src="' + A.pic(good ? "v-win" : "v-mixed") + '" alt="">' +
       "<h2>" + NAMES[e] + "</h2><p>" + (good ? "Patience wins. Vass walks out of Vienna a week later, on a quiet Tuesday, with nobody watching." : "Too loud, too soon. Vass is moved to a desk job far from any codebook. Nobody is hurt, but the door is closed.") + "</p>" +
-      '<button class="btn primary" id="go">Back to the title</button></div></div>');
+      '<button class="btn primary" id="wiepi">\u25b6 Epilogue</button><button class="btn ghost" id="go">Back to the title</button></div></div>');
     A.$("go").onclick = A.title;
+    A.$("wiepi").onclick = function () { if (window.ENDINGS) ENDINGS.play(e, false); };
   }
   window.REPLAY = { found: found, unlocked: unlocked, titleHTML: titleHTML, bindTitle: bindTitle, NAMES: NAMES };
 })();

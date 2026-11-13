@@ -2,8 +2,11 @@
    Nothing plays until the first tap (iOS rule). Mute is remembered in localStorage. */
 (function () {
   "use strict";
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
   const KEY = "albion-muted";
-  let ctx = null, master = null, out = null, amb = null, mus = null, rain = null, ringing = null;
+  const qp = function (p) { if (p && p.catch) p.catch(function () {}); }; // resume/suspend can reject on iOS: never an unhandled rejection
+  let ctx = null, master = null, out = null, mus = null, ringing = null, duckM = null, an = null;
+  let tr = 0, bedDay = -1, duckV = false, duckC = false;
   let muted = false;
   try { muted = localStorage.getItem(KEY) === "1"; } catch (e) {}
 
@@ -13,25 +16,19 @@
     return b;
   }
   function unlock() {
-    if (ctx) { if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} } return; }
+    if (ctx) { if (ctx.state !== "running") { try { qp(ctx.resume()); } catch (e) {} } return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    ctx = new AC(); out = ctx.createGain(); out.gain.value = muted ? 0 : 0.8; out.connect(ctx.destination);
-    // three buses so each slider in Settings has its own volume: effects (master), ambience, music
-    master = ctx.createGain(); amb = ctx.createGain(); mus = ctx.createGain(); [master, amb, mus].forEach(function (b) { b.connect(out); }); levels();
-    // soft rain bed: looped noise through a band-pass, gently swelling
-    const src = ctx.createBufferSource(); src.buffer = noiseBuffer(3); src.loop = true;
-    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1400; bp.Q.value = 0.4;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4200;
-    const g = ctx.createGain(); g.gain.value = 0.05;
-    const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 0.015; lfo.connect(lg).connect(g.gain); lfo.start();
-    src.connect(bp).connect(lp).connect(g).connect(amb); src.start(); rain = g;
+    ctx = new AC(); out = ctx.createGain(); out.gain.value = muted ? 0 : 0.8; out.connect(ctx.destination); an = ctx.createAnalyser(); an.fftSize = 2048; out.connect(an);
+    // two buses so each slider in Settings has its own volume: effects (master) and music. No ambience beds (Wayne: music, voices and effects only)
+    master = ctx.createGain(); mus = ctx.createGain(); duckM = ctx.createGain();
+    master.connect(out); mus.connect(duckM).connect(out); levels();
     if (want) setMusic(want);
   }
-  function levels() { if (!ctx || !window.PREFS) return; const t = ctx.currentTime; master.gain.setTargetAtTime(PREFS.vol("fx"), t, 0.05); amb.gain.setTargetAtTime(PREFS.vol("amb"), t, 0.05); mus.gain.setTargetAtTime(PREFS.vol("music"), t, 0.05); }
+  function levels() { if (!ctx || !window.PREFS) return; const t = ctx.currentTime; master.gain.setTargetAtTime(PREFS.vol("fx"), t, 0.05); mus.gain.setTargetAtTime(PREFS.vol("music"), t, 0.05); }
   document.addEventListener("prefs", levels);
   // coming back from another app: iOS suspends the context, so wake it on return and on the next tap
-  document.addEventListener("visibilitychange", function () { if (!document.hidden && ctx && ctx.state !== "running") { try { ctx.resume(); } catch (e) {} } });
-  window.addEventListener("pageshow", function () { if (ctx && ctx.state !== "running") { try { ctx.resume(); } catch (e) {} } });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && ctx && ctx.state !== "running") { try { qp(ctx.resume()); } catch (e) {} } });
+  window.addEventListener("pageshow", function () { if (ctx && ctx.state !== "running") { try { qp(ctx.resume()); } catch (e) {} } });
   function env(node, t, a, peak, dec) { node.gain.setValueAtTime(0.0001, t); node.gain.exponentialRampToValueAtTime(peak, t + a); node.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
   function bell(freq, t, dur, vol) {
     // a struck bell: a few inharmonic partials decaying at different rates
@@ -43,7 +40,7 @@
 
   // ---------- music: original, synthesised on the fly. A slow smoky jazz loop for the desk, tense strings for operations ----------
   let mode = null, want = null, mbus = null, mtimer = null, nextT = 0, step = 0;
-  const mtof = function (m) { return 440 * Math.pow(2, (m - 69) / 12); };
+  const mtof = function (m) { return 440 * Math.pow(2, (m + tr - 69) / 12); };
   // ii-V-I-VI in C, voiced like a tired piano at 2am: [bass root, chord tones]
   const JAZZ = [[38, [53, 57, 60, 64]], [43, [53, 57, 59, 64]], [36, [52, 55, 59, 62]], [45, [55, 58, 61, 64]]];
   const WALK = [[38, 41, 45, 44], [43, 47, 50, 49], [36, 40, 43, 46], [45, 44, 43, 42]];
@@ -83,6 +80,17 @@
     mbus = ctx.createGain(); mbus.gain.setValueAtTime(0.0001, t); mbus.gain.linearRampToValueAtTime(m === "jazz" ? 0.55 : 0.6, t + 2.5); mbus.connect(mus);
     nextT = t + 0.1; step = 0; schedule(); mtimer = setInterval(schedule, 200);
   }
+  // ---------- ducking: music dips under voice lines and cutscenes ----------
+  function applyDuck() {
+    if (!ctx) return; const t = ctx.currentTime;
+    duckM.gain.setTargetAtTime(duckC ? (duckV ? 0.1 : 0.25) : duckV ? 0.2 : 1, t, 0.12);
+  }
+  // ---------- each day plays the jazz in a new key (the old per-day ambience beds are gone) ----------
+  const KEYS = { 1: 0, 2: -2, 3: 3, 4: -4, 5: 1, 6: -1 };
+  function setDay(d) {
+    d = d || 1; bedDay = d; const k = KEYS[d] || 0;
+    if (k !== tr) { tr = k; if (mode === "jazz" && ctx) { mode = null; setMusic("jazz"); } } // a new key each day, crossfaded
+  }
   const api = {
     unlock: unlock,
     music: setMusic,
@@ -118,16 +126,20 @@
       }
     },
     // old British double ring: brr-brr, pause, repeated until stopped
+    // the old British double ring (400 + 450 Hz, ring-ring, pause), loud enough to hear over the music; follows the effects volume
     ring: function () {
-      if (!ctx || ringing) return;
+      unlock(); if (!ctx || ringing) return;
+      if (ctx.state !== "running") { try { qp(ctx.resume()); } catch (e) {} }
+      api.ringCount = (api.ringCount || 0) + 1;
       const burst = function () {
-        const t0 = ctx.currentTime;
+        if (!ctx) return; const t0 = ctx.currentTime + 0.03;
         [0, 0.6].forEach(function (d) {
-          [400, 450].forEach(function (fq) {
-            const o = ctx.createOscillator(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
-            o.frequency.value = fq; am.frequency.value = 20; ag.gain.value = 0.03; am.connect(ag).connect(g.gain); g.gain.value = 0.03;
-            o.connect(g).connect(master); o.start(t0 + d); am.start(t0 + d); o.stop(t0 + d + 0.4); am.stop(t0 + d + 0.4);
-          });
+          const g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain(), env = ctx.createGain();
+          g.gain.value = 0.5; am.frequency.value = 25; ag.gain.value = 0.5; am.connect(ag).connect(g.gain); // the bell clapper's rattle
+          env.gain.setValueAtTime(0.0001, t0 + d); env.gain.exponentialRampToValueAtTime(0.32, t0 + d + 0.02); env.gain.setValueAtTime(0.32, t0 + d + 0.38); env.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.42);
+          g.connect(env).connect(master);
+          [400, 450].forEach(function (fq) { const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = fq; o.connect(g); o.start(t0 + d); o.stop(t0 + d + 0.44); });
+          am.start(t0 + d); am.stop(t0 + d + 0.44);
         });
       };
       burst(); ringing = setInterval(burst, 3000);
@@ -135,7 +147,11 @@
     stopRing: function () { if (ringing) { clearInterval(ringing); ringing = null; } },
     // cinematic cues
     bigben: function (strikes) { if (!ctx) return; const t0 = ctx.currentTime + 0.05; for (let s = 0; s < (strikes || 4); s++) bell(103.8, t0 + s * 1.6, 3.4, 0.2); },
-    rainUp: function (on) { if (rain && ctx) rain.gain.setTargetAtTime(on ? 0.14 : 0.05, ctx.currentTime, 0.8); },
+    rainUp: function () {}, // no rain sound any more; the cutscenes still call it
+    day: function (d) { setDay(d); },
+    voiceDuck: function (on) { duckV = !!on; applyDuck(); },
+    cineDuck: function (on) { duckC = !!on; applyDuck(); },
+    state: function () { return { ctx: ctx ? ctx.state : "none", ringing: !!ringing, rings: api.ringCount || 0, day: bedDay, music: mode, key: tr, duckMusic: duckM ? +duckM.gain.value.toFixed(2) : null, musicGain: out ? +(out.gain.value * mus.gain.value * duckM.gain.value).toFixed(3) : 0, voiceDuck: duckV, cineDuck: duckC, rms: an ? (function () { const b = new Float32Array(an.fftSize); an.getFloatTimeDomainData(b); let q = 0; for (let i = 0; i < b.length; i++) q += b[i] * b[i]; return +Math.sqrt(q / b.length).toFixed(4); })() : 0 }; },
     engine: function (sec) {
       if (!ctx) return; const t = ctx.currentTime, d = sec || 3, o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
       o.type = "sawtooth"; o.frequency.setValueAtTime(48, t); o.frequency.linearRampToValueAtTime(62, t + d * 0.4); o.frequency.linearRampToValueAtTime(38, t + d);
@@ -148,6 +164,9 @@
     // a rubber stamp hitting a desk: a low thump and a short paper slap
     stamp: function () { if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12); env(g, t, 0.003, 0.5, 0.18); o.connect(g).connect(master); o.start(t); o.stop(t + 0.3);
       const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g2 = ctx.createGain(); n.buffer = noiseBuffer(0.12); f.type = "bandpass"; f.frequency.value = 1800; env(g2, t, 0.002, 0.25, 0.08); n.connect(f).connect(g2).connect(master); n.start(t); },
+    // the big rubber stamp hitting a desk: a low wooden boom under the usual stamp knock
+    thud: function () { if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(32, t + 0.22); env(g, t, 0.002, 0.9, 0.32); o.connect(g).connect(master); o.start(t); o.stop(t + 0.45);
+      const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g2 = ctx.createGain(); n.buffer = noiseBuffer(0.2); f.type = "lowpass"; f.frequency.value = 600; env(g2, t, 0.001, 0.6, 0.14); n.connect(f).connect(g2).connect(master); n.start(t); SFX.stamp(); },
     // a sheet of paper sliding: filtered noise swept upward
     paper: function () { if (!ctx) return; const t = ctx.currentTime, n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuffer(0.35); f.type = "bandpass"; f.Q.value = 0.8; f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(3200, t + 0.3); env(g, t, 0.05, 0.09, 0.25); n.connect(f).connect(g).connect(master); n.start(t); },
     // radio crackle: bursts of band-limited noise
@@ -155,11 +174,27 @@
       for (let i = 0; i < d * 20; i++) g.gain.setValueAtTime(Math.random() < 0.5 ? 0.0001 : 0.03 + Math.random() * 0.05, t + i / 20); g.gain.setValueAtTime(0.0001, t + d); n.connect(f).connect(g).connect(master); n.start(t); n.stop(t + d + 0.05); },
     // the red phone rumbling on the desk
     rumble: function () { if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), am = ctx.createOscillator(), ag = ctx.createGain(), g = ctx.createGain(); o.frequency.value = 38; am.frequency.value = 9; ag.gain.value = 0.12; am.connect(ag).connect(g.gain); g.gain.value = 0.12; o.connect(g).connect(master); o.start(t); am.start(t); g.gain.setTargetAtTime(0.0001, t + 0.9, 0.1); o.stop(t + 1.3); am.stop(t + 1.3); },
-    // a beat of silence before a reveal: dip music and rain
-    duck: function (sec) { if (!ctx) return; const t = ctx.currentTime; [mus, amb].forEach(function (b) { b.gain.cancelScheduledValues(t); b.gain.setTargetAtTime(0.0001, t, 0.04); }); setTimeout(levels, (sec || 0.8) * 1000); },
+    // a beat of silence before a reveal: dip the music
+    duck: function (sec) { if (!ctx) return; const t = ctx.currentTime; [mus].forEach(function (b) { b.gain.cancelScheduledValues(t); b.gain.setTargetAtTime(0.0001, t, 0.04); }); setTimeout(levels, (sec || 0.8) * 1000); },
+    // a short sting on every outcome card: win rises, partial hangs unresolved, loss falls
+    sting: function (res) {
+      if (!ctx) return; const t0 = ctx.currentTime + 0.05;
+      const seq = { win: [[523.3, 0], [659.3, 0.11], [784, 0.22]], mixed: [[440, 0], [466.2, 0.16]], loss: [[220, 0], [174.6, 0.2], [146.8, 0.4]] }[res] || [];
+      seq.forEach(function (n) { bell(n[0], t0 + n[1], res === "loss" ? 1.4 : 1.0, res === "win" ? 0.07 : 0.08); });
+    },
+    // quiet line hiss under a phone call
+    roomTone: function (on) {
+      if (!ctx) return; const t = ctx.currentTime;
+      if (on && !api._rt) { const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuffer(2); n.loop = true; f.type = "bandpass"; f.frequency.value = 900; f.Q.value = 0.7; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.012, t + 0.4); n.connect(f).connect(g).connect(master); n.start(t); api._rt = { n: n, g: g }; }
+      else if (!on && api._rt) { const r = api._rt; api._rt = null; r.g.gain.setTargetAtTime(0.0001, t, 0.15); setTimeout(function () { try { r.n.stop(); } catch (e) {} }, 900); }
+    },
+    hold: function (on) { if (!ctx) return; try { if (on) qp(ctx.suspend()); else qp(ctx.resume()); } catch (e) {} },
     heart: function (beats) { if (!ctx) return; const t0 = ctx.currentTime; for (let i = 0; i < (beats || 4); i++) [0, 0.22].forEach(function (d, j) { const t = t0 + i * 0.9 + d, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 52; env(g, t, 0.01, j ? 0.12 : 0.2, 0.18); o.connect(g).connect(master); o.start(t); o.stop(t + 0.3); }); }
   };
   window.SFX = api;
   window.addEventListener("pointerdown", unlock, { capture: true });
   window.addEventListener("keydown", unlock, { capture: true });
+  // on iPhone pointerdown is not a tap as far as audio goes: touchend and click are
+  window.addEventListener("touchend", unlock, { capture: true });
+  window.addEventListener("click", unlock, { capture: true });
 })();
