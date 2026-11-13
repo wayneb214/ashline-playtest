@@ -228,7 +228,7 @@
       $("go").textContent = "Open your file"; $("go").onclick = done;
     };
     window.DESK.call({ id: "pm0", voice: "call_pm0", line: "NO.10 \u00b7 SECURE LINE", img: "pm-calm", ring: "The Prime Minister, C. Your first morning.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Tell her",
-      text: "C, it\u2019s Eleanor Hale. Welcome to the chair. <b>We have a leak.</b> One of your secret reports has reached the Morning Courier, and they print it at three. I don\u2019t want to read about us over breakfast.",
+      text: "C, it\u2019s Eleanor Hale. Welcome to the chair. <b>We have a leak.</b> One of your secret reports has reached the Morning Courier. It goes to print at three in the morning. I will not read it over breakfast.",
       opts: [{ k: "yes", t: "\u201cI\u2019ll stop the leak before it prints, Prime Minister.\u201d", chips: '<span class="chip risk-low">+4 No.10 trust</span><span class="chip">She will hold you to it</span>' },
         { k: "free", t: "\u201cI\u2019ll deal with the leak, but my way. I need a free hand.\u201d", chips: '<span class="chip risk-high">\u22123 No.10 trust</span><span class="chip risk-low">+6% odds on the leak</span>' }],
       def: "yes", answer: function (k) { settle(k); },
