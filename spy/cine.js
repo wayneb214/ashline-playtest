@@ -195,7 +195,8 @@
       VOICE.now(id, { nosub: true, cut: true }); VOICE.after(id, function () { setTimeout(next, 200); });
     };
     // a scene line still being said when the choice arrives finishes first (it is never cut off by the question)
-    const begin = function () { if (live || run !== r) return; if (window.VOICE && VOICE.speaking() && waited < 8000) { waited += 150; return void setTimeout(begin, 150); } next(); };
+    const own = (s.sfx || []).filter(function (f) { return f[1] === "voice"; }).map(function (f) { return f[2]; });
+    const begin = function () { if (live || run !== r) return; const c = window.VOICE && VOICE.speaking() ? VOICE.current().replace(/\.mp3.*/, "") : ""; if (c && own.indexOf(c) >= 0 && waited < 8000) { waited += 150; return void setTimeout(begin, 150); } next(); }; // only this scene's own line; anything else is cut
     const sk = box.querySelector("#askskip"); if (sk) sk.addEventListener("click", function (ev) { ev.stopPropagation(); if (window.VOICE) VOICE.hush(); i = ids.length; said(null); ready(); });
     if (ids.length) { box.classList.add("speaking"); begin(); } else ready();
     if (pre.length) { const st = window.AH && AH.S(); if (st) st.flashSaid = st.day; }

@@ -1392,3 +1392,4 @@ body:has(.cine-ask) #subtitle { display: none; }
 .cine-ask { max-height: 80vh; overflow-y: auto; }
 .phone.call.listening ~ .appr, .phone.call.listening ~ .sticky-go { display: none; }
 #view .callskip { display: block; width: 100%; min-height: 44px; margin: 8px 0; font-size: 0.9375rem; }
+.cine.asking .cine-cap { opacity: 0 !important; }
