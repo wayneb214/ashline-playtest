@@ -255,7 +255,7 @@
         '<div class="sticky-go"><button class="btn primary" id="go">Begin \u00b7 ' + D.DIFFICULTY[pick].name + '</button></div><button class="btn ghost" id="back">Back</button>', "You can change this next time you start a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
-      $("go").onclick = function () { store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); }); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); if (!CINE.maybe("day1", intro)) intro(); };
+      $("go").onclick = function () { store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); }); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); const go = function () { if (!CINE.maybe("day1", intro)) intro(); }; if (window.HOWTO && HOWTO.due()) HOWTO.show(go, true); else go(); };
       $("back").onclick = title;
     };
     draw();

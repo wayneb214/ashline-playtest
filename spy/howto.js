@@ -1,4 +1,4 @@
-/* How it works: a short, skippable briefing shown once on the first new game (after the opening film),
+/* How it works: a short, skippable briefing shown once on every new game (after the opening film),
    and any time from Help or Settings as "How to play". Seven cards, one picture and a line or two each. */
 (function () {
   "use strict";
@@ -14,8 +14,9 @@
   ];
   const fast = function () { return (window.AH && AH.FAST) || window.__SPY_FAST__; };
   function seen() { try { return !!localStorage.getItem(SEEN); } catch (e) { return true; } }
-  // first new game only; tests opt in with ?howto=1 (and ?nocoach=1 always skips it)
-  function due() { if (seen() || /[?&]nocoach=1/.test(location.search)) return false; return !fast() || /[?&]howto=1/.test(location.search); }
+  // every new game (Wayne, 13 Nov: once-ever meant an old save or an earlier visit hid them for good); Skip is on every card.
+  // seen() is kept for anything that wants to know. Tests opt in with ?howto=1 (and ?nocoach=1 always skips it)
+  function due() { if (/[?&]nocoach=1/.test(location.search)) return false; return !fast() || /[?&]howto=1/.test(location.search); }
   function show(done, first) {
     try { localStorage.setItem(SEEN, "1"); } catch (e) {}
     const old = document.getElementById("howto"); if (old) old.remove();
