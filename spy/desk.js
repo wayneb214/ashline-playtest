@@ -64,7 +64,7 @@
     function talk() {
       const vid = o.voice || "call_" + o.id;
       if (window.SFX && SFX.roomTone) SFX.roomTone(true);
-      if (window.VOICE) VOICE.play(vid);
+      if (window.VOICE) { if (o.voice2 && VOICE.lines[o.voice2]) VOICE.seq([vid, o.voice2]); else VOICE.play(vid); }
       let sel = null, tt = null, listening = true;
       const secs = 0; // no reply clock: a call waits for your answer (Wayne: it must never answer for you)
       const commit = function (k, timedOut) { if (state !== "talk") return; state = "done"; if (window.SFX && SFX.roomTone) SFX.roomTone(false); if (tt) tt.stop(); C().calls = C().calls || {}; C().calls[o.id] = { k: k, late: !!timedOut }; o.answer(k, !!timedOut); };
@@ -93,15 +93,24 @@
   }
   const late = function (t) { return t ? "You hesitate too long. " : ""; };
 
+  // Batch M: the hotel caller is the officer in the Courier's photograph only sometimes. When they are (the same officer
+  // No.10 rang about, photographed abroad), they say so, and the time words follow when the photograph broke.
+  const PHOTO_WHEN = function (h) { return h < 12 ? "all_day" : h <= 14 ? "lunch" : "afternoon"; };
+  const PHOTO_TEXT = { all_day: "They\u2019ve had my face on the news all day.", lunch: "They\u2019ve had my face on the news since lunch.", afternoon: "They\u2019ve had my face on the news all afternoon." };
+  function photoLine(k) {
+    const s = S(); if (!s.call || s.call.k !== k || s.call.at == null || /London/i.test(s.call.where || "")) return null;
+    const w = PHOTO_WHEN(s.call.at); return { when: w, text: "<b>" + PHOTO_TEXT[w] + "</b>", plain: PHOTO_TEXT[w], vid: "panic_photo_" + w + "_" + k };
+  }
   // Day 1: a frightened officer abroad
   function panicCall() {
     // the officer ringing from a hotel has to be one we sent abroad today (not someone who spent the day in London)
     const a = A(), s = S(), abroad = s.log.filter(function (l) { const c = a.CASES()[l.id]; return l.k && l.id !== "mole" && s.roster.indexOf(l.k) >= 0 && c && !/London/i.test(c.where || ""); }).map(function (l) { return l.k; });
     if (!abroad.length) return false;
     const k = abroad.filter(function (x) { return !s.call || x !== s.call.k; }).slice(-1)[0] || abroad.slice(-1)[0];
-    C().panic = { k: k };
-    call({ id: "panic", voice: "call_panic_" + k, line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
-      text: "C? It\u2019s " + a.first(k) + ". There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?",
+    const photo = photoLine(k);
+    C().panic = { k: k, photo: photo ? photo.when : null };
+    call({ id: "panic", voice: "call_panic_" + k, voice2: photo ? photo.vid : null, line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
+      text: "C? It\u2019s " + a.first(k) + ". There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?" + (photo ? " " + photo.text : ""),
       opts: [{ k: "sit", t: "Sit tight. Walk out in the morning.", chips: '<span class="chip risk-low">+4 Secrecy</span><span class="chip risk-high">' + a.first(k) + " loyalty \u22121 \u00b7 stress +1</span>" },
         { k: "home", t: "Get out now. Ash books you home.", chips: '<span class="chip risk-high">\u22124 Secrecy</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
       def: "sit", hint: "Officers remember who picked up.",
@@ -286,5 +295,5 @@
   }
 
   window.DESK = { timer: timer, askSecs: askSecs, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
-    oddsMod: oddsMod, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
+    oddsMod: oddsMod, photoLine: photoLine, PHOTO_TEXT: PHOTO_TEXT, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();

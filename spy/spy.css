@@ -1356,3 +1356,9 @@ body:has(.cine-ask) #subtitle { display: none; }
 /* Batch L: the Day 5 intercept that points at the showdown */
 .card.intercept { text-align: left; border-left: 4px solid var(--stamp); margin: 10px 0; font-size: 1rem; }
 .card.intercept .fine { font-size: 0.875rem; opacity: .85; }
+/* Batch M: after Replay a day, what stands and what starts again */
+.card.replaynote { border-left: 4px solid var(--brass); margin: 8px 0 10px; font-size: 1rem; text-align: left; }
+.card.replaynote p { margin: 6px 0; }
+.card.replaynote .btn { min-height: 44px; margin-top: 4px; }
+.opcall { font-size: 0.9375rem; margin: 8px 0 4px; padding: 8px 10px; border: 1px dashed var(--brass); text-align: left; line-height: 1.4; }
+.achnext li { background: rgba(201,162,74,.12); } .achnext small { font-size: 0.9375rem; }

@@ -117,6 +117,7 @@
     document.querySelectorAll("[data-file]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); officerFile(b.getAttribute("data-file")); }; });
     document.querySelectorAll("[data-case-file]").forEach(function (b) { b.onclick = function () { caseFile(b.getAttribute("data-case-file")); }; });
     const od = $("dossier"); if (od) od.remove();
+    if ($("replay-ok")) $("replay-ok").onclick = function (e) { e.stopPropagation(); S.replayOf = null; const c = this.closest(".replaynote"); if (c) c.remove(); save(S.screen); };
     document.querySelectorAll("[data-tipx]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); S.tipSeen[b.getAttribute("data-tipx")] = true; b.parentNode.remove(); save(S.screen); }; });
   }
   // the stamp reveal: half a second of silence, then the stamp lands with a thud and a heavy buzz
@@ -199,7 +200,7 @@
       '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Six days, one spymaster, and a lot of problems before midnight.</p>' +
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
-      (window.FUN ? '<button class="btn primary" id="tach">\u2605 Achievements</button>' : "") +
+      (window.FUN ? '<button class="btn primary" id="tach">\u2605 Achievements' + (FUN.count ? " \u00b7 " + FUN.count() + " of " + FUN.total : "") + "</button>" : "") +
       (window.REVIEW && REVIEW.played() ? '<button type="button" class="btn primary" id="trate">\u2b50 Rate this game</button>' : "") +
       '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
@@ -220,20 +221,46 @@
     S.seenIntro = true; save("briefing"); chrome(true); meters(); ticker(); briefing();
   }
   function resume() { chrome(true); meters(); ticker(); S.screen === "summary" ? summary() : briefing(); }
+  // Batch M: after Replay a day, one card says what stands from the days before and what starts again, read from the
+  // restored state itself (so it is always true). It stays until the first case of the replayed day is closed, or Got it.
+  function markReplay() { S.replayOf = S.day; }
+  const DAYWORDS = {
+    1: function (r) { return r.caught ? "the mole caught" : "the mole still free"; },
+    2: function (r) { return { win: "the Bath team stopped at Harwich", mixed: "the Bath team only partly stopped", loss: "the Bath team got away" }[r.exit] || ""; },
+    3: function (r) { return { win: "the woman in green home safe", mixed: "the woman in green expelled, alive", loss: "the woman in green on state TV", traded: "the woman in green traded" }[r.end] || ""; },
+    4: function (r) { return r.leak === "win" ? "the leak found and closed" : "the leak still open"; },
+    5: function (r) { return { win: "the bridge swap done", mixed: "an untidy swap on the bridge", loss: "the bridge swap lost" }[r.swap] || ""; }
+  };
+  function replayFacts() {
+    const st = [], days = S.days || {};
+    for (let n = 1; n < S.day; n++) { const r = days[n]; if (!r) continue; const w = DAYWORDS[n] ? DAYWORDS[n](r) : ""; st.push("Day " + n + (r.grade ? " (grade " + r.grade + ")" : "") + (w ? ": " + w : "")); }
+    const lost = Object.keys(S.lost || {}).map(function (k) { return first(k) + " is gone (" + S.lost[k] + ")"; });
+    const hurt = S.roster.filter(function (k) { return S.status && (S.status[k] === "wounded" || S.status[k] === "burned"); }).map(function (k) { return first(k) + " is " + statusName(k).toLowerCase(); });
+    return { stands: st, people: lost.concat(hurt), trust: score(S.meters.capital), service: svc(), cases: S.order.length, next: S.day < 6 ? S.day + 1 : 0 };
+  }
+  function replayCard() {
+    if (!S.replayOf || S.replayOf !== S.day || Object.keys(S.done || {}).length) return "";
+    const f = replayFacts();
+    return '<div class="card replaynote" data-screen-note="replay"><div class="kicker">Replaying Day ' + S.day + '</div>' +
+      "<p><b>What stands:</b> " + (f.stands.length ? "your earlier days count as you played them. " + esc(f.stands.join("; ")) + "." : "nothing before today.") +
+      (f.people.length ? " " + esc(f.people.join("; ")) + "." : "") + " You start on No.10 trust " + f.trust + " and Service " + f.service + ", as you did first time.</p>" +
+      "<p><b>What starts again:</b> today\u2019s " + f.cases + " cases, from 08:00, with a fresh kit." + (f.next ? " When you finish, Day " + f.next + " picks up from the new result." : "") + "</p>" +
+      '<button class="btn ghost" id="replay-ok">Got it</button></div>';
+  }
   function daySelect() {
     const day2 = loadJSON(DAY2), day3 = loadJSON(DAY3);
     // Replay a day (Settings, from the title): only the days you have unlocked
     const tile = function (d, t, sub, tag) { return '<button class="card dossier sit" id="d' + d + '"><span class="num">' + d + '</span><span><div class="t">' + t + '</div><div class="s">' + sub + '</div></span><span class="dl">' + tag + "</span></button>"; };
     render('<div class="card dossier" data-screen="replayday">' + LH + '<div class="kicker" style="margin-top:8px">Case files</div><h2>Replay a day</h2>' +
-      tile(1, "The Long Day", "A defector, a mole, a leak, a cable. Ends in Bath.", "NEW") +
+      tile(1, "The Long Day", "A defector, a mole, a leak, a cable. Ends in Bath. Starts a new game: your saved days are cleared.", "NEW") +
       (day2 ? tile(2, "Pale Hour", "Hunt the Bath team before they leave Britain.", "OPEN") : "") +
       (day3 ? tile(3, "The Green Coat", "Bring the woman in green home before midnight.", "OPEN") : "") +
       [4, 5, 6].map(function (d) { return loadJSON(DAYK[d]) ? tile(d, window.AH4.NAMEOF[d], { 4: "Act 2. Kesk writes to Albion House itself.", 5: "One of ours is held. A bridge at dawn.", 6: "Kesk in London. Everyone, everywhere." }[d], "OPEN") : ""; }).join("") +
       '<button class="btn ghost" id="back">Back</button></div>');
-    [4, 5, 6].forEach(function (d) { const snap = loadJSON(DAYK[d]); if (snap) $("d" + d).onclick = function () { restore(snap); save("briefing"); chrome(true); meters(); ticker(); window.AH4.briefingIntro(); }; });
+    [4, 5, 6].forEach(function (d) { const snap = loadJSON(DAYK[d]); if (snap) $("d" + d).onclick = function () { restore(snap); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH4.briefingIntro(); }; });
     $("d1").onclick = coldOpen;
-    if (day3) $("d3").onclick = function () { restore(day3); save("briefing"); chrome(true); meters(); ticker(); window.AH3.briefingIntro(); };
-    if (day2) $("d2").onclick = function () { restore(day2); save("briefing"); chrome(true); meters(); ticker(); window.AH2.briefingIntro(); };
+    if (day3) $("d3").onclick = function () { restore(day3); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH3.briefingIntro(); };
+    if (day2) $("d2").onclick = function () { restore(day2); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH2.briefingIntro(); };
     $("back").onclick = title;
   }
   // ---------- the cold open: Standard, straight in; the Prime Minister rings within the minute ----------
@@ -349,7 +376,7 @@
         risk: risk, late: lt > 0 && !done, soon: !done && lt <= 0 && left <= 2, due: due, left: left, lockT: lockT, lock4: lock4, off: !!(done || noOff || lockT || lock4), why: why, sub: sub };
     });
     FILES = {}; cards.forEach(function (c) { FILES[c.id] = c; });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + replayCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || "Tap a file to pick it up.");
     if (no10Took() && !S.no10.said && window.VOICE) { S.no10.said = true; save("briefing"); VOICE.play("ash_no10_took"); }
     briefVoice(line.text, line.worried);
@@ -724,9 +751,19 @@
   // the painted vignette for an outcome: case-specific art on success, otherwise by result
   function vignette(id, res) { const art = CASES()[id].art; return '<div class="kbwrap"><img class="vignette" src="' + pic(art && res !== "loss" ? art : "v-" + res) + '" alt=""></div>'; }
 
+  // Batch M: Hold and Abort result cards say what the call itself cost and how the top bar moved, from the values applied
+  const sgn = function (n) { return n > 0 ? "+" + n : n < 0 ? "\u2212" + Math.abs(n) : "\u00b10"; };
+  function opCallLine(op, nm, res, t0, v0) {
+    if (!op.hold && !op.abort) return "";
+    const L = S.lastOp || {}, paid = (L.paid || {}).capital || 0, t1 = score(S.meters.capital), v1 = svc();
+    const what = op.abort ? "<b>Your call: Abort.</b> Pulling out cost No.10 trust " + sgn(paid) + ". " + esc(nm) + " walked home, and the case counts as lost."
+      : "<b>Your call: Hold.</b> Holding cost No.10 trust " + sgn(paid) + (res === "loss" ? ". " + esc(nm) + " was kept out of harm\u2019s way." : ". The trail cooled, but " + esc(nm) + " stayed safe.");
+    return '<p class="opcall" data-t0="' + t0 + '" data-t1="' + t1 + '" data-v0="' + v0 + '" data-v1="' + v1 + '">' + what + "<br>Top bar: No.10 trust " + t0 + "\u2192" + t1 + " (" + sgn(t1 - t0) + (L.back ? ", with +" + L.back + " for the closed case" : "") + ") \u00b7 Service " + v0 + "\u2192" + v1 + " (" + sgn(v1 - v0) + ").</p>";
+  }
   function resolve(id, k, a, kitId, op) {
     if (S.done[id]) return; // a case closes once: a second tap while the result is showing changes nothing
     op = op || {};
+    const t0 = score(S.meters.capital), v0 = svc(); // Batch M: the top bar before this case, for the Hold/Abort result line
     S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []) };
     const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, odds = Math.max(5, Math.min(95, oddsFor(id, k, a, kitId) + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
@@ -739,8 +776,9 @@
     const st0 = S.stress[k], lo0 = S.loyal[k], over = recIdx(id, k) !== s.approaches.indexOf(a), worked = st0 >= 4;
     S.styles = S.styles || { low: 0, med: 0, high: 0 }; S.styles[a.risk]++;
     const planStress = kitD.calm || (AG(k).quirk === "steady" && a.risk === "high") ? 0 : a.stress;
-    S.stress[k] = clamp5(S.stress[k] + planStress + (res === "loss" && !kitD.soft && !op.hold && !wrongSite ? 1 : res === "win" ? -1 : 0));
-    S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
+    // Batch M: an abort is a clean exit, as the button says: the officer's stress and loyalty (and so the Service) don't move
+    if (!op.abort) S.stress[k] = clamp5(S.stress[k] + planStress + (res === "loss" && !kitD.soft && !op.hold && !wrongSite ? 1 : res === "win" ? -1 : 0));
+    if (!op.abort) S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
     let delta = a[res];
     if (op.push && res === "win") { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * OPT.push.winX : a.win[m]; }); } // pushed and won: the big payoff
     if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
@@ -752,8 +790,10 @@
     const ch = apply(delta);
     // the price of the radio call, exactly as the button said
     const extra = op.abort ? { capital: OPT.abort.trust } : op.hold ? { capital: OPT.hold.trust } : op.push && res === "loss" ? { service: OPT.push.failService } : {};
-    Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; if (d) ch[m] = (ch[m] || 0) + d; });
-    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, res: res, extra: extra } : null;
+    const paid = {};
+    Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; paid[m] = d; if (d) ch[m] = (ch[m] || 0) + d; });
+    const back = no10Back(res, ch);
+    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, res: res, extra: extra, paid: paid, back: back } : null;
     S.done[id] = res; S.used[k] = true; S.sent = S.sent || {}; S.sent[k] = (S.sent[k] || 0) + 1; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
     if (window.FUN) FUN.xp(k, res);
@@ -787,11 +827,12 @@
     if (id === "defector" && res !== "loss") S.defector = true;
     if (S.day === 1 && S.order.indexOf("sabotage") < 0) S.order.push("sabotage");
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
+    const callLine = opCallLine(op, nm, res, t0, v0);
     const od = function (lab, a0, a1) { return a1 === a0 ? "" : '<span class="' + ((lab === "Stress") === (a1 > a0) ? "down" : "up") + '">' + lab + " " + a0 + "\u2192" + a1 + "</span>"; };
     // the evidence still first, then the write-up, read aloud by Ash after the officer's own line
     evidThen(id, res, head, function () {
       render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
-        (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + because(id, k, a.t, ch, res) + deltas(ch) +
+        (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + because(id, k, a.t, ch, res) + deltas(ch) + backLine(back) + callLine +
         '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (op.push ? '<span class="down">Pushed</span>' : "") + (op.abort ? '<span class="up">Pulled out</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
         '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
         "The gauges moved. The papers noticed. " + nm + " will remember this.");
@@ -841,19 +882,25 @@
     S.because = (S.because || []).concat(out.slice(0, 1).map(function (t) { return { id: id, t: t, res: res }; })).slice(-8);
     return '<div class="because" aria-label="Why it went this way">' + out.map(function (t) { return "<p><b>Because</b> " + t + ".</p>"; }).join("") + "</div>";
   }
-  const NO10_BACK = { win: 5, mixed: 2 };
+  // Batch L/M: in Act 2 the Prime Minister hears about every case you close (live ops and story cases alike)
+  const NO10_BACK = { win: 3, mixed: 1 };
+  function no10Back(res, ch) {
+    if (S.day < 4 || !NO10_BACK[res]) return 0;
+    const b = Math.min(NO10_BACK[res], 100 - S.meters.capital); if (b <= 0) return 0;
+    S.meters.capital += b; ch.capital = (ch.capital || 0) + b; S.no10Back = (S.no10Back || 0) + b; return b;
+  }
+  const backLine = function (b) { return b ? '<p class="no10back">\u260e No.10 heard about it: <b>+' + b + " trust</b>. Closed cases win the Prime Minister back.</p>" : ""; };
   function finishCase(id, res, k, appr, head, ch, stampWord, body, imgHtml, hintTxt) {
     if (S.done[id]) return; // already closed today (a double tap during the evidence still)
     // Batch L: in Act 2 the Prime Minister hears about every case you close, so good work wins No.10 trust back
-    let back = 0; const planCh = ch;
-    if (S.day >= 4 && NO10_BACK[res]) { const b = Math.min(NO10_BACK[res], 100 - S.meters.capital); if (b > 0) { S.meters.capital += b; ch = Object.assign({}, ch || {}); ch.capital = (ch.capital || 0) + b; S.no10Back = (S.no10Back || 0) + b; back = b; } }
+    const planCh = ch; ch = Object.assign({}, ch || {}); const back = no10Back(res, ch);
     S.done[id] = res; S.heads.push(head); S.log.push({ id: id, k: k, res: res, appr: appr, head: head, fit: S.lastWhy && S.lastWhy.id === id && S.lastWhy.k === k ? S.lastWhy.fit : null, rec: S.lastWhy && S.lastWhy.id === id && S.lastWhy.k === k ? S.lastWhy.rec : null });
     if (S.lastWhy && S.lastWhy.id === id && S.lastWhy.k === k) S.craft = (S.craft || []).concat([(S.lastWhy.fit ? 0.7 : 0) + (S.lastWhy.rec ? 0.3 : 0)]);
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
     if (window.SFX && SFX.sting) SFX.sting(res);
     evidThen(id, res, head, function () {
     caseReadout(id, res);
-    render('<div class="card outcome ' + res + '" id="case-result"><span class="stamp thud">' + stampWord + "</span>" + (imgHtml || "") + "<h2>" + esc(CASES()[id].title) + "</h2><p>" + body + "</p>" + because(id, k, appr, planCh, res) + deltas(ch) + (back ? '<p class="no10back">\u260e No.10 heard about it: <b>+' + back + " trust</b>. Closed cases win the Prime Minister back.</p>" : "") + headline(head) + '</div><button class="btn primary" id="go">Back to the desk</button>', hintTxt || "");
+    render('<div class="card outcome ' + res + '" id="case-result"><span class="stamp thud">' + stampWord + "</span>" + (imgHtml || "") + "<h2>" + esc(CASES()[id].title) + "</h2><p>" + body + "</p>" + because(id, k, appr, planCh, res) + deltas(ch) + backLine(back) + headline(head) + '</div><button class="btn primary" id="go">Back to the desk</button>', hintTxt || "");
     $("go").onclick = briefing;
     }, stampWord);
     S.lastWhy = null;
@@ -912,7 +959,7 @@
   // ---------- No.10 rings (Day 1) ----------
   function phone() {
     const last = S.log.filter(function (l) { return l.k && l.id !== "mole"; }).slice(-1)[0], k = last.k, where = CASES()[last.id].where.split(/,| or /)[0];
-    S.call = { k: k, choice: null }; save("briefing");
+    S.call = { k: k, choice: null, at: S.hour, where: CASES()[last.id].where || "" }; save("briefing");
     const settle = function (sel, t) {
       let ch, head;
       if (sel === "deny") { ch = apply({ capital: 10, trust: 4, safety: -10 }); S.loyal[k] = clamp5(S.loyal[k] - 2); S.stress[k] = clamp5(S.stress[k] + 1); head = "No.10: \u2018no knowledge\u2019 of Briton in " + where + " photograph"; }

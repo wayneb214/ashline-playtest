@@ -99,9 +99,34 @@
       if (S.day === 6 && window.AH4) { const e = AH4.ending(); if (window.REPLAY) REPLAY.found("a2_" + e); if (window.NATIVE && A().gradeScore) NATIVE.gcScore(Math.round(A().gradeScore() * 100)); if (e === "knight") unlock("knight"); if (S.days && S.days[1] && S.days[5]) unlock("six"); }
     }
   }
+  // Batch M: three locked achievements to try next, in the order a game reaches them, each with a hint that matches
+  // the real unlock rule above
+  const HINT = {
+    first_win: "Send an officer with a green \u2713 on the plan they rate best. That is the surest CLOSED stamp.",
+    mole: "Day 1: read the file notes and the debriefs before you name anyone. The mole slips on a small detail.",
+    clean_day: "Get through one day with no FAILED stamp. An abort counts as failed, and so does a case left on the desk at midnight.",
+    gold_day: "No failed case that day, and No.10 trust and Service averaging 62 or more at midnight.",
+    lie_detector: "Day 3, York: two rounds of watchers\u2019 stories. Each time, tap the story the clues rule out. Get both right.",
+    home: "Day 3: win the exfil and bring her home. Trading her doesn\u2019t count.",
+    trust: "Keep No.10 trust at 40 or above from Day 1 to the end of Day 3.",
+    no_hurt: "Through Day 3, nobody wounded, burned or lost. Holding on the radio keeps an officer safe if it goes wrong.",
+    all_gold: "Gold on Days 1, 2 and 3 of the same game.",
+    eagle_eye: "Day 4, \u2018Faces at the window\u2019: tap the face that is in both photos.",
+    leak: "Day 4: clear suspects before you name the leak. Three cleared leaves one.",
+    codebreaker: "Day 5, \u2018Proof of life\u2019: turn the dial until Kesk\u2019s postcard reads.",
+    bridge: "Day 5: win the swap on the bridge and bring your officer home.",
+    every_code: "Win the York stories (Day 3), the faces (Day 4) and the postcard (Day 5) in one game.",
+    six: "Play all six days of one game.",
+    knight: "A strong week, No.10 trust 45 or more at the end, and don\u2019t lose at Downing Street."
+  };
+  const NEXT_ORDER = ["first_win", "mole", "clean_day", "gold_day", "lie_detector", "home", "trust", "no_hurt", "all_gold", "eagle_eye", "leak", "codebreaker", "bridge", "every_code", "six", "knight"];
+  function nextUp(n) { return NEXT_ORDER.filter(function (id) { return !got[id]; }).slice(0, n || 3).map(function (id) { const a = ACH.filter(function (x) { return x[0] === id; })[0]; return { id: id, name: a[1], hint: HINT[id] }; }); }
+  function count() { return ACH.filter(function (a) { return got[a[0]]; }).length; }
   function screen(back) {
-    const n = ACH.filter(function (a) { return got[a[0]]; }).length;
-    MENU.sheet('<div class="kicker">Achievements \u00b7 ' + n + " of " + ACH.length + '</div><h2>Your record</h2><ul class="achs">' + ACH.map(function (a) {
+    const n = count(), nx = nextUp(3);
+    MENU.sheet('<div class="kicker">Achievements \u00b7 ' + n + " of " + ACH.length + '</div>' +
+      (nx.length ? '<h2>Try next</h2><ul class="achs achnext">' + nx.map(function (a) { return '<li data-next="' + a.id + '"><span class="ai" aria-hidden="true">\u2606</span><span><b>' + a.name + "</b><small>" + a.hint + "</small></span></li>"; }).join("") + "</ul>" : "") +
+      '<h2>Your record</h2><ul class="achs">' + ACH.map(function (a) {
       return '<li class="' + (got[a[0]] ? "got" : "") + '"><span class="ai" aria-hidden="true">' + (got[a[0]] ? "\u2605" : "\u2606") + "</span><span><b>" + a[1] + "</b><small>" + a[2] + "</small></span></li>"; }).join("") +
       '</ul><p class="fine">Saved on this device.</p>' + (gcReady() ? '<button class="btn" id="ach-gc">Open Game Center</button>' : '') + '<button class="btn primary" id="ach-back">Back</button>', "settings");
     if (back) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
@@ -133,6 +158,6 @@
     document.getElementById("promo-ok").onclick = function () { MENU.close(); promo(); };
     MENU.coach("promo", "Officers earn <b>XP</b> from successes. At 2, 5 and 8 XP they gain a new trait that lifts their odds.");
   }
-  const FUN = window.FUN = { traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
+  const FUN = window.FUN = { nextUp: nextUp, count: count, total: ACH.length, HINT: HINT, traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
     onUnlock: function (gcId) { const P = window.Capacitor && Capacitor.Plugins; if (P && P.GameCenter && P.GameCenter.reportAchievement) P.GameCenter.reportAchievement({ id: gcId, percent: 100 }).catch(function () {}); } };
 })();
