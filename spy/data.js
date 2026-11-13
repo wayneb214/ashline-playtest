@@ -62,7 +62,7 @@ window.AH_DATA = (function () {
     { id: "Rotterdam", alt: true, src: "Intercept \u00b7 single source", grade: "Unconfirmed", q: "\u201cLet the English watch the north. The real work is at the Rotterdam hub.\u201d" }
   ];
   const TRUTH = "Rotterdam";
-  // painted roundel (bottle-green field, brass star; no flag, no crests). Old SVG kept in review/panel/extras/emblem-old-svg.txt
+  // painted roundel: the app icon (a figure under a gaslamp, the clock tower behind) in a brass ring; no crests
   const EMBLEM = '<img class="emblem" src="img/emblem.webp" width="256" height="256" alt="" aria-hidden="true">';
 
   // ---------- officers you can recruit when one is lost ----------

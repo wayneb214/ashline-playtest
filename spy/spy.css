@@ -171,17 +171,11 @@ p strong { color: inherit; }
 .card:has(> .stamp.corner) > .kicker:first-of-type{padding-right:118px}
 .stamp.corner{top:10px;right:10px}
 /* British touches */
-.flagband{width:120px;height:10px;margin:12px auto 0;opacity:.55;border-radius:2px;background:
- linear-gradient(90deg,transparent 44%,#a8282c 44% 56%,transparent 56%),
- linear-gradient(0deg,transparent 30%,#a8282c 30% 70%,transparent 70%),
- linear-gradient(90deg,transparent 40%,#efe6d2 40% 60%,transparent 60%),
- linear-gradient(0deg,transparent 15%,#efe6d2 15% 85%,transparent 85%),#22305a;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.flagband{width:150px;height:14px;margin:12px auto 0;opacity:.92;background:url(img/union-flag.svg) center/28px 14px no-repeat,linear-gradient(90deg,transparent,rgba(201,162,74,.75) 30%,rgba(201,162,74,.75) 38%,transparent 38% 62%,rgba(201,162,74,.75) 62%,rgba(201,162,74,.75) 70%,transparent) center/100% 1px no-repeat;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
 .lh{font-family:var(--type);font-size: 0.875rem;letter-spacing: .06em;color:var(--oxblood);border-bottom:1px solid rgba(122,31,31,.35);padding-bottom:6px;margin:-2px 0 10px;padding-right:0}
 .lh.paper{color:var(--brass-hi);border-color:rgba(201,162,74,.35);margin:0 0 8px}
 .card.dossier{position:relative}
-.card.dossier::after{content:"";position:absolute;top:-1px;left:16px;width:22px;height:13px;border-radius:0 0 2px 2px;box-shadow:0 1px 2px rgba(0,0,0,.35);background:
- linear-gradient(90deg,transparent 42%,#a8282c 42% 58%,transparent 58%),linear-gradient(0deg,transparent 35%,#a8282c 35% 65%,transparent 65%),
- linear-gradient(90deg,transparent 36%,#efe6d2 36% 64%,transparent 64%),linear-gradient(0deg,transparent 24%,#efe6d2 24% 76%,transparent 76%),#22305a}
+.card.dossier::after{content:"";position:absolute;top:-1px;left:16px;width:24px;height:12px;border-radius:0 0 1px 1px;box-shadow:0 1px 2px rgba(0,0,0,.35);background:url(img/union-flag.svg) center/100% 100% no-repeat #012169}
 .card.dossier.sit::after{left:auto;right:14px}
 .card.dossier > .stamp.corner{top:26px}
 .no10{margin:calc(var(--safe-t) + 14px) 0 12px;position:relative}
@@ -417,7 +411,7 @@ body.is-night .clock { box-shadow: 0 0 14px rgba(232,200,116,.35); }
 .btn.ghost:active { transform: translateY(3px); box-shadow: inset 0 2px 5px rgba(60,40,10,.6), 0 1px 0 #4a3510, 0 2px 4px rgba(0,0,0,.4); filter: brightness(.94); }
 
 
-/* 9. living title: Big Ben's hands, a bus, fog */
+/* 9. living title: Big Ben's hands and fog (the bus is in the painting) */
 .living { position: fixed; z-index: 0; pointer-events: none; overflow: hidden; }
 .title { position: relative; z-index: 1; }
 .living .bb { position: absolute; left: 68.6%; top: 39.05%; width: 2.6%; aspect-ratio: 1; transform: translate(-50%,-50%); }
@@ -426,9 +420,6 @@ body.is-night .clock { box-shadow: 0 0 14px rgba(232,200,116,.35); }
 .living .mh { height: 44%; animation: spin 60s linear infinite; }
 @keyframes spin { from { transform: rotate(var(--a0,0deg)) } to { transform: rotate(calc(var(--a0,0deg) + 360deg)) } }
 .living .hh { --a0: 240deg; }
-.living .bus { position: absolute; top: 50.6%; left: 0; width: 4.2%; height: 2.6%; animation: bus 34s linear infinite; }
-.living .bus i { display: block; width: 100%; height: 100%; border-radius: 2px 2px 1px 1px; background: linear-gradient(180deg, #b52a20 0 44%, rgba(255,214,140,.9) 44% 52%, #b52a20 52% 86%, #1a1a1a 86%); box-shadow: 0 0 6px rgba(255,190,110,.4); }
-@keyframes bus { 0% { transform: translateX(2400%); opacity: 0 } 4% { opacity: 1 } 70% { opacity: 1 } 76%, 100% { transform: translateX(1000%); opacity: 0 } }
 .living .fog { position: absolute; left: -50%; width: 200%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse at 50% 50%, rgba(200,205,200,.22), transparent 70%); filter: blur(6px); }
 .living .f1 { top: 52%; animation: fog 60s ease-in-out infinite alternate; }
 .living .f2 { top: 62%; opacity: .7; animation: fog 85s ease-in-out infinite alternate-reverse; }

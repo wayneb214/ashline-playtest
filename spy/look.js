@@ -64,7 +64,7 @@
     l.style.left = (innerWidth - 720 * s) / 2 + "px"; l.style.top = (innerHeight - 1280 * s) / 2 + "px";
   }
   function living() {
-    return '<div class="living" aria-hidden="true"><div class="bb"><i class="hh"></i><i class="mh"></i></div><div class="bus"><i></i></div><div class="fog f1"></div><div class="fog f2"></div></div>';
+    return '<div class="living" aria-hidden="true"><div class="bb"><i class="hh"></i><i class="mh"></i></div><div class="fog f1"></div><div class="fog f2"></div></div>';
   }
 
   // red wax seal on secret files (an invented monogram; no crest or crown)
