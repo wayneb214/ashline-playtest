@@ -22,8 +22,10 @@
     return d;
   }
   function close() { const d = $("sheet"); if (d) d.remove(); window.AH_PAUSED = false; document.body.classList.remove("paused"); if (window.VOICE && VOICE.unhold) VOICE.unhold(); }
-  function confirm(title, txt, yes, onYes, back) {
-    sheet('<h2>' + title + "</h2><p>" + txt + '</p><button class="btn danger" id="cf-yes">' + yes + '</button><button class="btn ghost" id="cf-no">Cancel</button>');
+  // extra (Batch O): an optional second way through, e.g. { t: "Back up, then start again", go: fn }
+  function confirm(title, txt, yes, onYes, back, extra) {
+    sheet('<h2>' + title + "</h2><p>" + txt + "</p>" + (extra ? '<button class="btn primary" id="cf-alt">' + extra.t + "</button>" : "") + '<button class="btn danger" id="cf-yes">' + yes + '</button><button class="btn ghost" id="cf-no">Cancel</button>');
+    if (extra) $("cf-alt").onclick = function () { close(); extra.go(); };
     $("cf-yes").onclick = function () { close(); onYes(); };
     $("cf-no").onclick = function () { close(); if (back) back(); };
   }

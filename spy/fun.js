@@ -121,7 +121,7 @@
     bridge: "Day 5: win the swap on the bridge and bring your officer home.",
     every_code: "Win the York stories (Day 3), the faces (Day 4) and the postcard (Day 5) in one game.",
     six: "Play all six days of one game.",
-    knight: "A strong week, No.10 trust 45 or more at the end, and don\u2019t lose at Downing Street."
+    knight: "6 points by the end of Day 6 (wins on the woman in green, the bridge and the chase are 2 each, Downing Street 3, the leak 1), No.10 trust 45 or more, and don\u2019t lose at Downing Street."
   };
   const NEXT_ORDER = ["first_win", "mole", "clean_day", "gold_day", "lie_detector", "home", "trust", "no_hurt", "all_gold", "eagle_eye", "leak", "codebreaker", "bridge", "every_code", "six", "knight"];
   // Batch N: prefer achievements this game can still earn. The game is the one in play, or the saved game on the title
@@ -145,21 +145,25 @@
       default: return d <= 6;
     }
   }
+  // Batch O: the day to replay for an achievement this game has gone past (Day 1 means a new game)
+  const REPLAY_DAY = { mole: 1, trust: 1, no_hurt: 1, all_gold: 1, lie_detector: 3, home: 3, every_code: 3, eagle_eye: 4, leak: 4, codebreaker: 5, bridge: 5 };
+  function replayDay(id) { const d = REPLAY_DAY[id]; if (!d) return 0; if (d === 1) return 1; try { return localStorage.getItem("albion-day" + d + "-start") ? d : 0; } catch (e) { return 0; } }
   function nextUp(n) {
     const st = gameState(), open = NEXT_ORDER.filter(function (id) { return !got[id]; });
     const yes = open.filter(function (id) { return reachable(id, st); }), no = open.filter(function (id) { return !reachable(id, st); });
-    return yes.concat(no).slice(0, n || 3).map(function (id) { const a = ACH.filter(function (x) { return x[0] === id; })[0]; return { id: id, name: a[1], hint: HINT[id], later: no.indexOf(id) >= 0 }; });
+    return yes.concat(no).slice(0, n || 3).map(function (id) { const a = ACH.filter(function (x) { return x[0] === id; })[0]; const later = no.indexOf(id) >= 0; return { id: id, name: a[1], hint: HINT[id], later: later, replay: later ? replayDay(id) : 0 }; });
   }
   function count() { return ACH.filter(function (a) { return got[a[0]]; }).length; }
   function screen(back) {
     const n = count(), nx = nextUp(3);
     MENU.sheet('<div class="kicker">Achievements \u00b7 ' + n + " of " + ACH.length + '</div>' +
-      (nx.length ? '<h2>Try next</h2><ul class="achs achnext">' + nx.map(function (a) { return '<li data-next="' + a.id + '"' + (a.later ? ' class="later"' : "") + '><span class="ai" aria-hidden="true">\u2606</span><span><b>' + a.name + (a.later ? " \u00b7 next game" : "") + "</b><small>" + a.hint + (a.later ? " This game has gone past it." : "") + "</small></span></li>"; }).join("") + "</ul>" : "") +
+      (nx.length ? '<h2>Try next</h2><ul class="achs achnext">' + nx.map(function (a) { return '<li data-next="' + a.id + '"' + (a.later ? ' class="later"' : "") + '><span class="ai" aria-hidden="true">\u2606</span><span><b>' + a.name + (a.later ? (a.replay > 1 ? " \u00b7 missed this game" : " \u00b7 next game") : "") + "</b><small>" + a.hint + (a.later ? " This game has gone past it." + (a.replay === 1 ? " Start again from Day 1 to try." : a.replay ? " Replay Day " + a.replay + " to try again." : "") : "") + "</small>" + (a.replay ? '<button class="btn ghost achreplay" data-replay="' + a.replay + '">Replay Day ' + a.replay + "</button>" : "") + "</span></li>"; }).join("") + "</ul>" : "") +
       '<h2>Your record</h2><ul class="achs">' + ACH.map(function (a) {
       return '<li class="' + (got[a[0]] ? "got" : "") + '"><span class="ai" aria-hidden="true">' + (got[a[0]] ? "\u2605" : "\u2606") + "</span><span><b>" + a[1] + "</b><small>" + a[2] + "</small></span></li>"; }).join("") +
       '</ul><p class="fine">Saved on this device.</p>' + (gcReady() ? '<button class="btn" id="ach-gc">Open Game Center</button>' : '') + '<button class="btn primary" id="ach-back">Back</button>', "settings");
     if (back) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     document.getElementById("ach-back").onclick = function () { MENU.close(); if (back) back(); };
+    document.querySelectorAll("[data-replay]").forEach(function (b) { b.onclick = function () { MENU.close(); if (window.VOICE && VOICE.hush) VOICE.hush(); A().chrome(false); A().daySelect(); }; });
     const g = document.getElementById("ach-gc"); if (g) g.onclick = function () { NATIVE.gcShow(); };
   }
   // the Achievements button: Apple's Game Center screen when signed in, our own list otherwise
@@ -187,6 +191,6 @@
     document.getElementById("promo-ok").onclick = function () { MENU.close(); promo(); };
     MENU.coach("promo", "Officers earn <b>XP</b> from successes. At 2, 5 and 8 XP they gain a new trait that lifts their odds.");
   }
-  const FUN = window.FUN = { nextUp: nextUp, reachable: reachable, count: count, total: ACH.length, HINT: HINT, traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
+  const FUN = window.FUN = { nextUp: nextUp, reachable: reachable, replayDay: replayDay, count: count, total: ACH.length, HINT: HINT, traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
     onUnlock: function (gcId) { const P = window.Capacitor && Capacitor.Plugins; if (P && P.GameCenter && P.GameCenter.reportAchievement) P.GameCenter.reportAchievement({ id: gcId, percent: 100 }).catch(function () {}); } };
 })();

@@ -17,9 +17,11 @@
   // the trade-off under each answer, from the same numbers resolve() applies
   function terms(A, id, k, a, kit) {
     const T = A.opTerms(id, k, a, kit), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
+    // Batch O: on Hard the odds show in words (A.oddsTxt), not a percentage
+    const hard = A.S().diff === "hard", cap = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
     return { T: T, d: {
-      push: "<i>" + T.push.odds + "% chance.</i> Win: the big payoff (\u00d7" + T.push.winX + "). Fail: Service " + m(T.push.failService) + ", and " + nm + "\u2019s cover may be blown.",
-      hold: nm + " stays safe. The trail cools: <i>" + T.hold.odds + "% chance</i> (" + m(T.hold.mod) + "%). No.10 trust " + m(T.hold.trust) + ".",
+      push: "<i>" + cap(A.oddsTxt(T.push.odds)) + (hard ? "." : " chance.") + "</i> Win: the big payoff (\u00d7" + T.push.winX + "). Fail: Service " + m(T.push.failService) + ", and " + nm + "\u2019s cover may be blown.",
+      hold: nm + " stays safe. The trail cools: <i>" + A.oddsTxt(T.hold.odds) + (hard ? "" : " chance") + "</i> (" + m(T.hold.mod) + "%). No.10 trust " + m(T.hold.trust) + ".",
       abort: "Clean exit, Service steady. The case counts as lost. No.10 trust " + m(T.abort.trust) + "." } };
   }
   let timer = null;
@@ -216,5 +218,5 @@
     const r = document.getElementById("pace"); if (r) r.onchange = function () { cur.pace = +r.value; if (window.SFX && SFX.tick) SFX.tick(); draw(); };
     MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide toward <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
   }
-  window.OPS = { MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
+  window.OPS = { terms: terms, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
 })();

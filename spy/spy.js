@@ -43,6 +43,7 @@
   const OLD_IDS = { lena: "macrae", mira: "pryce", ren: "hartley", kite: "ash", nadia: "macrae", priya: "pryce", toby: "hartley" };
   function migrate(t) { return t ? t.replace(/"(lena|mira|ren|kite|nadia|priya|toby)"/g, function (m, k) { return '"' + OLD_IDS[k] + '"'; }).replace(/\b(Lena Novak|Mira Sol|Ren Okafor|Nadia Kowalczyk|Priya Lockwood|Tobias Adeyemi|Lena|Mira|Ren|Kite|Nadia|Priya|Toby)\b/g, function (m) { return OLD_NAMES[m]; }) : t; }
   const OLD_NAMES = { "Lena Novak": "Fiona Macrae", "Mira Sol": "Gareth Pryce", "Ren Okafor": "Tom Hartley", "Nadia Kowalczyk": "Fiona Macrae", "Priya Lockwood": "Gareth Pryce", "Tobias Adeyemi": "Tom Hartley", Lena: "Fiona", Mira: "Gareth", Ren: "Tom", Kite: "Ash", Nadia: "Fiona", Priya: "Gareth", Toby: "Tom" };
+  function readJ(key) { try { return JSON.parse(store.get(key) || "null"); } catch (e) { return null; } }
   function loadJSON(key) { try { const d = JSON.parse(migrate(store.get(key)) || "null"); return d && d.v === 1 && d.S ? d : null; } catch (e) { return null; } }
   function restore(d) { seed = d.seed; S = d.S; S.chimed = true; twoMeters(S); }
   // old saves had four gauges: secrecy and safety fold into Service, public trust becomes the hidden mood
@@ -104,11 +105,20 @@
   function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
   // Batch N: every result card shows how the top bar moved since you left the desk (the same numbers the bar shows)
+  function markBar() { S.bar0 = { t: score(S.meters.capital), v: svc(), m: Math.round(S.meters.service) }; }
+  // Batch O: the top-bar Service counts officer stress and loyalty as well as the Service meter, so when the two moved
+  // differently the line says so (otherwise "+2 Service" beside "Service 62\u219262" looks like a mistake)
+  const SVC_NOTE = " The top-bar Service includes officer stress and loyalty.";
   function barText() {
     const b = S && S.bar0; if (!b) return "";
-    const t1 = score(S.meters.capital), v1 = svc();
-    if (t1 === b.t && v1 === b.v) return "Top bar unchanged: No.10 trust " + t1 + " \u00b7 Service " + v1 + ".";
-    return "Top bar since you left the desk: No.10 trust " + b.t + "\u2192" + t1 + " (" + sgn(t1 - b.t) + ") \u00b7 Service " + b.v + "\u2192" + v1 + " (" + sgn(v1 - b.v) + ").";
+    const t1 = score(S.meters.capital), v1 = svc(), mood = b.m != null && (v1 - b.v) !== (Math.round(S.meters.service) - b.m);
+    if (t1 === b.t && v1 === b.v) return "Top bar unchanged: No.10 trust " + t1 + " \u00b7 Service " + v1 + "." + (mood ? SVC_NOTE : "");
+    return "Top bar since you left the desk: No.10 trust " + b.t + "\u2192" + t1 + " (" + sgn(t1 - b.t) + ") \u00b7 Service " + b.v + "\u2192" + v1 + " (" + sgn(v1 - b.v) + ")." + (mood ? SVC_NOTE : "");
+  }
+  // Batch O: VoiceOver / TalkBack hear the top-bar line when a result card opens (a polite live region, read after the stamp)
+  function announce(tx) {
+    let r = $("sr-live"); if (!r) { r = document.createElement("div"); r.id = "sr-live"; r.className = "sr-only"; r.setAttribute("role", "status"); r.setAttribute("aria-live", "polite"); document.body.appendChild(r); }
+    r.textContent = ""; setTimeout(function () { r.textContent = tx; }, 250);
   }
   function barMark(vw) {
     const oc = vw.querySelector('.card.outcome:not([data-screen="no10warn"])'); if (!oc || oc.querySelector(".barline")) return;
@@ -116,6 +126,7 @@
     const pEl = document.createElement("p"); pEl.className = "barline"; pEl.textContent = tx;
     const after = oc.querySelector(".opcall") || oc.querySelector(".no10back") || oc.querySelector(".deltas");
     if (after) after.insertAdjacentElement("afterend", pEl); else { const hd = oc.querySelector(".headline"); if (hd) oc.insertBefore(pEl, hd); else oc.appendChild(pEl); }
+    announce(tx);
   }
   function render(html, h, keep) {
     LOOK.rain(false); if (!keep) LOOK.fade();
@@ -159,7 +170,7 @@
   // Batch L: a tip card shows once per game. It stays while you are on the screen where it first appeared
   // (same day and hour), then never again in this game, whether or not you pressed Got it.
   function tipFresh(key) { const at = S.day + ":" + S.hour; S.tipSeen = S.tipSeen || {}; if (S.tipSeen[key] === true) return false; if (!S.tipSeen[key]) S.tipSeen[key] = at; return S.tipSeen[key] === at; }
-  function tip(key) { return S.day > 1 && S.tips && PREFS.get("tips") && !replayShowing() && tipFresh(key) ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
+  function tip(key) { return S.day > 1 && S.tips && PREFS.get("tips") && !S.replayFirst && tipFresh(key) ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
   function pips(n, cls, label) { let s = ""; for (let i = 1; i <= 5; i++) s += '<i class="' + (i <= n ? "on" : "") + '"></i>'; return '<div class="tr ' + cls + '">' + label + '<div class="pips">' + s + "</div></div>"; }
   const mname = function (m) { return D.METERS.filter(function (x) { return x.id === m; })[0].name; };
   function deltas(ch) { return '<div class="deltas">' + Object.keys(ch).map(function (m) { return '<span class="' + (ch[m] >= 0 ? "up" : "down") + '">' + (ch[m] >= 0 ? "+" : "") + ch[m] + " " + mname(m) + "</span>"; }).join("") + "</div>"; }
@@ -219,7 +230,7 @@
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (window.FUN ? '<button class="btn primary" id="tach">\u2605 Achievements' + (FUN.count ? " \u00b7 " + FUN.count() + " of " + FUN.total : "") + "</button>" : "") +
       (window.REVIEW && REVIEW.played() ? '<button type="button" class="btn primary" id="trate">\u2b50 Rate this game</button>' : "") +
-      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
+      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + endingsHTML() + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     LOOK.place(); LOOK.rain(true); LOOK.night(8); if (window.REPLAY) REPLAY.bindTitle();
     $("go").onclick = saved ? function () { MENU.confirm("Start a new game?", "Your saved game (Day " + (saved.S.day || 1) + ") will be replaced.", "Start again", coldOpen); } : coldOpen;
@@ -240,7 +251,7 @@
   function resume() { chrome(true); meters(); ticker(); S.screen === "summary" ? summary() : briefing(); }
   // Batch M: after Replay a day, one card says what stands from the days before and what starts again, read from the
   // restored state itself (so it is always true). It stays until the first case of the replayed day is closed, or Got it.
-  function markReplay() { S.replayOf = S.day; staleAfter(S.day); }
+  function markReplay() { S.replayOf = S.day; S.replayFirst = true; staleAfter(S.day); }
   function replayShowing() { return !!(S.replayOf && S.replayOf === S.day && !Object.keys(S.done || {}).length); }
   // Batch N: after replaying Day d, the saved starts of later days still hold the old run's choices. They are marked
   // old (still playable, labelled), until the replay reaches them and writes a fresh start.
@@ -277,14 +288,28 @@
       (day2 ? tile(2, "Pale Hour", "Hunt the Bath team before they leave Britain.", "OPEN") : "") +
       (day3 ? tile(3, "The Green Coat", "Bring the woman in green home before midnight.", "OPEN") : "") +
       [4, 5, 6].map(function (d) { return loadJSON(DAYK[d]) ? tile(d, window.AH4.NAMEOF[d], { 4: "Act 2. Kesk writes to Albion House itself.", 5: "One of ours is held. A bridge at dawn.", 6: "Kesk in London. Everyone, everywhere." }[d], "OPEN") : ""; }).join("") +
+      (function () { const old = [4, 5, 6].filter(function (d) { const sn = loadJSON(DAYK[d]); return sn && sn.stale; }); return old.length ? '<button class="btn ghost" id="clearold">Clear old saves (Day' + (old.length > 1 ? "s " : " ") + old.join(", ") + ")</button>" : ""; })() +
+      (function () { const bk = readJ(BACKUP); return bk ? '<button class="btn ghost" id="restorebk">Bring back your backup \u00b7 Day ' + bk.day + " \u00b7 " + esc(bk.when) + "</button>" : ""; })() +
       '<button class="btn ghost" id="back">Back</button></div>');
     [4, 5, 6].forEach(function (d) { const snap = loadJSON(DAYK[d]); if (snap) $("d" + d).onclick = function () { restore(snap); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH4.briefingIntro(); }; });
     // Batch N: Day 1 starts a new game, so ask first when there are saved days to lose
-    $("d1").onclick = function () { const have = [2, 3, 4, 5, 6].filter(function (d) { return loadJSON(DAYK[d]); }); if (!have.length && !loadJSON(SAVE)) return coldOpen(); MENU.confirm("Start a new game from Day 1?", (have.length ? "Your saved game and the saved starts of Day" + (have.length > 1 ? "s " : " ") + have.join(", ") + " will be cleared." : "Your saved game will be cleared.") + " This can\u2019t be undone.", "Start again", coldOpen); };
+    $("d1").onclick = function () { const have = [2, 3, 4, 5, 6].filter(function (d) { return loadJSON(DAYK[d]); }); if (!have.length && !loadJSON(SAVE)) return coldOpen();
+      // Batch O: offer to keep a copy first; one backup slot, restored from this screen
+      MENU.confirm("Start a new game from Day 1?", (have.length ? "Your saved game and the saved starts of Day" + (have.length > 1 ? "s " : " ") + have.join(", ") + " will be cleared." : "Your saved game will be cleared.") + " Back it up first and you can bring it back from Replay a day.", "Start again", coldOpen, null, { t: "Back up, then start again", go: function () { backup(); coldOpen(); } }); };
+    if ($("clearold")) $("clearold").onclick = function () { [4, 5, 6].forEach(function (d) { const sn = loadJSON(DAYK[d]); if (sn && sn.stale) store.del(DAYK[d]); }); daySelect(); };
+    if ($("restorebk")) $("restorebk").onclick = function () { const bk = readJ(BACKUP); if (!bk) return; MENU.confirm("Bring back your backup?", "Day " + bk.day + ", backed up " + bk.when + ". It replaces the game you have now.", "Bring it back", function () { restoreBackup(bk); daySelect(); }, daySelect); };
     if (day3) $("d3").onclick = function () { restore(day3); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH3.briefingIntro(); };
     if (day2) $("d2").onclick = function () { restore(day2); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH2.briefingIntro(); };
     $("back").onclick = title;
   }
+  // Batch O: one backup slot: the saved game and every saved day start, kept when you restart from Day 1
+  const BACKUP = "albion-backup-v1";
+  function backup() {
+    const sv = loadJSON(SAVE), keys = {}; [DAY1, DAY2, DAY3, DAYK[4], DAYK[5], DAYK[6], SAVE].forEach(function (k) { if (k && store.get(k)) keys[k] = store.get(k); });
+    const d = new Date(), when = d.getDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + ", " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    store.set(BACKUP, JSON.stringify({ day: sv && sv.S ? sv.S.day || 1 : 1, when: when, keys: keys }));
+  }
+  function restoreBackup(bk) { [SAVE, DAY2, DAY3, DAYK[4], DAYK[5], DAYK[6]].forEach(function (k) { store.del(k); }); Object.keys(bk.keys).forEach(function (k) { store.set(k, bk.keys[k]); }); store.del(BACKUP); }
   // ---------- the cold open: Standard, straight in; the Prime Minister rings within the minute ----------
   function coldOpen() {
     store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); });
@@ -370,7 +395,7 @@
   function briefing() {
     if (window.MINI) MINI.inject(S);
     if (S.hour >= 24) return summary();
-    S.bar0 = { t: score(S.meters.capital), v: svc() }; // Batch N: the top bar as you leave the desk; every result card measures from here
+    markBar(); // Batch N: the top bar as you leave the desk; every result card measures from here
     no10Take();
     const gone = expire();
     if (!remaining().length) return summary();
@@ -399,7 +424,7 @@
         risk: risk, late: lt > 0 && !done, soon: !done && lt <= 0 && left <= 2, due: due, left: left, lockT: lockT, lock4: lock4, off: !!(done || noOff || lockT || lock4), why: why, sub: sub };
     });
     FILES = {}; cards.forEach(function (c) { FILES[c.id] = c; });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + replayCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + replayCard() + lowTrustCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || "Tap a file to pick it up.");
     if (no10Took() && !S.no10.said && window.VOICE) { S.no10.said = true; save("briefing"); VOICE.play("ash_no10_took"); }
     briefVoice(line.text, line.worried);
@@ -411,6 +436,14 @@
     if (window.FUN) FUN.promo();
     MENU.coach("menu", "Tap \u2630 any time to pause, change settings or return to the title. The game saves itself.");
     $("endday").onclick = function () { S.hour = 24; summary(); };
+    if (S.replayFirst) { S.replayFirst = false; save("briefing"); } // Batch O: tips come back from the second screen of a replay
+  }
+  // Batch O: in Act 2, with No.10 trust under 20, a card on the desk says what it risks and how to win trust back
+  function lowTrustCard() {
+    const t = score(S.meters.capital); if (S.day < 4 || t >= NO10_LOW) return "";
+    return '<div class="card lowtrust" role="note" data-screen-note="lowtrust"><div class="kicker">No.10 trust ' + t + "/100</div><p><b>The Prime Minister is losing patience.</b> " +
+      (S.day === 6 ? "If trust ends Day 6 under 15, you resign. Under 30, a lost Downing Street means resigning too, and the quiet exit needs 30." : "Under 15 at the end of Day 6 means resigning. Under 20 at midnight, No.10 takes a file off your desk.") +
+      " Each case you close wins back +3 trust (+1 for a partial).</p></div>";
   }
   // painted header for each case file
   const HEADS = { defector: "clerk", mole: "mole", leak: "fleet", sabotage: "rig", courier: "courier", safehouse: "flat", mole2: "mole", exit: "harwich", bath: "bath", york: "york", watch: "fleet", manchester: "manchester", leak: "letter", recon: "bridge", press: "fleet", swap: "bridge", find: "london", chase: "london", showdown: "fleet", tail: "fleet", cable: "cabletap", exfil: "signal", proof: "signal", faces: "fleet", lie: "york" };
@@ -775,15 +808,20 @@
   function vignette(id, res) { const art = CASES()[id].art; return '<div class="kbwrap"><img class="vignette" src="' + pic(art && res !== "loss" ? art : "v-" + res) + '" alt=""></div>'; }
 
   // Batch M: Hold and Abort result cards say what the call itself cost and how the top bar moved, from the values applied
+  // Batch O: on Hard the live-op call shows the odds in words, not a percentage (the same way Hard hides Ash's default)
+  function oddsBand(p) { return p >= 75 ? "good odds" : p >= 55 ? "better than even" : p >= 45 ? "about even" : p >= 25 ? "poor odds" : "a long shot"; }
+  function oddsTxt(p) { return S && S.diff === "hard" ? oddsBand(p) : p + "%"; }
   const sgn = function (n) { return n > 0 ? "+" + n : n < 0 ? "\u2212" + Math.abs(n) : "\u00b10"; };
   function opCallLine(op, nm, res, t0, v0) {
     if (!op.hold && !op.abort && !op.push) return "";
     const L = S.lastOp || {}, paid = L.paid || {};
     let what;
-    if (op.abort) what = "<b>Your call: Abort.</b> Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home, and the case counts as lost.";
-    else if (op.hold) what = "<b>Your call: Hold.</b> Holding cost No.10 trust " + sgn(paid.capital || 0) + (res === "loss" ? ". " + esc(nm) + " was kept out of harm\u2019s way." : ". The trail cooled, but " + esc(nm) + " stayed safe.");
-    else if (res === "loss") what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds (" + L.odds + "%), and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown." : ", and " + esc(nm) + " came back wounded.");
-    else what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds (" + L.odds + "%). " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d71.5." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
+    // Batch O: Hold and Abort say the odds before and after the call
+    const before = L.base != null ? oddsTxt(L.base) : null;
+    if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? "The odds were " + before + "; pulling out meant no roll at all. " : "") + "Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home, and the case counts as lost.";
+    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (res === "loss" ? ". " + esc(nm) + " was kept out of harm\u2019s way." : ". The trail cooled, but " + esc(nm) + " stayed safe.");
+    else if (res === "loss") what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds (" + oddsTxt(L.odds) + "), and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown." : ", and " + esc(nm) + " came back wounded.");
+    else what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds (" + oddsTxt(L.odds) + "). " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d71.5." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
     return '<p class="opcall">' + what + "</p>";
   }
   function resolve(id, k, a, kitId, op) {
@@ -791,7 +829,7 @@
     op = op || {};
     const t0 = score(S.meters.capital), v0 = svc(); // Batch M: the top bar before this case, for the Hold/Abort result line
     S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []) };
-    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, odds = Math.max(5, Math.min(95, oddsFor(id, k, a, kitId) + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
+    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), odds = Math.max(5, Math.min(95, raw + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
@@ -819,7 +857,7 @@
     const paid = {};
     Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; paid[m] = d; if (d) ch[m] = (ch[m] || 0) + d; });
     const back = no10Back(res, ch);
-    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, res: res, extra: extra, paid: paid, back: back } : null;
+    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, base: Math.max(5, Math.min(95, raw)), res: res, extra: extra, paid: paid, back: back } : null;
     S.done[id] = res; S.used[k] = true; S.sent = S.sent || {}; S.sent[k] = (S.sent[k] || 0) + 1; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
     if (window.FUN) FUN.xp(k, res);
@@ -862,7 +900,7 @@
       render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
         (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + because(id, k, a.t, ch, res) + deltas(ch) + backLine(back) + callLine +
         '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (op.push ? '<span class="down">Pushed</span>' : "") + (op.abort ? '<span class="up">Pulled out</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
-        '<p class="oddsline">' + odds + "% odds \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
+        '<p class="oddsline">' + (S.diff === "hard" && (op.push || op.hold) ? oddsBand(odds).replace(/^./, function (c) { return c.toUpperCase(); }) : odds + "% odds") + " \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
         "The gauges moved. The papers noticed. " + nm + " will remember this.");
       if (window.SFX && SFX.sting) SFX.sting(res);
       if (window.VOICE && !op.abort) VOICE.play("op_" + k + "_" + (res === "win" ? "done" : res === "mixed" ? "part" : "hurt"));
@@ -1057,12 +1095,13 @@
     meters(); ticker(); save("summary");
     const grade = gradeOf();
     S.finished = grade;
+    if (S.day === 6 && window.AH4 && AH4.ending) recordEnding(AH4.ending());
     if (window.FUN) FUN.event("day");
     // the order at the end of every day: the full front page with the news bulletin first, then this report
     if (S.paperDay !== S.day) return paper({ first: true });
     const verdict = S.day === 6 && window.AH4 && AH4.ending ? END6_LETTER[AH4.ending()] : { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
     render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
-      (S.day === 5 && window.AH4 && AH4.interceptClue ? AH4.interceptClue() : "") +
+      (S.day === 5 && window.AH4 && AH4.interceptClue ? AH4.interceptClue() : "") + (S.day === 6 && window.AH4 && AH4.knightGap ? '<p class="knightgap">' + AH4.knightGap() + "</p>" : "") +
       (function () { const g = gradeParts(); return '<p class="gradeparts">Graded on: No.10 trust and Service (top bar) \u00b7 cases closed <b>' + g.record + "%</b> \u00b7 tradecraft <b>" + g.craft + "%</b>" + (g.bonus ? " \u00b7 Easy +" + g.bonus : "") + (S.diff !== "easy" && g.craft < 75 ? '<br><small>An A needs 75% tradecraft over the week, a B 60%: the right officer, on the plan they rate best.</small>' : "") + "</p>"; })() + (window.FUN ? FUN.medalHTML(S) : "") +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
@@ -1083,6 +1122,19 @@
     // the bulletin played over the front page; the report gets Ash's verdict on the day (subtitled)
     // Ash reads the report aloud, short version, while the full text shows: the grade, then her FLASH telegram
     setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; VOICE.seq([reportLine(grade), bulletinLine()]); } }, 900);
+  }
+  // Batch O: each finished game's ending, newest first (kept to 10; the title shows the last 3). Once per game.
+  const ENDS = "albion-game-endings"; // not "albion-endings": the epilogue collection (endings.js, replay.js) owns that key
+  function recordEnding(e) {
+    if (S.endSaved) return; S.endSaved = true;
+    const raw = readJ(ENDS), list = Array.isArray(raw) ? raw : [], d = new Date();
+    list.unshift({ e: e, d: S.diff, at: d.getDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] });
+    store.set(ENDS, JSON.stringify(list.slice(0, 10))); save("summary");
+  }
+  function endingsHTML() {
+    const raw = readJ(ENDS), list = (Array.isArray(raw) ? raw : []).slice(0, 3); if (!list.length || !window.AH4) return "";
+    const SHORT = { knight: "Knighted", quiet: "Quiet exit", scandal: "Front page", resign: "Resigned" };
+    return '<p class="lastends">Your last games: ' + list.map(function (x) { return '<b class="endpill e-' + x.e + '">' + esc(SHORT[x.e] || x.e) + "</b>"; }).join(" \u00b7 ") + "</p>";
   }
   // Batch L: on Day 6 the letter and Ash's read-out follow the ending, never the day grade, so a resignation is never "held the line"
   const END6_LETTER = { knight: "The Prime Minister is delighted, and there is talk of the Palace. Don\u2019t let it go to your head.", quiet: "The street is quiet, and Kesk has flown home. The Prime Minister says that will do. From her, that\u2019s praise.", scandal: "It\u2019s all over the papers. The Prime Minister is furious, but you still have the chair.", resign: "The Prime Minister has asked for your resignation letter by Friday. Ash says it\u2019s been an honour." };
@@ -1246,7 +1298,7 @@
   // shared with day2.js
   window.AH = { caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, oddsBand: oddsBand, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

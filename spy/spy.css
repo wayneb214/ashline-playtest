@@ -1366,3 +1366,11 @@ body:has(.cine-ask) #subtitle { display: none; }
 /* Batch N: the top-bar line on every result card; achievements this game has gone past */
 .barline { font-size: 0.9375rem; margin: 8px 0 4px; padding: 6px 10px; border-left: 3px solid var(--brass); text-align: left; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .achnext li.later { background: rgba(127,127,127,.10); opacity: .85; }
+/* Batch O: the low-trust card, the knighthood line, the last endings on the title, replay suggestions, new buttons */
+.card.lowtrust { border-left: 4px solid var(--red, #a3201c); text-align: left; }
+.card.lowtrust p { font-size: 0.9375rem; margin: 6px 0 0; line-height: 1.45; }
+.knightgap { font-size: 0.9375rem; line-height: 1.45; margin: 8px 0; text-align: left; }
+.lastends { margin: 6px 0 2px; font-family: var(--serif); font-size: 0.9375rem; line-height: 1.45; text-align: center; color: var(--paper); opacity: .9; }
+.lastends .endpill { font-weight: 700; white-space: nowrap; } .lastends .e-knight { color: var(--brass); }
+.achnext .achreplay { display: block; margin-top: 8px; min-height: 44px; width: auto; padding: 8px 14px; font-size: 0.9375rem; }
+#clearold, #restorebk, #cf-alt { min-height: 44px; }
