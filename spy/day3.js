@@ -106,7 +106,7 @@
     let sel = null;
     const draw = function () {
       A.render('<div class="card dossier">' + A.LH + '<span class="stamp corner">MORALE</span><div class="kicker" style="margin-top:8px">Personnel \u00b7 a word from Ash</div><h2 style="padding-right:110px">' + esc(A.first(k)) + " is close to walking</h2></div>" +
-        A.ash(esc(A.first(k)) + " hasn\u2019t said a word all morning, C. Twice they\u2019ve taken calls in the stairwell. Loyalty is at rock bottom. A bitter officer is how leaks start.", true) +
+        (window.VOICE ? (VOICE.once("ash_d3_bitter"), "") : "") + A.ash(esc(A.first(k)) + " hasn\u2019t said a word all morning, C. Twice they\u2019ve taken calls in the stairwell. Loyalty is at rock bottom. A bitter officer is how leaks start.", true) +
         '<div class="agents">' + A.agentCard(k, "", false, false, "data-x") + "</div>" +
         '<button class="card appr' + (sel === "talk" ? " sel" : "") + '" data-o="talk"><div class="t">A quiet word in your office</div><p style="margin:0">Listen. Apologise if you need to.</p><div class="chips"><span class="chip time">\u23f1 1h</span><span class="chip risk-low">Loyalty +2 \u00b7 Stress \u22121</span></div></button>' +
         '<button class="card appr' + (sel === "off" ? " sel" : "") + '" data-o="off"><div class="t">Send them home for the day</div><p style="margin:0">Rest, and out of harm\u2019s way. One fewer pair of hands.</p><div class="chips"><span class="chip risk-med">Off duty today</span><span class="chip risk-low">Loyalty +1</span></div></button>' +
@@ -217,9 +217,20 @@
     if ($("skip")) $("skip").onclick = function () { A.advance(1); tailEnd(0, true); };
     $("back").onclick = A.briefing;
   }
+  // the street game's round display: one stop per corner (clear, spotted, dead end, too slow), then the heat gauge
+  const TGK = { ok: ["\u2713", "Clear"], watch: ["\ud83d\udc41", "Spotted +2"], dead: ["\u26d4", "Dead end +1"], slow: ["\u23f1", "Too slow +1"] };
+  function tgTrack(n, i, hist, heat, max) {
+    let t = "";
+    for (let k = 0; k < n; k++) { const h = hist[k]; t += '<li class="tgs ' + (h ? h : k === i ? "now" : "todo") + '" title="' + (h ? TGK[h][1] : k === i ? "This corner" : "To come") + '"><span>' + (h ? TGK[h][0] : k + 1) + "</span></li>"; }
+    let g = ""; for (let p = 0; p < max; p++) g += '<i class="' + (p < heat ? "on" : "") + '"></i>';
+    const last = hist[i - 1];
+    return '<div class="tg-round"><div class="tg-head"><span>Corner ' + Math.min(n, i + 1) + " of " + n + '</span><span class="tg-heat">Heat <b>' + heat + '</b><span class="hp" aria-hidden="true">' + g + "</span></span></div>" +
+      '<ol class="tg-track" aria-label="Corners: ' + hist.filter(function (h) { return h === "ok"; }).length + " clear of " + hist.length + '">' + t + "</ol>" +
+      (last ? '<div class="tg-last ' + (last === "ok" ? "ok" : "bad") + '">Last corner: ' + TGK[last][1] + "</div>" : "") + "</div>";
+  }
   function tailGame() {
     const s = S(), N = 6, limit = FEEL.reduce ? 0 : ({ easy: 4200, standard: 3000, hard: 2200 }[s.diff] || 3000);
-    let i = 0, heat = startHeat(), timer = null, cur = null, busy = false;
+    let i = 0, heat = startHeat(), timer = null, cur = null, busy = false; const hist = [];
     const corner = function () {
       const w = Math.floor(A.rnd() * 3); let b = Math.floor(A.rnd() * 2); if (b >= w) b++;
       cur = { w: w, b: b, safe: 3 - w - b }; window.__TAIL__ = cur; busy = false;
@@ -227,8 +238,7 @@
       const dead = ["Scaffolding, no way through", "Locked gates", "Roadworks, fenced off"][Math.floor(A.rnd() * 3)];
       let lanes = "";
       for (let L = 0; L < 3; L++) lanes += '<button class="lane" data-l="' + L + '"><span class="arr">' + ARROW[L] + '</span><span class="ln">' + LANES[L] + '</span><span class="what ' + (L === w ? "watch" : L === b ? "dead" : "clear") + '">' + (L === w ? "\ud83d\udc41 " + cue : L === b ? "\u26d4 " + dead : "Rain, and nobody") + "</span></button>";
-      let pips = ""; for (let p = 0; p < 5; p++) pips += '<i class="' + (p < heat ? "on" : "") + '"></i>';
-      A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>Corner ' + (i + 1) + " of " + N + '</span><span class="heat">Heat <span class="hp">' + pips + "</span></span></div>" +
+      A.render('<div class="tailgame" id="tailgame">' + tgTrack(N, i, hist, heat, 6) +
         (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') +
         '<div class="tg-lanes">' + lanes + '</div><div class="tg-msg" id="tgmsg">' + (i ? "" : "Swipe or tap the clear street.") + "</div></div>", limit ? "Pick the clear street before the bar runs out." : "No timer with reduced motion. Take your time.");
       document.querySelectorAll("[data-l]").forEach(function (b2) { b2.onclick = function () { pick(+b2.getAttribute("data-l")); }; });
@@ -242,6 +252,7 @@
     const pick = function (L) {
       if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer);
       let msg, cls;
+      hist.push(L === cur.safe ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow");
       if (L === cur.safe) { msg = "Clear. Nobody turns."; cls = "ok"; FEEL.buzz("tap"); }
       else if (L === cur.w) { heat += 2; msg = "He saw you. A cough, a newspaper folded."; cls = "bad"; FEEL.buzz("loss"); }
       else if (L === cur.b) { heat += 1; msg = "Dead end. You double back, past them."; cls = "bad"; FEEL.buzz("loss"); }
@@ -409,5 +420,5 @@
     }[ending()];
   }
 
-  window.AH3 = { briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
+  window.AH3 = { tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
 })();

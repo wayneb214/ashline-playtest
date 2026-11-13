@@ -46,8 +46,11 @@
   // ---------- the evidence board ----------
   // painted police mugshots for the three suspects (literal paths so the iOS packager keeps them)
   const MUG = { tall: "img/mug-tall.jpg", green: "img/mug-green.jpg", driver: "img/mug-driver.jpg" };
-  function board(msg) {
+  function board(msg, vk) {
     const s = S(); let sel = board.sel || null;
+    if (window.VOICE) { let k = vk || (msg ? null : sel ? "ash_board_pick" : "ash_board_intro");
+      if (k === "ash_board_pick") { if (board.pickSaid === s.day) k = null; else board.pickSaid = s.day; } // Ash's prompt once a day, not on every card tapped
+      if (k && VOICE.lines[k]) VOICE.now(k); }
     const suspects = Object.keys(D.SUSPECTS).map(function (k) {
       const p = D.SUSPECTS[k], n = Object.keys(s.links).filter(function (c) { return s.links[c] === k; }).length;
       return '<button class="suspect" data-s="' + k + '"><span class="pinhead"></span><span class="photo s-' + k + '">' + (MUG[k] ? '<img src="' + MUG[k] + '" alt="">' : "") + "</span><b>" + p.name + "</b><small>" + p.note + "</small>" + (n ? '<span class="cnt">' + n + "</span>" : "") + "</button>";
@@ -63,19 +66,19 @@
       '<button class="btn primary" id="back">Back to the desk</button>', "Right links cost nothing. A wrong one wastes an hour.");
     document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { board.sel = b.getAttribute("data-c"); board(); }; });
     document.querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { if (board.sel) link(board.sel, b.getAttribute("data-s")); }; });
-    $("back").onclick = function () { board.sel = null; A.briefing(); };
+    $("back").onclick = function () { board.sel = null; const r = board.ret; board.ret = null; if (r) r(); else A.briefing(); };
     strings();
   }
   function link(c, who) {
     const s = S(), cl = D.CLUES[c]; board.sel = null;
     if (cl.owner !== who) {
       A.advance(1); A.meters(); A.save("briefing"); window.FEEL.buzz("loss");
-      return board("No. That doesn\u2019t fit <b>" + D.SUSPECTS[who].name.toLowerCase() + "</b>, C. We\u2019ve lost an hour chasing it. (" + A.hh(s.hour) + ")");
+      return board("No. That doesn\u2019t fit <b>" + D.SUSPECTS[who].name.toLowerCase() + "</b>, C. We\u2019ve lost an hour chasing it. (" + A.hh(s.hour) + ")", "ash_board_wrong");
     }
     s.links[c] = who; window.FEEL.buzz("stamp");
     let msg = "Pinned. Red string from <b>" + cl.name.toLowerCase() + "</b> to <b>" + D.SUSPECTS[who].name.toLowerCase() + "</b>.";
     if (cl.unlock) { s.unlocked[cl.unlock] = true; msg += cl.unlock === "ferry" ? " <b>That\u2019s the ferry. Harwich intercept unlocked.</b>" : " <b>We know the car. Taking the driver first is unlocked.</b>"; }
-    A.save("briefing"); board(msg);
+    A.save("briefing"); board(msg, cl.unlock === "ferry" ? "ash_board_ferry" : cl.unlock ? "ash_board_car" : "ash_board_pin");
   }
   // red string from each linked clue up to its suspect
   function strings() {
@@ -96,7 +99,7 @@
   // the wrong tone hardens them. The tell in each round hints which it is.
   const SUBJECTS = {
     courier: { who: "The courier", img: "courier", rounds: ["He sits with the unsealed bag on the table between you.", "You ask who packed the bag.", "You ask where the others are going.", "His embassy will ring in ten minutes."],
-      gives: ["\u201cA tall man paid me in Bath. Cash. Very tall. Didn\u2019t give a name.\u201d", "\u201cThey have a ferry tonight. Three berths. Harwich.\u201d He writes the booking reference on your file."], clue: "ticket", art: "v-airport",
+      gives: ["\u201cA tall man paid me in Bath. Cash. Very tall. Didn\u2019t give a name.\u201d", "\u201cThey have a ferry tonight. Three berths. Harwich.\u201d He writes the booking reference on your file. <b>The Ferry booking goes up on the evidence board.</b> Pin it to the tall man to unlock a quiet intercept at Harwich."], clue: "ticket", art: "v-airport",
       head: { win: "Man held at London airport \u2018helping police\u2019", mixed: "Airport passenger questioned and released", loss: "Varenian protest over airport \u2018harassment\u2019" } },
     mole2: { who: null, img: null, rounds: ["They sit very straight in the windowless room on the fourth floor.", "You ask who they rang last night.", "You ask what they gave the Grey House.", "Their lawyer is on the stairs."],
       gives: ["\u201cI never met them. I only ever rang a number.\u201d", "They write the number down. Ash has it traced in minutes: the team leader\u2019s phone."], clue: "phone", art: null,
@@ -104,15 +107,28 @@
   };
   const RETORT = { friendly: "Your kindness gets a thin smile. \u201cTea won\u2019t help you.\u201d", hard: "Shouting gets nothing but folded arms. \u201cI want my embassy.\u201d", bluff: "\u201cYour file is empty. I can see it from here.\u201d" };
 
+  const RETORT2 = { friendly: "\u201cStill no. And the tea is cold.\u201d", hard: "\u201cShout all you like. My embassy is on its way.\u201d", bluff: "\u201cYou keep saying you know. So tell me, then.\u201d" };
+  const RETORT2M = { friendly: "\u201cDon\u2019t be kind to me, C. It makes it worse.\u201d", hard: "\u201cI\u2019ve said it. A lawyer. Now.\u201d", bluff: "\u201cIf you had it, I\u2019d be in a cell already.\u201d" };
+  // how the subject looks across the table: calm to start, nervous once they give, angry when pushed the wrong way
+  const MOODW = { calm: "Calm", nervous: "Nervous", angry: "Angry" };
+  function mood(st) { if (!st.last) return "calm"; if (st.last.ok) return "nervous"; return st.last.tone === "hard" || st.resist >= 2 ? "angry" : "calm"; }
+  // round pips and two meters: Talking (answers out of 2) and Nerve (how much fight is left), each with a +/- chip for the last round
+  function roundBar(st) {
+    const dots = [0, 1, 2, 3].map(function (i) { return '<i class="' + (i < st.round ? "on" : i === st.round ? "now" : "") + '"></i>'; }).join("");
+    const talk = Math.round(st.got / 2 * 100), nerve = Math.max(0, Math.round((3 - st.resist) / 3 * 100));
+    const chip = function (show, up, txt) { return show ? '<span class="dchip ' + (up ? "up" : "down") + '">' + txt + "</span>" : ""; };
+    return '<div class="rounds" aria-label="Round ' + Math.min(4, st.round + 1) + ' of 4">Round ' + Math.min(4, st.round + 1) + ' of 4 <span class="step">' + dots + "</span></div>" +
+      '<div class="imeters"><div class="im"><span class="lab">Talking' + chip(st.last && st.last.ok, true, "+1") + '</span><span class="bar" role="meter" aria-label="Talking" aria-valuemin="0" aria-valuemax="2" aria-valuenow="' + st.got + '"><i style="--w:' + talk + '%"></i></span></div>' +
+      '<div class="im"><span class="lab">Their nerve' + chip(st.last && !st.last.ok, false, "\u22121") + '</span><span class="bar nerve" role="meter" aria-label="Their nerve" aria-valuemin="0" aria-valuemax="3" aria-valuenow="' + (3 - st.resist) + '"><i style="--w:' + nerve + '%"></i></span></div></div>';
+  }
   function interro(id) {
     const s = S(), sub = SUBJECTS[id];
     if (!s.interro[id]) s.interro[id] = { temper: Object.keys(D.TEMPERS)[Math.floor(A.rnd() * 3)], round: 0, got: 0, resist: 0, lines: [] };
     if (window.__SPY_TEMPER__) s.interro[id].temper = window.__SPY_TEMPER__;
     const st = s.interro[id], T = D.TEMPERS[st.temper];
     const who = sub.who || A.D.AGENTS[s.mole].name, img = sub.img || A.D.AGENTS[s.mole].tense || A.D.AGENTS[s.mole].img;
-    const dots = [0, 1, 2, 3].map(function (i) { return '<i class="' + (i < st.round ? "on" : "") + '"></i>'; }).join("");
-    A.render('<div class="interro card"><div class="lh">INTERVIEW ROOM \u00b7 ' + (id === "courier" ? "WEST LONDON AIRPORT" : "ALBION HOUSE, FOURTH FLOOR") + " \u00b7 " + A.hh(s.hour) + '</div><figure><img src="' + A.pic(img) + '" alt="' + esc(who) + ' across the table"><figcaption>' + esc(who) + "</figcaption></figure>" +
-      '<div class="rounds">Round ' + Math.min(4, st.round + 1) + ' of 4 <span class="step">' + dots + "</span></div>" +
+    A.render('<div class="interro card"><div class="lh">INTERVIEW ROOM \u00b7 ' + (id === "courier" ? "WEST LONDON AIRPORT" : "ALBION HOUSE, FOURTH FLOOR") + " \u00b7 " + A.hh(s.hour) + '</div><figure class="mood-' + mood(st) + (st.last ? " fresh" : "") + '"><img src="' + A.pic(img) + '" alt="' + esc(who) + ' across the table, looking ' + mood(st) + '"><figcaption>' + esc(who) + ' <span class="moodchip">' + MOODW[mood(st)] + "</span></figcaption></figure>" +
+      roundBar(st) +
       '<ul class="transcript">' + st.lines.map(function (l) { return '<li class="' + l.c + '">' + l.t + "</li>"; }).join("") +
       '<li class="cue">' + esc(sub.rounds[st.round] || "") + ' <span class="tell">' + esc(T.tell) + "</span></li></ul></div>" + A.tip("interro") +
       '<div class="tones">' + Object.keys(TONES).map(function (k) { return '<button class="card appr tone" data-q="' + k + '"><div class="t">' + TONES[k].t + '</div><p style="margin:0">' + TONES[k].d + "</p></button>"; }).join("") + "</div>" +
@@ -124,11 +140,18 @@
     const s = S(), st = s.interro[id], sub = SUBJECTS[id];
     st.lines.push({ c: "you", t: "You: <i>" + TONES[tone].t + "</i>" });
     const vk = id === "mole2" ? "int_mole2_" + s.mole + "_" : "int_courier_";
-    if (D.TEMPERS[st.temper].works === tone) { st.lines.push({ c: "gave", t: sub.gives[st.got] }); if (window.VOICE && (id === "courier" || st.got === 0)) VOICE.play(vk + "give" + st.got); st.got++; window.FEEL.buzz("win"); }
-    else { st.lines.push({ c: "no", t: id === "mole2" && tone === "hard" ? "Shouting gets nothing but folded arms. \u201cI want a lawyer.\u201d" : RETORT[tone] }); if (window.VOICE) VOICE.play(vk + tone); st.resist++; window.FEEL.buzz("tap"); }
+    st.used = st.used || {}; const again = (st.used[tone] = (st.used[tone] || 0) + 1) > 1;
+    if (D.TEMPERS[st.temper].works === tone) { st.lines.push({ c: "gave", t: sub.gives[st.got] }); if (window.VOICE && VOICE.lines[vk + "give" + st.got]) VOICE.play(vk + "give" + st.got); st.got++; st.last = { ok: true, tone: tone }; window.FEEL.buzz("win"); }
+    else {
+      // a different reply each time you try the same thing, and the subject hardens
+      const v2 = again && window.VOICE && VOICE.lines[vk + tone + "2"];
+      const t = v2 ? (id === "mole2" ? RETORT2M : RETORT2)[tone] : id === "mole2" && tone === "hard" ? "Shouting gets nothing but folded arms. \u201cI want a lawyer.\u201d" : RETORT[tone];
+      st.lines.push({ c: "no", t: t }); if (window.VOICE) VOICE.play(v2 ? vk + tone + "2" : vk + tone); st.resist++; st.last = { ok: false, tone: tone }; window.FEEL.buzz("tap");
+    }
     st.round++; A.save("briefing");
     if (st.got >= 2 || st.round >= 4 || st.resist >= 3) return endInterro(id);
     interro(id);
+    const card = document.querySelector(".interro"); if (card) card.classList.add("nextround");
   }
   function endInterro(id) {
     const s = S(), st = s.interro[id], sub = SUBJECTS[id];
@@ -164,5 +187,5 @@
     }[exitRes()];
   }
 
-  window.AH2 = { briefingIntro: briefingIntro, line: line, titleOf: titleOf, boardButton: boardButton, bindBoardButton: bindBoardButton, open: open, afterCase: afterCase, flash: flash, paperLead: paperLead };
+  window.AH2 = { boardThen: function (ret) { board.ret = ret; board(); }, briefingIntro: briefingIntro, line: line, titleOf: titleOf, boardButton: boardButton, bindBoardButton: bindBoardButton, open: open, afterCase: afterCase, flash: flash, paperLead: paperLead };
 })();

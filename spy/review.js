@@ -18,7 +18,11 @@
     if (native()) { window.open("itms-apps://apps.apple.com" + q, "_system"); return true; }
     window.open("https://apps.apple.com" + q, "_blank", "noopener"); return true;
   }
-  function rateHTML(id) { return '<button type="button" class="btn ghost ratebtn" id="' + id + '">\u2605 Rate this game</button>'; }
+  // the Rate buttons only appear once a day has been played through (no asking before they have played)
+  const PLAYED = "albion-played";
+  function played() { try { return FORCE || !!localStorage.getItem(PLAYED); } catch (e) { return false; } }
+  function markPlayed() { try { localStorage.setItem(PLAYED, "1"); } catch (e) {} }
+  function rateHTML(id) { if (!played()) return ""; return '<button type="button" class="btn ghost ratebtn" id="' + id + '">\u2605 Rate this game</button>'; }
   function bindRate(id) { const b = document.getElementById(id); if (b) b.onclick = function () { openReviewPage(); }; }
   // the system prompt; never throws, never waits, never asks twice
   function requestReview() {
@@ -30,5 +34,5 @@
   }
   // called after a stamp lands: only a win, only outside cutscenes
   function happyMoment(res) { if (res !== "win" || document.body.classList.contains("in-cine")) return; setTimeout(function () { if (!document.body.classList.contains("in-cine") && !window.AH_PAUSED) requestReview(); }, 1800); }
-  window.REVIEW = { rateHTML: rateHTML, bindRate: bindRate, canRate: canRate, openReviewPage: openReviewPage, requestReview: requestReview, happyMoment: happyMoment };
+  window.REVIEW = { played: played, markPlayed: markPlayed, rateHTML: rateHTML, bindRate: bindRate, canRate: canRate, openReviewPage: openReviewPage, requestReview: requestReview, happyMoment: happyMoment };
 })();

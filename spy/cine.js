@@ -1,4 +1,4 @@
-/* Albion House cinematics: painted scenes cut into depth layers, slow camera moves, tilt or pointer parallax,
+/* Albion House cinematics: painted scenes cut into depth layers, slow camera moves, pointer parallax,
    letterbox bars, subtitles and synthesised sound. One small engine drives the opening, the cutscenes and
    the trailer (?trailer=1). Loops are capped at 30 fps and pause when the page is hidden.
    Reduced motion shows still frames with captions. Everything is fictional. */
@@ -25,14 +25,14 @@
       { img: "phone", dur: 4.4, cam: [1.0, 0, 0, 1.06, 2, -2], caps: [[0.6, "Narrator", "Then, at midnight\u2026 the telephone rang."]], sfx: [[0.6, "voice", "nar_open_4"], [3.6, "ring"]] },
       { img: "phone", dur: 4.6, cam: [1.06, 2, -2, 1.1, 3, -3], inset: "ash", caps: [[0.4, "Margaret \u2018Ash\u2019 Ashby \u00b7 Chief of Staff", "Chief, we have a problem."]], sfx: [[0.4, "voice", "ash_problem"], [0, "stopRing"], [0.3, "stinger"]] }]; } },
     day1: { name: "Day 1 \u00b7 The Long Day", shots: function () { return [
-      { img: "no10", dur: 7, pan: [15, 70], cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 07:10. Downing Street."], [3.9, "Eleanor Hale \u00b7 Prime Minister", "Keep Britain safe, C. And keep it out of the papers."]], sfx: [[0.5, "voice", "cine_day1_1"], [3.9, "voice", "pm_keep_safe"], [0.2, "chime", 2]] }]; } },
+      { img: "downing", dur: 5, cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 08:00. Downing Street."]], sfx: [[0.5, "voice", "cine_day1_1"], [0.2, "chime", 2]] }]; } },
     day2: { name: "Day 2 \u00b7 Pale Hour", shots: function () { return [
       { img: "brief", dur: 7, cam: [1.16, 0, 4, 1.02, 0, -2], caps: [[0.5, "", "Thursday. Vass is alive."], [3.4, "", "Three suspects. One night to stop them leaving."]], sfx: [[0.2, "rainUp", true], [0.4, "tele"], [0.5, "voice", "cine_day2_1"], [3.4, "voice", "cine_day2_2"]] }]; } },
     day3: { name: "Day 3 \u00b7 The Green Coat", shots: function () { return [
       { img: "york", dur: 4.4, pan: [10, 60], cam: [1.05, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Friday. York."]], sfx: [[0.2, "engine", 3], [0.5, "voice", "cine_day3_1"]] },
       { img: "green", dur: 4, cam: [1.12, 0, 3, 1.02, 0, 0], caps: [[0.3, "Ash", "The woman in green isn\u2019t one of theirs, C. She\u2019s ours."]], sfx: [[0.3, "voice", "ash_green_ours"], [0.2, "stinger"]] }]; } },
     bath: { name: "Bath, 23:47", shots: function () { return [
-      { img: "bath", dur: 9, ask: { id: "bath", at: 7.9 }, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."], [6.1, "", "He is one of ours."]], sfx: [[0.1, "rainUp", true], [5.9, "stinger"], [0.5, "voice", "cine_bath_1"], [3.2, "voice", "cine_bath_2"], [6.1, "voice", "cine_bath_3"]] }]; } },
+      { img: "bath", dur: 9, ask: { id: "bath", at: 7.9 }, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."]], sfx: [[0.1, "rainUp", true], [5.9, "stinger"], [0.5, "voice", "cine_bath_1"], [3.2, "voice", "cine_bath_2"]] }]; } },
     ferry: { name: "Harwich, 23:10", shots: function () { const r = S().done && S().done.exit; return [
       { img: "ferry", dur: 8.5, ask: { id: "ferry", at: 6.9 }, cam: [1.18, 0, 2, 1.0, 0, -3], caps: [[0.5, "", "Harwich. 23:10. The night ferry."], [3.8, "", r === "win" ? "Plain clothes at the gangway. Now." : r === "mixed" ? "One taken at the services. Two still aboard." : "The ferry clears the harbour wall."]], sfx: [[0.3, "horn"], [3.2, "engine", 4], [0.5, "voice", "cine_ferry_1"], [3.8, "voice", "cine_ferry_" + (r === "win" || r === "mixed" ? r : "loss")]] }]; } },
     border: { name: "The border", shots: function () { return [
@@ -99,7 +99,7 @@
     const el = document.createElement("div"); el.className = "cine" + (reduce() ? " still" : "") + (opts.trailer ? " trailer" : ""); el.id = "cine";
     el.setAttribute("role", "dialog"); el.setAttribute("aria-label", SCENES[id].name);
     el.innerHTML = '<div class="cine-stage">' + shots.map(shotHTML).join("") + '</div><div class="lb top"></div><div class="lb bot"></div><div class="cine-cap" aria-live="polite"><small></small><span></span></div>' +
-      (opts.trailer ? "" : '<div class="cine-skip">Tap to skip</div>' + (window.DeviceOrientationEvent && !reduce() ? '<button class="cine-tilt" type="button" aria-label="Tilt to look around">\u25ce Tilt</button>' : ""));
+      (opts.trailer ? "" : '<div class="cine-skip">Tap to skip</div>');
     return { id: id, shots: shots, total: t, el: el, nodes: null, cap: "", elapsed: 0, last: 0, tilt: [0, 0], aim: [0, 0], opts: opts };
   }
   function frame(r) {
@@ -161,12 +161,15 @@
     r.paused = true; sfx("heart", 2);
     const secs = r.opts.replay ? 0 : DESK.timer(q.secs);
     const box = document.createElement("div"); box.className = "cine-ask"; box.setAttribute("role", "group"); box.setAttribute("aria-label", q.q);
-    box.innerHTML = '<div class="q">' + q.q + "</div>" + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + o.d + "</small></button>"; }).join("") +
-      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">If you say nothing: ' + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase() + "</div>" : "");
+    // context first, spoken (Ash on the line); the choices appear once the line has finished
+    const vo = q.voice && window.VOICE && VOICE.lines[q.voice];
+    box.innerHTML = '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
+      '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + o.d + "</small></button>"; }).join("") +
+      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">If you say nothing: ' + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase() + "</div>" : "") + "</div>";
     r.el.appendChild(box); r.el.classList.add("asking");
-    let tm = null;
+    let tm = null, live = false;
     const pickIt = function (k, late) {
-      if (s.answered) return; s.answered = true; if (tm) tm.stop();
+      if (s.answered || !live) return; s.answered = true; if (tm) tm.stop();
       s.resCap = r.opts.replay ? q.opts.filter(function (o) { return o.k === k; })[0].t : (late ? "Too late to choose. " : "") + DESK.choose(s.ask.id, k, late);
       box.remove(); r.el.classList.remove("asking"); r.paused = false; r.last = 0;
       if (window.FEEL) FEEL.buzz("stamp");
@@ -174,7 +177,12 @@
       window.__CINE_ASKED__ = { id: s.ask.id, k: k, late: !!late };
     };
     box.querySelectorAll("[data-ask]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); pickIt(b.getAttribute("data-ask"), false); }); });
-    tm = DESK.countdown(secs, "askbar", function () { pickIt(q.def, true); });
+    const ready = function () {
+      if (live || run !== r) return; live = true; box.classList.add("ready"); window.__CINE_ASK_READY__ = { id: s.ask.id, at: Date.now() };
+      const f = box.querySelector("[data-ask]"); if (f) f.focus({ preventScroll: true });
+      tm = DESK.countdown(secs, "askbar", function () { pickIt(q.def, true); });
+    };
+    if (vo) { box.classList.add("speaking"); VOICE.now(q.voice, { nosub: true, cut: true }); VOICE.after(q.voice, ready); } else ready();
     r.ask = { stop: function () { if (tm) tm.stop(); } };
   }
   // the first unanswered choice still ahead, if any
@@ -196,7 +204,7 @@
   function finish(skipped) {
     const r = run; if (!r) return; run = null;
     cancelAnimationFrame(r.raf); if (r.ask) r.ask.stop(); sfx("stopRing"); sfx("rainUp", false); if (skipped && window.VOICE) VOICE.hush();
-    window.removeEventListener("deviceorientation", r.ori); document.removeEventListener("keydown", r.key); document.removeEventListener("visibilitychange", r.vis);
+    document.removeEventListener("keydown", r.key); document.removeEventListener("visibilitychange", r.vis);
     document.body.classList.remove("in-cine"); if (window.SFX && SFX.cineDuck) SFX.cineDuck(false);
     if (r.opts.trailer) { window.__TRAILER_DONE__ = true; return; }
     r.el.remove(); window.__CINE_LAST__ = { id: r.id, skipped: skipped };
@@ -217,23 +225,14 @@
       if (e.pointerType === "mouse" || down) r.aim = [clamp((e.clientX / W - 0.5) * 2, -1, 1), clamp((e.clientY / H - 0.5) * 2, -1, 1)];
     });
     el.addEventListener("pointerup", function (e) {
-      if (e.target.closest(".cine-tilt") || e.target.closest(".cine-gate")) { down = null; return; }
+      if (e.target.closest(".cine-gate")) { down = null; return; }
       const moved = down ? Math.hypot(e.clientX - down[0], e.clientY - down[1]) : 0; down = null;
       if (e.target.closest(".cine-ask")) { down = null; return; }
       if (moved < 12 && run === r) skip(r);
     });
-    r.ori = function (e) { if (e.gamma == null) return; r.aim = [clamp(e.gamma / 25, -1, 1), clamp((e.beta - 45) / 25, -1, 1)]; };
     r.key = function (e) { if (["Escape", "Enter", " "].indexOf(e.key) >= 0 && run === r && !r.paused) { e.preventDefault(); skip(r); } };
     r.vis = function () { if (!document.hidden && run === r) r.last = 0; };
     document.addEventListener("keydown", r.key); document.addEventListener("visibilitychange", r.vis);
-    const tb = el.querySelector(".cine-tilt");
-    if (tb) tb.addEventListener("click", function (e) { e.stopPropagation(); askTilt(r); tb.classList.add("on"); });
-  }
-  // iOS asks permission for motion only from a tap
-  function askTilt(r) {
-    const D = window.DeviceOrientationEvent;
-    if (D && typeof D.requestPermission === "function") D.requestPermission().then(function (s) { if (s === "granted") window.addEventListener("deviceorientation", r.ori); }).catch(function () {});
-    else window.addEventListener("deviceorientation", r.ori);
   }
   function markSeen(id) { seen[id] = 1; store.set(SEEN, JSON.stringify(seen)); }
   function play(id, done, opts) {
@@ -244,11 +243,11 @@
     document.body.appendChild(r.el); document.body.classList.add("in-cine"); if (window.SFX && SFX.cineDuck) SFX.cineDuck(true);
     if (window.LOOK) LOOK.rain(!reduce());
     wire(r);
-    if (opts.gate) { // first launch: one tap to begin, which also unlocks sound (and tilt on iOS)
+    if (opts.gate) { // first launch: one tap to begin, which also unlocks sound
       const g = document.createElement("div"); g.className = "cine-gate";
       g.innerHTML = '<div class="gt"><h1>Albion House</h1><div class="sub">Spymaster</div><p class="soon">A work of fiction</p><button class="btn primary" id="cine-begin">Tap to begin</button><button class="btn ghost" id="cine-nope">Skip the opening</button></div>';
       r.el.appendChild(g); gated = r;
-      g.querySelector("#cine-begin").onclick = function (e) { e.stopPropagation(); if (window.SFX) SFX.unlock(); if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") askTilt(r); g.remove(); gated = null; start(r); };
+      g.querySelector("#cine-begin").onclick = function (e) { e.stopPropagation(); if (window.SFX) SFX.unlock(); g.remove(); gated = null; start(r); };
       g.querySelector("#cine-nope").onclick = function (e) { e.stopPropagation(); gated = null; run = r; finish(true); };
       return;
     }

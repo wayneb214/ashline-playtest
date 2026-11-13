@@ -148,7 +148,7 @@
       A.render('<div class="card dossier"><div class="chead"><img src="img/h-letter.jpg" alt=""></div>' + A.LH + '<span class="stamp corner">EYES ONLY</span><div class="kicker">Albion House \u00b7 by ' + A.hh(A.dueOf("leak")) + '</div><h2 style="margin-top:8px;padding-right:110px">' + c.title + "</h2>" +
         "<p>Kesk\u2019s letter came to <b>this building</b>. Our address is on no list. Somebody here saw it written down and passed it on, carelessly or not. It isn\u2019t treason yet. It will be, if we don\u2019t stop it.</p>" +
         '<p class="clue"><b>What we know (' + cl.length + " of 3):</b><br>" + (cl.length ? cl.join("<br>") : "Nothing yet. The caf\u00e9 watch, the Manchester job, and the hidden ink or the caf\u00e9 photos can each clear somebody.") + "</p></div>" +
-        A.ash(cl.length >= 3 ? "Three people cleared, Chief. That leaves one." : "We can guess now, or wait for more. A wrong name costs us a good officer\u2019s trust.", cl.length < 3) +
+        (window.VOICE ? (VOICE.once(cl.length >= 3 ? "ash_leak4_three" : "ash_leak4_wait"), "") : "") + A.ash(cl.length >= 3 ? "Three people cleared, Chief. That leaves one." : "We can guess now, or wait for more. A wrong name costs us a good officer\u2019s trust.", cl.length < 3) +
         '<div class="kicker" style="margin:4px 0 8px">Who saw the address first? (takes 1 hour)</div><div class="agents">' + cards + "</div>" +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Name " + esc(nm(sel).split(",")[0]) : "Choose someone") + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "Each clue clears one person.");
       document.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-m"); draw(); }; });
@@ -276,7 +276,7 @@
       let sel = null;
       const draw = function () {
         A.render('<div class="step x4">' + LEGS.map(function (z, j) { return '<i class="' + (j <= X.leg ? "on" : "") + '"></i>'; }).join("") + '</div><div class="card dossier exfil"><div class="chead"><img src="img/h-london.jpg" alt=""></div>' + A.LH + '<span class="stamp corner">LEG ' + (X.leg + 1) + '</span><div class="kicker">Across London \u00b7 ' + A.hh(s.hour) + '</div><h2 style="margin-top:8px;padding-right:110px">' + leg.t + "</h2><p>" + leg.d + "</p></div>" +
-          '<div class="kicker" style="margin:6px 0">Who takes this leg? Each person runs once.</div><div class="agents">' + free.map(function (k) {
+          '<div class="kicker" data-avoid style="margin:6px 0">Who takes this leg? Each person runs once.</div><div class="agents">' + free.map(function (k) {
             return A.agentCard(k, '<div class="fit' + (leg.best === k ? "" : " meh") + '">' + legOdds(leg, k) + "% to keep him in sight" + (leg.best === k ? " \u00b7 \u2713 their kind of ground" : "") + "</div>", sel === k, false, "data-p");
           }).join("") + (free.length ? "" : '<button class="card appr' + (sel === "ash" ? " sel" : "") + '" data-p="ash"><div class="t">Ash goes herself</div><p style="margin:0">' + legOdds(leg, "ash") + "% \u00b7 Ash hasn\u2019t run for a bus since 1987.</p></button>") + "</div>" +
           '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? "Go" : "Choose who") + "</button></div>", "Put each person on the ground that suits them.");
@@ -298,7 +298,7 @@
     const twoCalls = function () {
       X.call = true;
       A.render('<div data-screen="twocalls" data-music="tense"><div class="card dossier"><div class="kicker">' + A.hh(s.hour) + " \u00b7 mid-chase \u00b7 two calls at once</div><h2>Both lines, both urgent</h2>" +
-        A.ash("Chief, the Foreign Secretary is on one line and the river police are on the other. I can put you through to <b>one</b>.", true) +
+        (window.VOICE ? (VOICE.once("ash_a2_lines"), "") : "") + A.ash("Chief, the Foreign Secretary is on one line and the river police are on the other. I can put you through to <b>one</b>.", true) +
         '<div class="crunch"><button class="card dossier crunchf" data-c="fs"><span class="urg">URGENT</span><div class="t">The Foreign Secretary</div><div class="s">She wants to know why there are men running across Southwark. Answer and No.10 stays calm.</div></button><div class="or">or</div>' +
         '<button class="card dossier crunchf" data-c="river"><span class="urg">URGENT</span><div class="t">The river police</div><div class="s">They can hold the river bus at the next pier for three minutes. Nobody else will ask them.</div></button></div></div></div>', "The one you don\u2019t take goes worse.");
       if (window.SFX) SFX.tele(); FEEL.buzz("ring");
@@ -310,19 +310,19 @@
     };
     // the last leg: C on foot, three corners
     const lanes = function (leg) {
-      let i = 0, heat = 0, busy = false, timer = null;
+      let i = 0, heat = 0, busy = false, timer = null; const hist = [];
       const limit = FEEL.reduce ? 0 : ({ easy: 4200, standard: 3000, hard: 2200 }[s.diff] || 3000);
       const corner = function () {
         const w = Math.floor(A.rnd() * 3); let b = Math.floor(A.rnd() * 2); if (b >= w) b++;
         const cur = { w: w, b: b, safe: 3 - w - b }; window.__TAIL__ = cur; busy = false;
         let html = ""; for (let L = 0; L < 3; L++) html += '<button class="lane" data-l="' + L + '"><span class="arr">' + ["\u25c0", "\u25b2", "\u25b6"][L] + '</span><span class="ln">' + ["Left", "Straight on", "Right"][L] + '</span><span class="what ' + (L === w ? "watch" : L === b ? "dead" : "clear") + '">' + (L === w ? "\ud83d\udc41 Kesk\u2019s driver, engine running" : L === b ? "\u26d4 A police cordon" : "Rain, and the grey coat ahead") + "</span></button>";
-        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + " \u00b7 corner " + (i + 1) + ' of 3</span><span class="heat">Heat ' + heat + '</span></div>' + (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') + '<div class="tg-lanes">' + html + '</div><div class="tg-msg" id="tgmsg">Stay on him. Pick the clear street.</div></div>', "Pick the clear street before the bar runs out.");
+        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + '</span></div>' + (window.AH3 && AH3.tgTrack ? AH3.tgTrack(3, i, hist, heat, 6) : "") + (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') + '<div class="tg-lanes">' + html + '</div><div class="tg-msg" id="tgmsg">Stay on him. Pick the clear street.</div></div>', "Pick the clear street before the bar runs out.");
         document.querySelectorAll("[data-l]").forEach(function (b2) { b2.onclick = function () { pick(+b2.getAttribute("data-l"), cur); }; });
         if (limit) { const bar = $("tgbar"); requestAnimationFrame(function () { bar.style.transitionDuration = limit + "ms"; bar.classList.add("run"); }); timer = setTimeout(function () { pick(-1, cur); }, limit); }
       };
       const pick = function (L, cur) {
         if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer);
-        const ok = L === cur.safe; if (!ok) heat += L === cur.w ? 2 : 1;
+        const ok = L === cur.safe; if (!ok) heat += L === cur.w ? 2 : 1; hist.push(ok ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow");
         const m = $("tgmsg"); m.textContent = ok ? "Clear. The grey coat turns into Whitehall." : "Wrong turn. You double back."; m.className = "tg-msg " + (ok ? "ok" : "bad"); FEEL.buzz(ok ? "tap" : "loss");
         setTimeout(function () { i++; if (i >= 3) { window.__TAIL__ = null; A.advance(1); X.score += heat <= 1 ? 2 : heat <= 3 ? 1 : 0; X.notes.push("C on foot, heat " + heat); X.leg++; step(); } else corner(); }, FEEL.reduce || window.__SPY_FAST__ ? 150 : 650);
       };
@@ -478,6 +478,6 @@
   function bulletinId() { const s = S(); if (s.day === 4) return "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
-  window.AH4 = { cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
+  window.AH4 = { ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
     locked: locked, lockWhy: lockWhy, lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
 })();
