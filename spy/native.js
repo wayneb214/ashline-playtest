@@ -26,14 +26,14 @@
   // impact: LIGHT/MEDIUM/HEAVY; note: SUCCESS/WARNING/ERROR (iOS notification feedback); sel: selection tick
   const MAP = {
     tap: [["impact", "LIGHT"]], select: [["sel"]], press: [["impact", "MEDIUM"]],
-    stamp: [["impact", "HEAVY"]], slam: [["impact", "HEAVY"], ["impact", "MEDIUM", 90]], drop: [["impact", "MEDIUM"]], tear: [["impact", "LIGHT"], ["impact", "LIGHT", 70]],
+    stamp: [["impact", "HEAVY"]], drop: [["impact", "MEDIUM"]], tear: [["impact", "LIGHT"], ["impact", "LIGHT", 70]],
     win: [["note", "SUCCESS"]], loss: [["note", "ERROR"]], warn: [["note", "WARNING"]],
     ring: [["impact", "MEDIUM"], ["impact", "MEDIUM", 120], ["impact", "MEDIUM", 240]],
     heavy: [["impact", "HEAVY"], ["impact", "MEDIUM", 90]], rumble: [["impact", "HEAVY"], ["impact", "HEAVY", 110], ["impact", "HEAVY", 220]],
     heart: [["impact", "MEDIUM"], ["impact", "LIGHT", 220]], tick: [["sel"]], dial: [["impact", "LIGHT"]]
   };
   const RANK = { sel: 0, LIGHT: 1, MEDIUM: 2, SUCCESS: 3, WARNING: 3, HEAVY: 3, ERROR: 4 };
-  const VIB = { tap: 8, select: 5, press: 12, stamp: 30, slam: [45, 40, 25], drop: 18, tear: 15, win: [20, 40, 20], loss: [70, 40, 70], warn: [30, 40, 30], ring: [180, 120, 180], heavy: [40, 30, 60], rumble: [60, 40, 60, 40, 60], heart: [25, 180, 15], tick: 5, dial: 6 };
+  const VIB = { tap: 8, select: 5, press: 12, stamp: 30, drop: 18, tear: 15, win: [20, 40, 20], loss: [70, 40, 70], warn: [30, 40, 30], ring: [180, 120, 180], heavy: [40, 30, 60], rumble: [60, 40, 60, 40, 60], heart: [25, 180, 15], tick: 5, dial: 6 };
   let last = { t: 0, r: -1 };
   function strength(kind) { return Math.max.apply(null, (MAP[kind] || [["impact", "LIGHT"]]).map(function (s) { return RANK[s[1] || "sel"] || 0; })); }
   window.AH_HAPTICS = function (kind) {
@@ -62,12 +62,8 @@
 
   // ---------- pause: background, lock screen, incoming call ----------
   let held = false;
-  // Freezing CSS animations is only safe while the page is really hidden: a screen that is still on show
-  // with its fade-ins frozen at frame 0 is a black screen. So bg-held follows document.hidden, never a bare
-  // native "pause" (an iOS audio interruption or an inactive banner can arrive with no matching resume).
-  const freeze = function () { document.body.classList.toggle("bg-held", held && document.hidden); };
   function hold(why) {
-    if (held) return; held = true; window.AH_PAUSED = true; freeze();
+    if (held) return; held = true; window.AH_PAUSED = true; document.body.classList.add("bg-held");
     if (window.VOICE && VOICE.hold) VOICE.hold();
     if (window.SFX && SFX.hold) SFX.hold(true);
     (window.__PAUSE_LOG = window.__PAUSE_LOG || []).push("hold:" + why);
@@ -78,35 +74,22 @@
     (window.__PAUSE_LOG = window.__PAUSE_LOG || []).push("wake:" + why);
     const inGame = window.AH && AH.S && AH.S() && AH.S().day && !document.querySelector(".title") && !document.body.classList.contains("in-cine") && !document.getElementById("sheet");
     // in the middle of a day: come back to the pause menu, so a timer never runs on before you are looking
-    // (not after a touch: the player is already looking, and the tap belongs to what they touched)
-    if (inGame && why !== "touch" && window.MENU && MENU.open) { MENU.open(); return; }
+    if (inGame && window.MENU && MENU.open) { MENU.open(); return; }
     if (!document.getElementById("sheet")) window.AH_PAUSED = false;
     if (window.VOICE && VOICE.unhold) VOICE.unhold();
   }
-  document.addEventListener("visibilitychange", function () { if (document.hidden) { hold("hidden"); freeze(); } else wake("visible"); });
-  // a touch on a visible page means the player is here: a pause the native shell never lifted ends now
-  document.addEventListener("pointerdown", function () { if (held && !document.hidden) wake("touch"); }, { passive: true, capture: true });
-  // watchdog: nothing may stay frozen on a visible page
-  setInterval(function () { if (!document.hidden && document.body.classList.contains("bg-held")) { document.body.classList.remove("bg-held"); (window.__PAUSE_LOG = window.__PAUSE_LOG || []).push("unfreeze"); } }, 1000);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) hold("hidden"); else wake("visible"); });
   window.addEventListener("pagehide", function () { hold("pagehide"); });
   window.addEventListener("pageshow", function (e) { if (e.persisted) wake("pageshow"); });
   window.addEventListener("ah:pause", function () { hold("native"); });   // native shell: willResignActive / audio interruption
   window.addEventListener("ah:resume", function () { wake("native"); });
-  try { const App = CAP() && CAP().App; if (App && App.addListener) quiet(App.addListener("appStateChange", function (s) { if (s && s.isActive) wake("app"); else hold("app"); })); } catch (e) {}
+  try { const App = CAP() && CAP().App; if (App && App.addListener) App.addListener("appStateChange", function (s) { if (s && s.isActive) wake("app"); else hold("app"); }); } catch (e) {}
 
   // ---------- Game Center ----------
   // our own plugin (review/panel2/ios-plugins.patch) is "GameCenter"; a third-party one would be "CapacitorGameConnect"
   const GC = function () { return plug("GameCenter") || plug("CapacitorGameConnect"); };
-  let signed = false, gcOn = false;
-  // once Game Center says yes, re-send everything earned so far (unlocks before sign-in were turned away)
-  function resend() {
-    const G = GC(), got = window.FUN && FUN.got ? FUN.got() : {}; if (!G || !G.unlockAchievement) return;
-    Object.keys(got).forEach(function (id) { if (got[id]) { try { quiet(G.unlockAchievement({ achievementID: (FUN.GC_PREFIX || "albionhouse.ach.") + id })); } catch (e) {} } });
-  }
-  function gcSignIn() {
-    const G = GC(); if (!G || signed || !G.signIn) return; signed = true;
-    try { const pr = G.signIn(); if (pr && pr.then) pr.then(function (r) { gcOn = !r || r.signedIn !== false; if (gcOn) resend(); }, function () {}); } catch (e) {}
-  }
+  let signed = false;
+  function gcSignIn() { const G = GC(); if (!G || signed || !G.signIn) return; signed = true; try { quiet(G.signIn()); } catch (e) {} }
   function gcAchieve(id) {
     const G = GC(); if (!G) return false;
     try {
@@ -120,26 +103,8 @@
   function gcScore(points) { const G = GC(); if (!G || !G.submitScore) return false; try { gcSignIn(); quiet(G.submitScore({ leaderboardID: BOARD, totalScoreAmount: Math.round(points) })); return true; } catch (e) { return false; } }
   function gcShow() { const G = GC(); if (G && G.showAchievements) { try { quiet(G.showAchievements()); return true; } catch (e) {} } return false; }
   if (window.FUN) FUN.onUnlock = gcAchieve;
-  // back from the Settings app having signed in: ask again, quietly
-  try { const App = CAP() && CAP().App; if (App && App.addListener) quiet(App.addListener("appStateChange", function (s) { if (s && s.isActive && !gcOn && signed) { signed = false; setTimeout(gcSignIn, 1500); } })); } catch (e) {}
   // sign in on the first deliberate tap, never at launch (Apple: don't interrupt the opening)
   document.addEventListener("pointerup", function once() { document.removeEventListener("pointerup", once, true); if (native()) setTimeout(gcSignIn, 1500); }, true);
 
-  // ---------- save an image to Photos ----------
-  // iOS web views ignore <a download> and blob links. On the iPhone the PNG goes to the app's cache with
-  // @capacitor/filesystem and @capacitor/share opens the system share sheet on that file, where "Save Image"
-  // puts it in Photos (Info.plist: NSPhotoLibraryAddUsageDescription). Only the image is shared, so iOS offers Save Image.
-  const SAVE_LOG = window.__SAVE_LOG = [];
-  function canShareImage() { return native() && !!plug("Filesystem") && !!plug("Share"); }
-  function shareImage(canvas, name, title) {
-    const FS = plug("Filesystem"), SH = plug("Share");
-    return new Promise(function (res) {
-      let data; try { data = canvas.toDataURL("image/png").split(",")[1]; } catch (e) { SAVE_LOG.push("fail:encode"); return res("failed"); }
-      Promise.resolve().then(function () { return FS.writeFile({ path: name, data: data, directory: "CACHE" }); })
-        .then(function (w) { SAVE_LOG.push("share:" + (w && w.uri)); return SH.share({ title: title, files: [w.uri], dialogTitle: "Save or share" }); })
-        .then(function () { res("shared"); }, function (e) { const m = String((e && e.message) || e); SAVE_LOG.push("err:" + m); res(/cancel/i.test(m) ? "cancelled" : "failed"); });
-    });
-  }
-
-  window.NATIVE = { canShareImage: canShareImage, shareImage: shareImage, plug: plug, native: native, hold: hold, wake: wake, gcAchieve: gcAchieve, gcScore: gcScore, gcShow: gcShow, gcReady: function () { return gcOn; }, BOARD: BOARD, MAP: MAP };
+  window.NATIVE = { plug: plug, native: native, hold: hold, wake: wake, gcAchieve: gcAchieve, gcScore: gcScore, gcShow: gcShow, BOARD: BOARD, MAP: MAP };
 })();

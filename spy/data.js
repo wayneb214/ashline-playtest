@@ -10,9 +10,9 @@ window.AH_DATA = (function () {
     { id: "service", name: "Service", txt: "Your officers: safe, loyal and unseen. Every point adds to the odds in the field." }
   ];
   const AGENTS = {
-    macrae: { strength: "Runs people. Best with defectors and leaks.", name: "Fiona Macrae", short: "Fiona", code: "Linnet", role: "Case officer \u00b7 \u2018Linnet\u2019 \u00b7 runs people", img: "macrae", tense: "macrae-tense", faces: { tired: "macrae-tired", injured: "macrae-injured", proud: "macrae-proud" }, happy: "macrae", look: "a red scarf", note: "Speaks fluent Varenian", clue: "Every blown operation was discussed with someone who could read the Varenian traffic without a translator.", slip: "She quoted a Grey House codeword we never told her.", skill: 4, loyalty: 4, stress: 1, cover: 3, good: ["defector", "leak"] },
-    pryce: { strength: "Watches unseen. Best at spotting moles and saboteurs.", name: "Gareth Pryce", short: "Gareth", code: "Wren", role: "Watcher \u00b7 \u2018Wren\u2019 \u00b7 patient, unseen", img: "pryce", tense: "pryce-tense", faces: { tired: "pryce-tired", injured: "pryce-injured", proud: "pryce-proud" }, happy: "pryce", look: "a green knitted hat", note: "Ran the Rotterdam watch rota", clue: "Every blown operation crossed the Rotterdam watch rota before it went wrong.", slip: "His report was timed an hour before she says she arrived.", skill: 3, loyalty: 5, stress: 2, cover: 4, good: ["mole", "sabotage"] },
-    hartley: { strength: "Leads in the field. Best when it gets physical.", name: "Tom Hartley", short: "Tom", code: "Harrier", role: "Field lead \u00b7 \u2018Harrier\u2019 \u00b7 brilliant, worn thin", img: "hartley", tense: "hartley-tense", faces: { tired: "hartley-tired", injured: "hartley-injured", proud: "hartley-proud" }, happy: "hartley", look: "a navy raincoat", note: "Spring leave: Vienna, alone", clue: "Every blown operation went wrong after someone took a quiet spring holiday in Vienna.", slip: "He knew the clerk\u2019s cover name before we\u2019d briefed him.", skill: 5, loyalty: 2, stress: 3, cover: 2, good: ["sabotage", "defector"] }
+    macrae: { strength: "Runs people. Best with defectors and leaks.", name: "Fiona Macrae", short: "Fiona", code: "Linnet", role: "Case officer \u00b7 \u2018Linnet\u2019 \u00b7 runs people", img: "macrae", tense: "macrae-tense", happy: "macrae", look: "a red scarf", note: "Speaks fluent Varenian", clue: "Every blown operation was discussed with someone who could read the Varenian traffic without a translator.", slip: "She quoted a Grey House codeword we never told her.", skill: 4, loyalty: 4, stress: 1, cover: 3, good: ["defector", "leak"] },
+    pryce: { strength: "Watches unseen. Best at spotting moles and saboteurs.", name: "Gareth Pryce", short: "Gareth", code: "Wren", role: "Watcher \u00b7 \u2018Wren\u2019 \u00b7 patient, unseen", img: "pryce", tense: "pryce-tense", happy: "pryce", look: "a green knitted hat", note: "Ran the Rotterdam watch rota", clue: "Every blown operation crossed the Rotterdam watch rota before it went wrong.", slip: "His report was timed an hour before she says she arrived.", skill: 3, loyalty: 5, stress: 2, cover: 4, good: ["mole", "sabotage"] },
+    hartley: { strength: "Leads in the field. Best when it gets physical.", name: "Tom Hartley", short: "Tom", code: "Harrier", role: "Field lead \u00b7 \u2018Harrier\u2019 \u00b7 brilliant, worn thin", img: "hartley", tense: "hartley-tense", happy: "hartley", look: "a navy raincoat", note: "Spring leave: Vienna, alone", clue: "Every blown operation went wrong after someone took a quiet spring holiday in Vienna.", slip: "He knew the clerk\u2019s cover name before we\u2019d briefed him.", skill: 5, loyalty: 2, stress: 3, cover: 2, good: ["sabotage", "defector"] }
   };
   const SITS1 = {
     defector: {
@@ -37,7 +37,7 @@ window.AH_DATA = (function () {
     },
     leak: {
       kind: "officer", title: "A file has reached the press", where: "Fleet Street, London", x: 31, y: 50, home: true, due: 13, left: true,
-      brief: "The Morning Courier has an Albion House report naming a source abroad. The editor picks the front page at one o\u2019clock, and it prints at three in the morning.",
+      brief: "The Morning Courier has an Albion House report naming a source abroad. The first edition goes to press at three.",
       approaches: [
         { t: "Lunch with the editor", d: "Explain who dies if the name runs. Ask, don\u2019t threaten.", mod: 12, risk: "low", stress: 1, win: { safety: 10, trust: 6 }, mixed: { safety: 4, secrecy: -4 }, loss: { safety: -8, secrecy: -8 } },
         { t: "Recover the copy", d: "Find the file before it\u2019s set in type.", mod: -10, risk: "high", stress: 2, win: { secrecy: 12, safety: 8 }, mixed: { trust: -8, secrecy: 4 }, loss: { trust: -16, capital: -10 } },
@@ -62,7 +62,7 @@ window.AH_DATA = (function () {
     { id: "Rotterdam", alt: true, src: "Intercept \u00b7 single source", grade: "Unconfirmed", q: "\u201cLet the English watch the north. The real work is at the Rotterdam hub.\u201d" }
   ];
   const TRUTH = "Rotterdam";
-  // painted roundel: the app icon (a figure under a gaslamp, the clock tower behind) in a brass ring; no crests
+  // painted roundel (bottle-green field, brass star; no flag, no crests). Old SVG kept in review/panel/extras/emblem-old-svg.txt
   const EMBLEM = '<img class="emblem" src="img/emblem.webp" width="256" height="256" alt="" aria-hidden="true">';
 
   // ---------- officers you can recruit when one is lost ----------
