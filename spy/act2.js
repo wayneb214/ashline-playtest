@@ -212,8 +212,8 @@
     const ch = chips(), helps = swapHelps(), base = A.diff().odds + sum(helps) + (A.svc() - 50) / 4;
     const OPTS = [
       { k: "trade", t: "Trade", d: "Give Kesk something real. Ours walks across, his walks back. Clean, and it costs us.", risk: "low", need: "chip", odds: function () { return clampP(58 + base + (chip ? chip.v : 0)); } },
-      { k: "bluff", t: "Bluff", d: "Bring an empty car and a confident face. Tell him we have more than we do.", risk: "med", odds: function () { return clampP(34 + base + Math.min(30, ch.length * 10) + keskMod("med")); } },
-      { k: "rescue", t: "Rescue", d: "While everyone watches the bridge, a team takes ours from the car. Fast, and loud if it goes wrong.", risk: "high", pm: 45, odds: function () { return clampP(40 + base + keskMod("high")); } }];
+      { k: "bluff", t: "Bluff", d: "Bring an empty car and a confident face. Tell him we have more than we do.", risk: "med", odds: function () { return clampP(34 + base + Math.min(30, ch.length * 10) + keskMod("med") + surprise("med")); } },
+      { k: "rescue", t: "Rescue", d: "While everyone watches the bridge, a team takes ours from the car. Fast, and loud if it goes wrong.", risk: "high", pm: 45, odds: function () { return clampP(40 + base + keskMod("high") + surprise("high")); } }];
     const draw = function () {
       A.render('<div class="card dossier exfil"><div class="chead"><img src="img/h-bridge.jpg" alt="An iron bridge over a river at dawn, two cars facing each other"></div>' + A.LH + '<span class="stamp corner">DAWN</span><div class="kicker">The Vell bridge \u00b7 05:40 \u00b7 Thursday, first light</div><h2 style="margin-top:8px;padding-right:110px">The bridge at dawn</h2>' +
         "<p>Mist on the River Vell. Two cars, one at each end. In the back of Kesk\u2019s, <b>" + (who ? esc(A.AG(who).name) : "our officer") + "</b>. Kesk stands by the bonnet with a flask of coffee, as if this were a picnic.</p>" +
@@ -223,7 +223,7 @@
           const locked = (o.need === "chip" && !chip) || (o.pm && s.meters.capital < o.pm);
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + o.t + '</div><p style="margin:0">' + o.d + '</p><div class="chips">' +
             (locked ? '<span class="chip risk-high">' + (o.need === "chip" ? (ch.length ? "Pick something to trade first" : "Nothing to trade") : "No.10 won\u2019t sign off \u00b7 needs No.10 trust " + o.pm + " (now " + s.meters.capital + "/100)") + "</span>"
-              : '<span class="chip odds">' + o.odds() + '% chance</span><span class="chip risk-' + o.risk + '">' + RISK[o.risk] + "</span>" + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this</span>' : "")) + "</div></button>";
+              : '<span class="chip odds">' + o.odds() + '% chance</span><span class="chip risk-' + o.risk + '">' + RISK[o.risk] + "</span>" + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this</span>' : o.k !== "trade" && surprise(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
         }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Decide" : "Walk onto the bridge") + '</button></div><button class="btn ghost" id="back">Not yet</button>', "Trading costs a chip. Bluffing works better the more you hold.");
       document.querySelectorAll("[data-chip]").forEach(function (b) { b.onclick = function () { chip = ch.filter(function (c) { return c.k === b.getAttribute("data-chip"); })[0]; draw(); }; });
@@ -356,19 +356,21 @@
     const f = fav(); if (!f) return "";
     return '<div class="card intercept"><div class="kicker">Intercept \u00b7 Grey House, Kessgrad</div><p>A cable to Kesk, decoded tonight: <b>\u201cC plays it ' + STYLEW[f] + '. Be ready for it.\u201d</b></p><p class="fine">Tomorrow, at Downing Street, the choice he expects will be the hardest. \u2014 Ash</p></div>';
   }
+  // Batch P: the Downing Street choices and odds at module level, so the balance test can sweep them
+  const SD_OPTS = [
+    { k: "quiet", t: "Have him put on the morning plane", d: "Quietly declared unwelcome. No arrest, no cameras. He goes home, and he knows we won.", risk: "low", mod: 10 },
+    { k: "turn", t: "Offer him a deal: work for us", d: "The boldest thing you will ever say to a man. If he says yes, the Grey House is ours.", risk: "high", mod: -10 },
+    { k: "public", t: "Arrest him on the steps of No.10", d: "Cameras, handcuffs, a show for the House. Hale gets her headline.", risk: "med", mod: 0, pm: 35 }]; // Batch P: was 40
+  function sdOdds(o) { const s = S(); return clampP(SD_BASE + o.mod + surprise(o.risk) + A.diff().odds + ({ win: 14, mixed: 4, loss: -12 }[s.done.chase] || 0) + (s.done.find === "win" ? 6 : 0) + (A.score(s.meters.capital) - 50) / 3 + keskMod(o.risk)); }
   function showdown() {
     const s = S(); let sel = null;
     if (s.hour < 18) { A.advance(18 - s.hour); A.save("briefing"); A.meters(); }
-    const OPTS = [
-      { k: "quiet", t: "Have him put on the morning plane", d: "Quietly declared unwelcome. No arrest, no cameras. He goes home, and he knows we won.", risk: "low", mod: 10 },
-      { k: "turn", t: "Offer him a deal: work for us", d: "The boldest thing you will ever say to a man. If he says yes, the Grey House is ours.", risk: "high", mod: -10 },
-      { k: "public", t: "Arrest him on the steps of No.10", d: "Cameras, handcuffs, a show for the House. Hale gets her headline.", risk: "med", mod: 0, pm: 40 }];
-    const odds = function (o) { return clampP(SD_BASE + o.mod + surprise(o.risk) + A.diff().odds + ({ win: 14, mixed: 4, loss: -12 }[s.done.chase] || 0) + (s.done.find === "win" ? 6 : 0) + (A.score(s.meters.capital) - 50) / 3 + keskMod(o.risk)); };
+    const OPTS = SD_OPTS, odds = sdOdds;
     const draw = function () {
       A.render('<figure class="no10 d2fig"><img src="' + pic("no10") + '" alt="The study at Number 10"><figcaption>10 Downing Street \u00b7 ' + A.hh(s.hour) + '</figcaption></figure><div class="card dossier">' + A.LH + '<span class="stamp corner">NO.10</span><div class="kicker">Day 6 \u00b7 the last file</div><h2 style="margin-top:8px;padding-right:110px">Downing Street</h2>' +
         "<p>Kesk is in the waiting room at Number 10, with a trade minister\u2019s appointment and a tractor brochure. Hale is in the study next door. She turns to you. <b>\u201cWell, C? He\u2019s in my house.\u201d</b></p></div>" +
         (window.VOICE && fav() ? (VOICE.once("ash_showdown_clue"), "") : "") + A.ash(showdownClue(), !!fav()) +
-        OPTS.map(function (o, i) { const locked = o.pm && s.meters.capital < o.pm; return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + o.t + '</div><p style="margin:0">' + o.d + '</p><div class="chips">' + (locked ? '<span class="chip risk-high">Hale won\u2019t risk it \u00b7 needs No.10 trust ' + o.pm + "</span>" : '<span class="chip odds">' + odds(o) + '% chance</span><span class="chip risk-' + o.risk + '">' + RISK[o.risk] + "</span>" + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this</span>' : surprise(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>"; }).join("") +
+        OPTS.map(function (o, i) { const locked = o.pm && s.meters.capital < o.pm; return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + o.t + '</div><p style="margin:0">' + o.d + '</p><div class="chips">' + (locked ? '<span class="chip risk-high">Hale won\u2019t risk it \u00b7 needs No.10 trust ' + o.pm + " (you have " + A.score(s.meters.capital) + ")</span>" : '<span class="chip odds">' + (s.diff === "hard" ? A.oddsBand(odds(o)).replace(/^./, function (c) { return c.toUpperCase(); }) : odds(o) + "% chance") + '</span><span class="chip risk-' + o.risk + '">' + RISK[o.risk] + "</span>" + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this</span>' : surprise(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>"; }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + '>' + (sel == null ? "Decide" : "Open the door") + "</button></div>", "Everything from the last six days counts here.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
       $("go").onclick = function () {
@@ -387,6 +389,7 @@
   }
 
   // ---------- interruptions: letters and No.10 calls ----------
+  const BRIEF = { under: 30, trust: 10, hours: 2 };
   function haleCall(day) {
     const s = S(); s.cons = s.cons || {};
     const T = {
@@ -394,12 +397,15 @@
       5: { text: "C. I want our officer home, and I want it quiet. No headlines, no heroics. Can you do that?", opts: [{ k: "yes", t: "Yes, Prime Minister. Quiet.", chips: '<span class="chip">+6 No.10 trust</span>' }, { k: "honest", t: "Tell her it may not be quiet", chips: '<span class="chip risk-high">\u22124 No.10 trust</span><span class="chip risk-low">Loyalty +1 for every officer</span>' }] },
       6: { text: "C. Kesk is in London, and the Foreign Secretary knows. Bring me something by tonight, or bring me your resignation.", opts: [{ k: "tonight", t: "You\u2019ll have him by midnight", chips: '<span class="chip">+4 No.10 trust</span><span class="chip risk-high">Miss and it costs double</span>' }, { k: "letter", t: "Offer your resignation now, in a drawer", chips: '<span class="chip risk-low">+6 Service</span><span class="chip risk-high">\u22124 No.10 trust</span>' }] }
     }[day];
+    // Batch P: a way back for a weak week. On the Day 5 call, with No.10 trust under 30, you can ask for ten minutes in
+    // person tonight: +10 trust, for two hours of your day.
+    if (day === 5 && A.score(s.meters.capital) < BRIEF.under) T.opts = T.opts.concat([{ k: "brief", t: "Ask for ten minutes in person, tonight", chips: '<span class="chip">+' + BRIEF.trust + ' No.10 trust</span><span class="chip risk-high">Costs ' + BRIEF.hours + " hours</span>" }]);
     const settle = function (k, timed, missed) {
-      s.cons["hale" + day] = missed ? "missed" : k; A.advance(1);
-      const eff = { careful: { capital: 6 }, firm: { capital: -4, secrecy: 4 }, yes: { capital: 6 }, honest: { capital: -4 }, tonight: { capital: 4 }, letter: { service: 6, capital: -4 } }[k] || {};
+      s.cons["hale" + day] = missed ? "missed" : k; A.advance(k === "brief" && !missed ? BRIEF.hours : 1);
+      const eff = { careful: { capital: 6 }, firm: { capital: -4, secrecy: 4 }, yes: { capital: 6 }, honest: { capital: -4 }, tonight: { capital: 4 }, letter: { service: 6, capital: -4 }, brief: { capital: BRIEF.trust } }[k] || {};
       const ch = missed ? A.apply({ capital: -8 }) : A.apply(eff);
       if (k === "honest") s.roster.forEach(function (x) { s.loyal[x] = A.clamp5(s.loyal[x] + 1); });
-      const txt = missed ? "Nobody answered. Hale\u2019s private secretary writes it down." : { careful: "\u201cGood.\u201d The line clicks.", firm: "A long pause. \u201cThen be quick about it.\u201d", yes: "\u201cI\u2019ll hold you to that, C.\u201d", honest: "\u201cAt least you\u2019re honest.\u201d Downstairs, somebody hears you said it.", tonight: "\u201cMidnight, then.\u201d", letter: "She doesn\u2019t open the drawer. \u201cLet\u2019s hope I never need to.\u201d" }[k];
+      const txt = missed ? "Nobody answered. Hale\u2019s private secretary writes it down." : { careful: "\u201cGood.\u201d The line clicks.", firm: "A long pause. \u201cThen be quick about it.\u201d", yes: "\u201cI\u2019ll hold you to that, C.\u201d", honest: "\u201cAt least you\u2019re honest.\u201d Downstairs, somebody hears you said it.", tonight: "\u201cMidnight, then.\u201d", letter: "She doesn\u2019t open the drawer. \u201cLet\u2019s hope I never need to.\u201d", brief: "\u201cTen minutes, C. Make them count.\u201d You walk to Downing Street in the rain and make them count." }[k];
       if (!missed && window.VOICE) VOICE.play("react_pm_" + k);
       window.DESK.after(missed ? "MISSED" : "NOTED", missed ? "loss" : "mixed", "The call from No.10", (timed ? "You hesitate. " : "") + txt, ch, null);
     };
@@ -488,7 +494,9 @@
     if (e.p < KNIGHT.p) miss.push((KNIGHT.p - e.p) + " more point" + (KNIGHT.p - e.p > 1 ? "s" : "") + " (you had " + e.p + " of " + KNIGHT.p + ")");
     if (e.t < KNIGHT.t) miss.push((KNIGHT.t - e.t) + " more No.10 trust (you had " + e.t + " of " + KNIGHT.t + ")");
     if (e.showdown === "loss") miss.push("a Downing Street that wasn\u2019t lost");
-    return "<b>How close to a knighthood:</b> you needed " + (miss.length > 1 ? miss.slice(0, -1).join(", ") + " and " + miss[miss.length - 1] : miss[0]) + ". Points come from the woman in green, the bridge and the chase (2 for a win, 1 for a partial), Downing Street (3 for a win, 1 for a partial) and closing the leak (1).";
+    // Batch P: when the 30 rule is what turned a won Downing Street into the front page, the letter says so first
+    const q = ending() === "scandal" && e.p >= 4 && e.showdown !== "loss" && e.t < 30 ? "<b>Why not the quiet exit:</b> it needed No.10 trust 30, and you had " + e.t + ". " : "";
+    return q + "<b>How close to a knighthood:</b> you needed " + (miss.length > 1 ? miss.slice(0, -1).join(", ") + " and " + miss[miss.length - 1] : miss[0]) + ". Points come from the woman in green, the bridge and the chase (2 for a win, 1 for a partial), Downing Street (3 for a win, 1 for a partial) and closing the leak (1).";
   }
   const END = {
     knight: { name: "Knighted in silence", cine: "end2-good", lead: "NEW YEAR HONOURS: \u2018FOR SERVICES\u2019", sub: "A senior official honoured \u00b7 No reason given \u00b7 Varenian visitor \u2018went home early\u2019", flash: "A small box arrives by hand, no covering letter, no return address. Inside, a ribbon. Ash pins it to the noticeboard upside down, where only the building can see it. <b>Nobody outside will ever know why.</b>" },
@@ -513,6 +521,6 @@
   function bulletinId() { const s = S(); if (s.day === 4) return "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
-  window.AH4 = { SD_BASE: SD_BASE, SURPRISE: SURPRISE, surprise: surprise, knightGap: knightGap, KNIGHT: KNIGHT, endingInputs: endingInputs, showdownClue: showdownClue, interceptClue: interceptClue, ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
+  window.AH4 = { SD_OPTS: SD_OPTS, sdOdds: sdOdds, BRIEF: BRIEF, haleCall: haleCall, SD_BASE: SD_BASE, SURPRISE: SURPRISE, surprise: surprise, knightGap: knightGap, KNIGHT: KNIGHT, endingInputs: endingInputs, showdownClue: showdownClue, interceptClue: interceptClue, ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
     locked: locked, lockWhy: lockWhy, lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
 })();

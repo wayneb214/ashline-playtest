@@ -109,6 +109,7 @@
   // Batch O: the top-bar Service counts officer stress and loyalty as well as the Service meter, so when the two moved
   // differently the line says so (otherwise "+2 Service" beside "Service 62\u219262" looks like a mistake)
   const SVC_NOTE = " The top-bar Service includes officer stress and loyalty.";
+  const LOW_ALERT = function (t) { return "No.10 trust has just dropped under 20 (now " + t + "). " + (S.day === 6 ? "Under 15 at the end of today means resigning." : "Under 15 at the end of Day 6 means resigning, and under 20 at midnight No.10 takes a file.") + " Each case you close wins back +3."; };
   function barText() {
     const b = S && S.bar0; if (!b) return "";
     const t1 = score(S.meters.capital), v1 = svc(), mood = b.m != null && (v1 - b.v) !== (Math.round(S.meters.service) - b.m);
@@ -124,9 +125,16 @@
     const oc = vw.querySelector('.card.outcome:not([data-screen="no10warn"])'); if (!oc || oc.querySelector(".barline")) return;
     const tx = barText(); if (!tx) return;
     const pEl = document.createElement("p"); pEl.className = "barline"; pEl.textContent = tx;
+    // Batch P: the Service note links to the Help entry that explains it
+    if (tx.indexOf(SVC_NOTE.trim()) >= 0) { const hb = document.createElement("button"); hb.type = "button"; hb.className = "linkbtn svchelp"; hb.textContent = "How Service works"; hb.onclick = function (e) { e.stopPropagation(); MENU.help(null, "service"); }; pEl.appendChild(document.createTextNode(" ")); pEl.appendChild(hb); }
     const after = oc.querySelector(".opcall") || oc.querySelector(".no10back") || oc.querySelector(".deltas");
     if (after) after.insertAdjacentElement("afterend", pEl); else { const hd = oc.querySelector(".headline"); if (hd) oc.insertBefore(pEl, hd); else oc.appendChild(pEl); }
-    announce(tx);
+    // Batch P: the moment No.10 trust drops under 20 in Act 2, the result card says so (once a day), as an alert
+    let alertTx = ""; const t1 = score(S.meters.capital);
+    if (S.day >= 4 && S.bar0 && S.bar0.t >= NO10_LOW && t1 < NO10_LOW && S.lowAlerted !== S.day) { S.lowAlerted = S.day; alertTx = LOW_ALERT(t1); const al = document.createElement("p"); al.className = "lowalert"; al.setAttribute("role", "alert"); al.textContent = alertTx; pEl.insertAdjacentElement("beforebegin", al); }
+    // Batch P: screen readers hear the stamp first (CLOSED, PARTIAL, FAILED...), then the top bar
+    const st = oc.querySelector(".stamp"), stTx = st ? st.textContent.trim() : "";
+    announce((stTx ? stTx.charAt(0) + stTx.slice(1).toLowerCase() + ". " : "") + tx + (alertTx ? " " + alertTx : ""));
   }
   function render(html, h, keep) {
     LOOK.rain(false); if (!keep) LOOK.fade();
@@ -230,7 +238,7 @@
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (window.FUN ? '<button class="btn primary" id="tach">\u2605 Achievements' + (FUN.count ? " \u00b7 " + FUN.count() + " of " + FUN.total : "") + "</button>" : "") +
       (window.REVIEW && REVIEW.played() ? '<button type="button" class="btn primary" id="trate">\u2b50 Rate this game</button>' : "") +
-      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + endingsHTML() + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
+      '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     LOOK.place(); LOOK.rain(true); LOOK.night(8); if (window.REPLAY) REPLAY.bindTitle();
     $("go").onclick = saved ? function () { MENU.confirm("Start a new game?", "Your saved game (Day " + (saved.S.day || 1) + ") will be replaced.", "Start again", coldOpen); } : coldOpen;
@@ -289,27 +297,43 @@
       (day3 ? tile(3, "The Green Coat", "Bring the woman in green home before midnight.", "OPEN") : "") +
       [4, 5, 6].map(function (d) { return loadJSON(DAYK[d]) ? tile(d, window.AH4.NAMEOF[d], { 4: "Act 2. Kesk writes to Albion House itself.", 5: "One of ours is held. A bridge at dawn.", 6: "Kesk in London. Everyone, everywhere." }[d], "OPEN") : ""; }).join("") +
       (function () { const old = [4, 5, 6].filter(function (d) { const sn = loadJSON(DAYK[d]); return sn && sn.stale; }); return old.length ? '<button class="btn ghost" id="clearold">Clear old saves (Day' + (old.length > 1 ? "s " : " ") + old.join(", ") + ")</button>" : ""; })() +
-      (function () { const bk = readJ(BACKUP); return bk ? '<button class="btn ghost" id="restorebk">Bring back your backup \u00b7 Day ' + bk.day + " \u00b7 " + esc(bk.when) + "</button>" : ""; })() +
+      backups().map(function (bk, i) { return '<button class="btn ghost restorebk" id="restorebk' + i + '" data-bk="' + i + '">Bring back your backup \u00b7 Day ' + bk.day + " \u00b7 " + esc(bk.when) + "</button>"; }).join("") +
       '<button class="btn ghost" id="back">Back</button></div>');
-    [4, 5, 6].forEach(function (d) { const snap = loadJSON(DAYK[d]); if (snap) $("d" + d).onclick = function () { restore(snap); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH4.briefingIntro(); }; });
+    [4, 5, 6].forEach(function (d) { if (loadJSON(DAYK[d])) $("d" + d).onclick = function () { playDay(d); }; });
     // Batch N: Day 1 starts a new game, so ask first when there are saved days to lose
     $("d1").onclick = function () { const have = [2, 3, 4, 5, 6].filter(function (d) { return loadJSON(DAYK[d]); }); if (!have.length && !loadJSON(SAVE)) return coldOpen();
       // Batch O: offer to keep a copy first; one backup slot, restored from this screen
       MENU.confirm("Start a new game from Day 1?", (have.length ? "Your saved game and the saved starts of Day" + (have.length > 1 ? "s " : " ") + have.join(", ") + " will be cleared." : "Your saved game will be cleared.") + " Back it up first and you can bring it back from Replay a day.", "Start again", coldOpen, null, { t: "Back up, then start again", go: function () { backup(); coldOpen(); } }); };
     if ($("clearold")) $("clearold").onclick = function () { [4, 5, 6].forEach(function (d) { const sn = loadJSON(DAYK[d]); if (sn && sn.stale) store.del(DAYK[d]); }); daySelect(); };
-    if ($("restorebk")) $("restorebk").onclick = function () { const bk = readJ(BACKUP); if (!bk) return; MENU.confirm("Bring back your backup?", "Day " + bk.day + ", backed up " + bk.when + ". It replaces the game you have now.", "Bring it back", function () { restoreBackup(bk); daySelect(); }, daySelect); };
-    if (day3) $("d3").onclick = function () { restore(day3); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH3.briefingIntro(); };
-    if (day2) $("d2").onclick = function () { restore(day2); markReplay(); save("briefing"); chrome(true); meters(); ticker(); window.AH2.briefingIntro(); };
+    document.querySelectorAll("[data-bk]").forEach(function (b) { b.onclick = function () { const i = +b.getAttribute("data-bk"), bk = backups()[i]; if (!bk) return; MENU.confirm("Bring back your backup?", "Day " + bk.day + ", backed up " + bk.when + ". It replaces the game you have now, and you carry on where it was saved.", "Bring it back", function () { restoreBackup(i); }, daySelect); }; });
+    if (day3) $("d3").onclick = function () { playDay(3); };
+    if (day2) $("d2").onclick = function () { playDay(2); };
     $("back").onclick = title;
+  }
+  // Batch P: replay one day straight from its saved start (Replay a day, and the achievements screen). Day 1 is a new
+  // game, so it goes through Replay a day and its confirm.
+  function playDay(d) {
+    if (d === 1) { daySelect(); const b = $("d1"); if (b) b.click(); return; }
+    const snap = loadJSON(DAYK[d]); if (!snap) return daySelect();
+    restore(snap); markReplay(); save("briefing"); chrome(true); meters(); ticker();
+    (d === 2 ? window.AH2 : d === 3 ? window.AH3 : window.AH4).briefingIntro();
   }
   // Batch O: one backup slot: the saved game and every saved day start, kept when you restart from Day 1
   const BACKUP = "albion-backup-v1";
   function backup() {
     const sv = loadJSON(SAVE), keys = {}; [DAY1, DAY2, DAY3, DAYK[4], DAYK[5], DAYK[6], SAVE].forEach(function (k) { if (k && store.get(k)) keys[k] = store.get(k); });
     const d = new Date(), when = d.getDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + ", " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-    store.set(BACKUP, JSON.stringify({ day: sv && sv.S ? sv.S.day || 1 : 1, when: when, keys: keys }));
+    // Batch P: two slots, newest first
+    store.set(BACKUP, JSON.stringify([{ day: sv && sv.S ? sv.S.day || 1 : 1, when: when, keys: keys }].concat(backups()).slice(0, 2)));
   }
-  function restoreBackup(bk) { [SAVE, DAY2, DAY3, DAYK[4], DAYK[5], DAYK[6]].forEach(function (k) { store.del(k); }); Object.keys(bk.keys).forEach(function (k) { store.set(k, bk.keys[k]); }); store.del(BACKUP); }
+  function backups() { const b = readJ(BACKUP); return Array.isArray(b) ? b : b && b.keys ? [b] : []; }
+  // Batch P: bringing a backup back drops you straight into that game where it was saved (no extra Continue)
+  function restoreBackup(i) {
+    const list = backups(), bk = list[i]; if (!bk) return;
+    [SAVE, DAY2, DAY3, DAYK[4], DAYK[5], DAYK[6]].forEach(function (k) { store.del(k); }); Object.keys(bk.keys).forEach(function (k) { store.set(k, bk.keys[k]); });
+    list.splice(i, 1); if (list.length) store.set(BACKUP, JSON.stringify(list)); else store.del(BACKUP);
+    const sv = loadJSON(SAVE); if (sv) { restore(sv); resume(); } else daySelect();
+  }
   // ---------- the cold open: Standard, straight in; the Prime Minister rings within the minute ----------
   function coldOpen() {
     store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); });
@@ -648,9 +672,18 @@
   function oddsFor(id, k, a, kitId) { return oddsParts(id, k, a, kitId).odds; }
   // the live-op call: what each answer costs and pays. One source for the buttons and for resolve().
   const OPT = { push: { mod: 12, winX: 1.5, failService: -5, burn: 1 / 3 }, hold: { mod: -6, trust: -2 }, abort: { trust: -6 } };
+  // Batch P: on Hard the situation on the ground shifts the odds at the radio call by a hidden -8..+8, so the words
+  // (good odds, poor odds...) can't be worked out from the dial. Fixed per case, officer and point in the day, so the
+  // words on the call and the roll in resolve() agree. It is named on the result card afterwards.
+  function driftOf(id, k) {
+    if (!S || S.diff !== "hard") return 0;
+    const str = id + "|" + k + "|" + S.day + "|" + (S.log || []).length + "|" + (S.roster || []).join(""); let h = 7;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 100003;
+    return (h % 17) - 8;
+  }
   function opTerms(id, k, a, kitId) {
-    const base = oddsFor(id, k, a, kitId), cl = function (x) { return Math.max(5, Math.min(95, x)); };
-    return { base: base, push: Object.assign({ odds: cl(base + OPT.push.mod) }, OPT.push), hold: Object.assign({ odds: cl(base + OPT.hold.mod) }, OPT.hold), abort: Object.assign({}, OPT.abort) };
+    const base = oddsFor(id, k, a, kitId), dr = driftOf(id, k), cl = function (x) { return Math.max(5, Math.min(95, x)); };
+    return { base: base, drift: dr, push: Object.assign({ odds: cl(base + dr + OPT.push.mod) }, OPT.push), hold: Object.assign({ odds: cl(base + dr + OPT.hold.mod) }, OPT.hold), abort: Object.assign({}, OPT.abort) };
   }
   function statusName(k) { const st = (S.status || {})[k]; return st ? { tired: "Tired", wounded: "Wounded", burned: "Burned" }[st] || "" : ""; }
   function statusMod(k) { const st = (S.status || {})[k]; return st === "tired" ? -8 : st === "wounded" ? -15 : 0; }
@@ -828,8 +861,8 @@
     if (S.done[id]) return; // a case closes once: a second tap while the result is showing changes nothing
     op = op || {};
     const t0 = score(S.meters.capital), v0 = svc(); // Batch M: the top bar before this case, for the Hold/Abort result line
-    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []) };
-    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), odds = Math.max(5, Math.min(95, raw + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
+    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground (Hard)", driftOf(id, k)]] : []) };
+    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = Math.max(5, Math.min(95, raw + drift + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
@@ -857,7 +890,7 @@
     const paid = {};
     Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; paid[m] = d; if (d) ch[m] = (ch[m] || 0) + d; });
     const back = no10Back(res, ch);
-    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, base: Math.max(5, Math.min(95, raw)), res: res, extra: extra, paid: paid, back: back } : null;
+    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, base: Math.max(5, Math.min(95, raw)), drift: drift, res: res, extra: extra, paid: paid, back: back } : null;
     S.done[id] = res; S.used[k] = true; S.sent = S.sent || {}; S.sent[k] = (S.sent[k] || 0) + 1; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
     if (window.FUN) FUN.xp(k, res);
@@ -1121,7 +1154,7 @@
     if ($("daynext")) $("daynext").onclick = function () { no10Night(function () { const nx = DAYK[S.day + 1]; FEEL.tearThen($("flash"), function () { restore(loadJSON(nx)); save("briefing"); window.AH4.briefingIntro(); }); }); };
     // the bulletin played over the front page; the report gets Ash's verdict on the day (subtitled)
     // Ash reads the report aloud, short version, while the full text shows: the grade, then her FLASH telegram
-    setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; VOICE.seq([reportLine(grade), bulletinLine()]); } }, 900);
+    setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; VOICE.seq(S.flashSaid === S.day ? [reportLine(grade)] : [reportLine(grade), bulletinLine()]); } }, 900);
   }
   // Batch O: each finished game's ending, newest first (kept to 10; the title shows the last 3). Once per game.
   const ENDS = "albion-game-endings"; // not "albion-endings": the epilogue collection (endings.js, replay.js) owns that key
@@ -1131,10 +1164,17 @@
     list.unshift({ e: e, d: S.diff, at: d.getDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] });
     store.set(ENDS, JSON.stringify(list.slice(0, 10))); save("summary");
   }
+  // Batch P: one place for endings. The Endings button on the title carries the last three games; the Endings screen
+  // lists every saved game (up to 10) above the collection of epilogues.
+  const SHORT_END = { knight: "Knighted", quiet: "Quiet exit", scandal: "Front page", resign: "Resigned" }, DIFFW = { easy: "Easy", standard: "Standard", hard: "Hard" };
+  function pastGames() { const raw = readJ(ENDS); return Array.isArray(raw) ? raw : []; }
   function endingsHTML() {
-    const raw = readJ(ENDS), list = (Array.isArray(raw) ? raw : []).slice(0, 3); if (!list.length || !window.AH4) return "";
-    const SHORT = { knight: "Knighted", quiet: "Quiet exit", scandal: "Front page", resign: "Resigned" };
-    return '<p class="lastends">Your last games: ' + list.map(function (x) { return '<b class="endpill e-' + x.e + '">' + esc(SHORT[x.e] || x.e) + "</b>"; }).join(" \u00b7 ") + "</p>";
+    const list = pastGames().slice(0, 3); if (!list.length) return "";
+    return '<small class="lastends">Last games: ' + list.map(function (x) { return '<b class="endpill e-' + x.e + '">' + esc(SHORT_END[x.e] || x.e) + "</b>"; }).join(" \u00b7 ") + "</small>";
+  }
+  function pastGamesHTML() {
+    const list = pastGames();
+    return '<h3 class="pasth">Your past games</h3>' + (list.length ? '<ol class="pastgames">' + list.map(function (x) { const en = window.AH4 && AH4.END[x.e]; return '<li class="e-' + x.e + '"><b>' + esc(en ? en.name : x.e) + "</b><span>" + esc((DIFFW[x.d] || "Standard") + " \u00b7 " + (x.at || "")) + "</span></li>"; }).join("") + "</ol>" : '<p class="fine">Finish Day 6 and your ending is kept here.</p>');
   }
   // Batch L: on Day 6 the letter and Ash's read-out follow the ending, never the day grade, so a resignation is never "held the line"
   const END6_LETTER = { knight: "The Prime Minister is delighted, and there is talk of the Palace. Don\u2019t let it go to your head.", quiet: "The street is quiet, and Kesk has flown home. The Prime Minister says that will do. From her, that\u2019s praise.", scandal: "It\u2019s all over the papers. The Prime Minister is furious, but you still have the chair.", resign: "The Prime Minister has asked for your resignation letter by Friday. Ash says it\u2019s been an honour." };
@@ -1298,7 +1338,7 @@
   // shared with day2.js
   window.AH = { caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, oddsBand: oddsBand, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

@@ -163,7 +163,7 @@
       '</ul><p class="fine">Saved on this device.</p>' + (gcReady() ? '<button class="btn" id="ach-gc">Open Game Center</button>' : '') + '<button class="btn primary" id="ach-back">Back</button>', "settings");
     if (back) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     document.getElementById("ach-back").onclick = function () { MENU.close(); if (back) back(); };
-    document.querySelectorAll("[data-replay]").forEach(function (b) { b.onclick = function () { MENU.close(); if (window.VOICE && VOICE.hush) VOICE.hush(); A().chrome(false); A().daySelect(); }; });
+    document.querySelectorAll("[data-replay]").forEach(function (b) { b.onclick = function () { MENU.close(); if (window.VOICE && VOICE.hush) VOICE.hush(); A().playDay(+b.getAttribute("data-replay")); }; });
     const g = document.getElementById("ach-gc"); if (g) g.onclick = function () { NATIVE.gcShow(); };
   }
   // the Achievements button: Apple's Game Center screen when signed in, our own list otherwise

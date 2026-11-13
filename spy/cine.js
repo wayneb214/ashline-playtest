@@ -162,28 +162,43 @@
     const secs = r.opts.replay ? 0 : DESK.askSecs ? DESK.askSecs(q) : DESK.timer(q.secs);
     const hide = !!(DESK.hideDef && DESK.hideDef()), rl = function (t) { return window.AH && AH.relabel ? AH.relabel(t) : t; };
     const box = document.createElement("div"); box.className = "cine-ask"; box.setAttribute("role", "group"); box.setAttribute("aria-label", q.q);
-    // context first, spoken (Ash on the line); the choices appear once the line has finished
+    // context first, spoken: any narration the jump held back, then the report (q.pre), then the question. The options
+    // stay hidden until the last line has finished, or you tap Skip.
     const vo = q.voice && window.VOICE && VOICE.lines[q.voice];
-    box.innerHTML = '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
+    const pre = typeof q.pre === "function" ? q.pre() : q.pre || [], ctxIds = (s.ctx || []).concat(pre).filter(function (id) { return window.VOICE && VOICE.lines[id]; });
+    const ctxHTML = ctxIds.length ? '<div class="askctx">' + ctxIds.map(function (id) { const L = VOICE.lines[id]; return '<p data-line="' + id + '">' + (L.who && L.who !== "Narrator" ? "<b>" + L.who + ":</b> " : "") + L.text + "</p>"; }).join("") + "</div>" : "";
+    box.innerHTML = ctxHTML + '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
       '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def && !hide ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + rl(o.d) + "</small></button>"; }).join("") +
       (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">' + (hide ? "If you say nothing, Ash decides. (Hard: you won\u2019t know which.)" : "If you say nothing: " + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase()) + "</div>" : "") + "</div>";
+    if (vo || ctxIds.length) box.insertAdjacentHTML("beforeend", '<button type="button" class="askskip" id="askskip">Skip to the choice</button>');
     r.el.appendChild(box); r.el.classList.add("asking");
     let tm = null, live = false;
     const pickIt = function (k, late) {
       if (s.answered || !live) return; s.answered = true; if (tm) tm.stop();
       s.resCap = r.opts.replay ? q.opts.filter(function (o) { return o.k === k; })[0].t : (late ? "Too late to choose. " : "") + DESK.choose(s.ask.id, k, late);
-      box.remove(); r.el.classList.remove("asking"); r.paused = false; r.last = 0;
+      box.remove(); r.el.classList.remove("asking"); r.paused = false; r.last = 0; if (window.VOICE) VOICE.hush();
       if (window.FEEL) FEEL.buzz("stamp");
       if (r.opts.askOnly) r.endAt = r.elapsed + 1800;
       window.__CINE_ASKED__ = { id: s.ask.id, k: k, late: !!late };
     };
     box.querySelectorAll("[data-ask]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); pickIt(b.getAttribute("data-ask"), false); }); });
     const ready = function () {
-      if (live || run !== r) return; live = true; box.classList.add("ready"); window.__CINE_ASK_READY__ = { id: s.ask.id, at: Date.now() };
+      if (live || run !== r) return; live = true; box.classList.add("ready"); const skb = box.querySelector("#askskip"); if (skb) skb.remove(); window.__CINE_ASK_READY__ = { id: s.ask.id, at: Date.now() };
       const f = box.querySelector("[data-ask]"); if (f) f.focus({ preventScroll: true });
       tm = DESK.countdown(secs, "askbar", function () { pickIt(q.def, true); });
     };
-    if (vo) { box.classList.add("speaking"); VOICE.now(q.voice, { nosub: true, cut: true }); VOICE.after(q.voice, ready); } else ready();
+    const ids = ctxIds.concat(vo ? [q.voice] : []); let i = 0, waited = 0;
+    const said = function (id) { box.querySelectorAll("[data-line]").forEach(function (pEl) { pEl.classList.toggle("now", pEl.getAttribute("data-line") === id); }); };
+    const next = function () {
+      if (live || run !== r) return; if (i >= ids.length) { said(null); return ready(); }
+      const id = ids[i++]; said(id); window.__CINE_SAID__ = (window.__CINE_SAID__ || []).concat([id]);
+      VOICE.now(id, { nosub: true, cut: true }); VOICE.after(id, function () { setTimeout(next, 200); });
+    };
+    // a scene line still being said when the choice arrives finishes first (it is never cut off by the question)
+    const begin = function () { if (live || run !== r) return; if (window.VOICE && VOICE.speaking() && waited < 8000) { waited += 150; return void setTimeout(begin, 150); } next(); };
+    const sk = box.querySelector("#askskip"); if (sk) sk.addEventListener("click", function (ev) { ev.stopPropagation(); if (window.VOICE) VOICE.hush(); i = ids.length; said(null); ready(); });
+    if (ids.length) { box.classList.add("speaking"); begin(); } else ready();
+    if (pre.length) { const st = window.AH && AH.S(); if (st) st.flashSaid = st.day; }
     r.ask = { stop: function () { if (tm) tm.stop(); } };
   }
   // the first unanswered choice still ahead, if any
@@ -196,10 +211,17 @@
     if (r.last && ts - r.last < 33) return; // 30 fps cap
     const dt = r.last ? Math.min(100, ts - r.last) : 0; r.last = ts; if (!r.paused) r.elapsed += dt; frame(r);
   }
+  // Batch P: jumping ahead to a choice (a tap, or a scene already seen) never fires the narration it passed over all at
+  // once (those lines used to queue behind the question and play over, or after, your choice). They are held back and
+  // said first, inside the choice, before the options appear.
+  function holdBack(r, pa, upTo) {
+    pa.ctx = pa.ctx || [];
+    (pa.sfx || []).forEach(function (f, j) { if (f[1] === "voice" && f[0] <= upTo && !pa.fired[j]) { pa.fired[j] = true; pa.ctx.push(f[2]); } });
+  }
   function skip(r) {
     if (r.paused) return;
     const pa = pendingAsk(r);
-    if (pa && !r.opts.replay) { r.elapsed = (pa.t0 + pa.ask.at) * 1000; r.last = 0; frame(r); return; }
+    if (pa && !r.opts.replay) { holdBack(r, pa, pa.ask.at); r.elapsed = (pa.t0 + pa.ask.at) * 1000; r.last = 0; frame(r); return; }
     finish(true);
   }
   function finish(skipped) {
@@ -215,7 +237,7 @@
     r.total = timeShots(r.shots);
     run = r; r.nodes = Array.prototype.slice.call(r.el.querySelectorAll(".shot"));
     r.t0 = clockNow(); r.elapsed = 0;
-    if (r.opts.askOnly) { const pa = pendingAsk(r); if (pa) r.elapsed = (pa.t0 + pa.ask.at - 0.6) * 1000; }
+    if (r.opts.askOnly) { const pa = pendingAsk(r); if (pa) { holdBack(r, pa, pa.ask.at); r.elapsed = (pa.t0 + pa.ask.at - 0.6) * 1000; } }
     frame(r); r.raf = requestAnimationFrame(loop);
   }
   function wire(r) {

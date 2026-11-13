@@ -71,19 +71,24 @@
       const secs = 0; // no reply clock: a call waits for your answer (Wayne: it must never answer for you)
       const commit = function (k, timedOut) { if (state !== "talk") return; state = "done"; if (window.SFX && SFX.roomTone) SFX.roomTone(false); if (tt) tt.stop(); C().calls = C().calls || {}; C().calls[o.id] = { k: k, late: !!timedOut }; o.answer(k, !!timedOut); };
       let first = true; // the caller's portrait slides in once, when you pick up
+      // Batch P: what the caller says comes before your answers. They stay hidden until the line has finished (or Skip).
+      let hold = !!(window.VOICE && VOICE.lines[vid] && !((window.AH && AH.FAST) || window.__SPY_FAST__));
+      const heard = function () { if (!hold || state !== "talk") return; hold = false; const ph = a.$("phone"); if (ph) ph.classList.remove("listening"); document.querySelectorAll("[data-c]").forEach(function (b) { b.disabled = false; }); const sk = a.$("callskip"); if (sk) sk.remove(); const f = document.querySelector("[data-c]"); if (f && f.focus) f.focus({ preventScroll: true }); };
       const draw = function () {
-        a.render('<div class="phone card call desk" id="phone" data-call="' + o.id + '"><div class="lh">' + o.line + " \u00b7 " + a.hh(S().hour) + '</div><div class="pm' + (first && !reduce() ? " slidein" : "") + '"><img src="' + a.pic(o.img) + '" alt=""></div>' +
+        a.render('<div class="phone card call desk' + (hold ? " listening" : "") + '" id="phone" data-call="' + o.id + '"><div class="lh">' + o.line + " \u00b7 " + a.hh(S().hour) + '</div><div class="pm' + (first && !reduce() ? " slidein" : "") + '"><img src="' + a.pic(o.img) + '" alt=""></div>' +
           '<div class="note"><div class="who">' + o.who + '</div><span class="tx">' + o.text + "</span>" + (o.note ? '<span class="callnote">' + o.note + "</span>" : "") + "</div>" + (secs ? '<div class="replybar" aria-hidden="true"><i id="replybar"></i></div><div class="replyhint" id="replyhint">' + (listening ? "Listening\u2026" : "Answer before the line goes quiet") + "</div>" : "") + "</div>" +
-          o.opts.map(function (p) { return '<button class="card appr' + (sel === p.k ? " sel" : "") + '" data-c="' + p.k + '"><div class="t">' + p.t + '</div><div class="chips">' + p.chips + "</div></button>"; }).join("") +
+          (hold ? '<button type="button" class="btn ghost callskip" id="callskip">Skip to your answer</button>' : "") +
+          o.opts.map(function (p) { return '<button class="card appr' + (sel === p.k ? " sel" : "") + '" data-c="' + p.k + '"' + (hold ? " disabled" : "") + '><div class="t">' + p.t + '</div><div class="chips">' + p.chips + "</div></button>"; }).join("") +
           '<div class="sticky-go"><button class="btn primary" id="go"' + (sel ? "" : " disabled") + ">" + (sel ? o.say || "Tell them" : "What do you say?") + "</button></div>", o.hint || "There is no right answer. Only a choice.");
-        document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { sel = b.getAttribute("data-c"); commit(sel, false); }; });
+        document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { if (hold) return; sel = b.getAttribute("data-c"); commit(sel, false); }; });
+        if (a.$("callskip")) a.$("callskip").onclick = function () { if (window.VOICE) VOICE.hush(); heard(); };
         a.$("go").onclick = function () { commit(sel, false); };
         first = false;
       };
       draw();
       // the reply clock only starts once the caller has finished speaking
       const start = function () { if (state !== "talk" || !a.$("replybar")) return; listening = false; const h = a.$("replyhint"); if (h) h.textContent = "Answer before the line goes quiet"; tt = countdown(secs, "replybar", function () { commit(sel || o.def, true); }); };
-      if (window.VOICE && VOICE.after) VOICE.after(vid, start); else start();
+      if (window.VOICE && VOICE.after) VOICE.after(vid, function () { heard(); start(); }); else { heard(); start(); }
     }
   }
   // the outcome card after a call
@@ -222,7 +227,8 @@
 
   // ---------- timed choices inside cutscenes ----------
   const ASKS = {
-    bath: { q: "Our man is down. The ambulance is two minutes out.", voice: "ask_bath", def: "away", secs: 9,
+    // Batch P: the Flash from Bath (who he is, what was used) is said before the choice, not on tonight's report after it
+    bath: { q: "Our man is down. The ambulance is two minutes out.", voice: "ask_bath_now", pre: function () { return [S().defector ? "flash_d1_def" : "flash_d1_nodef"]; }, def: "away", secs: 9,
       opts: [{ k: "doctor", t: "Send our doctor in with it", d: "\u22126 Secrecy \u00b7 Vass may talk: +10% on the ferry tomorrow" }, { k: "away", t: "Stay out of sight", d: "+4 Secrecy" }],
       res: { doctor: "Our doctor rides in the back. Vass grips her hand.", away: "Our people melt into the rain." } },
     // the ask matches how Harwich went: the same two choices (+10% in York, or +4 Secrecy), worded for what is in front of you

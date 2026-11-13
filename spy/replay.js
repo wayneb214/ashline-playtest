@@ -9,7 +9,7 @@
   const unlocked = function () { return ALL.slice(0, 4).some(function (e) { return get()[e]; }); };
   function titleHTML() {
     const n = ALL.filter(function (e) { return get()[e]; }).length;
-    return (window.ENDINGS ? '<button class="btn ghost endings" id="gallery">\u2756 Endings \u00b7 ' + n + " of " + ALL.length + " found</button>" : '<div class="endings">Endings found: ' + n + " of " + ALL.length + "</div>") + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
+    return (window.ENDINGS ? '<button class="btn ghost endings" id="gallery"><span>\u2756 Endings \u00b7 ' + n + " of " + ALL.length + " found</span>" + (window.AH && AH.endingsHTML ? AH.endingsHTML() : "") + "</button>" : '<div class="endings">Endings found: ' + n + " of " + ALL.length + "</div>") + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
   }
   function bindTitle() { const b = document.getElementById("whatif"); if (b) b.onclick = function () { scene(0, 0); }; const g = document.getElementById("gallery"); if (g) g.onclick = function () { ENDINGS.gallery(window.AH.title); }; }
 

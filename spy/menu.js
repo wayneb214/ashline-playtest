@@ -100,13 +100,16 @@
   const FAQ = [
     ["What am I doing?", "You are C, the new chief of Albion House. Each day brings a pile of cases. Open one, pick an officer, pick a plan, and live with the result."],
     ["What do the two gauges mean?", "<b>No.10 trust</b> is how far the Prime Minister backs you. It opens bold plans. <b>Service</b> is your officers\u2019 health, loyalty and cover. It lifts the odds of every plan."],
+    ["How does Service work?", "The Service meter is the department\u2019s health. The top-bar Service adds how your officers feel: each officer above Steady loyalty lifts it, each one below drags it down, and stress over 3 costs it too. So a case can move the top bar even when its <b>Service</b> chip says something else. Rest tired officers, and send them on plans they rate, to keep it up.", "service"],
     ["Why did the clock jump?", "Every operation takes hours. Careful plans take longer. Each case has a deadline, and a case left too long is lost."],
     ["How do I save?", "You don\u2019t need to. The game saves after every move and when you leave the app. Continue from the title screen."],
     ["Can I quit?", "Open \u2630 and choose Title screen. Your place is kept."],
     ["Is any of this real?", "No. Every service, state, firm and person is invented."]
   ];
-  function help(back) {
-    sheet('<div class="kicker">Help &amp; FAQ</div><h2>How to play</h2>' + (window.HOWTO ? '<button type="button" class="btn ghost" id="hp-howto">How to play \u00b7 the briefing</button>' : "") + FAQ.map(function (q) { return "<details><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; }).join("") + '<button class="btn primary" id="hp-back">Back</button>', "settings");
+  // Batch P: help(back, key) opens with that question already open (the Service note on result cards links here)
+  function help(back, key) {
+    sheet('<div class="kicker">Help &amp; FAQ</div><h2>How to play</h2>' + (window.HOWTO ? '<button type="button" class="btn ghost" id="hp-howto">How to play \u00b7 the briefing</button>' : "") + FAQ.map(function (q) { return "<details" + (q[2] ? ' data-faq="' + q[2] + '"' : "") + (key && q[2] === key ? " open" : "") + "><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; }).join("") + '<button class="btn primary" id="hp-back">Back</button>', "settings");
+    if (key) { const d = document.querySelector('[data-faq="' + key + '"]'); if (d && d.scrollIntoView) d.scrollIntoView({ block: "center" }); }
     if (back === open) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     $("hp-back").onclick = function () { close(); if (back) back(); };
     if ($("hp-howto")) $("hp-howto").onclick = function () { close(); HOWTO.show(function () { help(back); }, false); };

@@ -61,13 +61,17 @@
   }
   const keskHit = function () { return S().leaked ? 18 : 12; };
   function keskMod(risk) { return fav() && risk === fav() ? -keskHit() : 0; }
+  // Batch P: the Downing Street rule all week. Wherever Kesk reads your style, a plan he doesn't expect catches him off
+  // balance (+8%), so reading him pays the same way on Day 3 as on Day 6.
+  const SURPRISE = 8;
+  function surp(risk) { return fav() && risk !== fav() ? SURPRISE : 0; }
   function oddsMod(id, k, a) {
-    let o = keskMod(a.risk);
+    let o = keskMod(a.risk) + surp(a.risk);
     if (id === "york") { const lr = (S().minis || {}).lie; o += lr === "win" ? 8 : lr === "mixed" ? 3 : lr === "loss" ? -6 : 0; }
     return o;
   }
   function chips(id, k, a) {
-    let h = keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : "";
+    let h = keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(a.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "";
     if (id === "york") { const lr = (S().minis || {}).lie; if (lr) h += lr === "loss" ? '<span class="chip risk-high">Believed the wrong watcher \u22126%</span>' : '<span class="chip risk-low">The right watcher +' + (lr === "win" ? 8 : 3) + "%</span>"; }
     return h;
   }
@@ -94,7 +98,7 @@
     if (window.SFX) SFX.tele();
     A.render('<div class="kletter card" id="kletter"><div class="kl-top"><img class="portrait" src="' + pic("kesk") + '" alt="Colonel Kesk"><div><div class="kl-from">From the desk of</div><div class="kl-name">' + KESK + '</div><div class="kl-role">Director \u00b7 the Grey House</div></div></div>' +
       '<div class="kl-body"><p>My dear C,</p><p>' + esc(L.body) + "</p>" + (n === 1 ? window.DESK.inkHTML("kesk") : "") + '<p class="kl-sig">K.</p></div>' +
-      (L.st ? '<div class="chips"><span class="chip kesk">Kesk now counters ' + STYLE[L.st] + " plans \u00b7 \u2212" + keskHit() + "% on them today</span></div>" : "") +
+      (L.st ? '<div class="chips"><span class="chip kesk">Kesk now counters ' + STYLE[L.st] + " plans \u00b7 \u2212" + keskHit() + "% on them today \u00b7 any other plan +" + SURPRISE + "%</span></div>" : "") +
       '<p class="kl-note">Hand-delivered to the front desk. No fingerprints. The paper smells of ' + (n === 1 ? "pine, and faintly of lemons." : "pine.") + "</p></div>" + (n === 1 ? window.DESK.lampHTML("kesk") : "") + '<button class="btn primary" id="go">Into the burn bag</button>', n === 1 ? "Some ink only shows when the paper is warm." : "Your most-used style is the one Kesk will be ready for.");
     if (n === 1) window.DESK.ink($("kletter"), "kesk");
     $("go").onclick = function () { FEEL.tearThen($("kletter"), then || A.briefing); };
@@ -277,7 +281,7 @@
     { t: "Navy divers from a trawler", d: "A fishing boat with a decompression chamber where the fish should be. Slow and careful.", risk: "low", hrs: 3, mod: 4, win: { secrecy: 10 }, mixed: { secrecy: -2 }, loss: { safety: -10, secrecy: -6 } },
     { t: "Send the submarine", d: "In and out in one night. If it goes wrong, it goes very wrong.", risk: "high", hrs: 2, mod: 18, pm: 50, win: { secrecy: 8, capital: 6 }, mixed: { capital: -6 }, loss: { capital: -14, trust: -8 } },
     { t: "A wind-farm survey ship", d: "A cover story with a hull: a survey licence, a crane, a very bored crew.", risk: "med", hrs: 3, mod: 0, win: { secrecy: 6, trust: 4 }, mixed: { trust: -4 }, loss: { trust: -8, secrecy: -8 } }];
-  function podOdds(a) { const s = S(); return clampP(56 + a.mod + dodds() + keskMod(a.risk) + (a.risk === "med" && s.meters.capital >= 60 ? 10 : 0) - (A.late("cable") ? 10 + A.late("cable") * 5 : 0)); }
+  function podOdds(a) { const s = S(); return clampP(56 + a.mod + dodds() + keskMod(a.risk) + surp(a.risk) + (a.risk === "med" && s.meters.capital >= 60 ? 10 : 0) - (A.late("cable") ? 10 + A.late("cable") * 5 : 0)); }
   function cable() {
     const s = S(), c = D.SITS3.cable; let sel = null;
     const draw = function () {
@@ -286,7 +290,7 @@
           const locked = a.pm && s.meters.capital < a.pm;
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + '</p><div class="chips">' +
             (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust ' + a.pm + " (now " + s.meters.capital + "/100)</span>" :
-              '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence +10%</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : "")) + "</div></button>";
+              '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence +10%</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(a.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
         }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: up to +10% at the border.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
@@ -333,7 +337,7 @@
     ];
     const swapOK = function () { return f.exit === "win" && s.meters.capital >= 50; };
     const driverMod = function (k) { if (!k) return 0; const a = A.AG(k); return a.skill * 4 - s.stress[k] * 4 + (s.loyal[k] - 3) * 3 + (f.call && f.call.choice === "stand" && f.call.k === k ? 10 : 0); };
-    const odds = function (o, st) { return clampP(44 + dodds() + o.mod + sum(common()) + sum(st.extra ? st.extra() : []) + sum(window.DESK.stageHelps(st.key)) + keskMod(o.risk) + driverMod(X.driver) + (X.car === "dip" ? 8 : 0)); };
+    const odds = function (o, st) { return clampP(44 + dodds() + o.mod + sum(common()) + sum(st.extra ? st.extra() : []) + sum(window.DESK.stageHelps(st.key)) + keskMod(o.risk) + surp(o.risk) + driverMod(X.driver) + (X.car === "dip" ? 8 : 0)); };
     const banned = function (k) { return f.call && f.call.choice === "deny" && f.call.k === k; };
     const draw = function (sel, sel2) {
       const st = STAGES[X.stage];
@@ -352,7 +356,7 @@
           if (o.swap && f.exit !== "win") return "";
           const locked = o.swap && !swapOK();
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(o.t) + '</div><p style="margin:0">' + esc(o.d) + '</p><div class="chips">' +
-            (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 50 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip odds">' + odds(o, st) + '% chance</span><span class="chip risk-' + o.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[o.risk] + "</span>" + (o.hrs ? '<span class="chip time">\u23f1 +1h</span>' : "") + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : "")) + "</div></button>";
+            (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 50 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip odds">' + odds(o, st) + '% chance</span><span class="chip risk-' + o.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[o.risk] + "</span>" + (o.hrs ? '<span class="chip time">\u23f1 +1h</span>' : "") + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
         }).join("");
       }
       const ready = st.car ? sel && sel2 : sel != null;
@@ -420,5 +424,5 @@
     }[ending()];
   }
 
-  window.AH3 = { tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
+  window.AH3 = { surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
 })();
