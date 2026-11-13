@@ -140,7 +140,7 @@
       if (sel === "deal") {
         ch = A.apply({ capital: 14, trust: 4 }); s.roster.forEach(function (k) { s.loyal[k] = A.clamp5(s.loyal[k] - 1); });
         s.done.exfil = "loss"; s.log.push({ id: "exfil", k: null, res: "loss", appr: "Traded for Tom Archer" });
-        head = "Briton freed by Varenia \u2018on humanitarian grounds\u2019"; txt = "Hale is warm for the first time all week. Ash closes the Green Coat file without a word, and doesn\u2019t look at you.";
+        head = "Briton freed by Varenia \u2018on humanitarian grounds\u2019"; txt = "\u201cThank you, C. Mr Archer will be home by the weekend.\u201d Hale is warm for the first time all week. Ash closes the Green Coat file without a word, and doesn\u2019t look at you.";
       } else if (sel === "refuse" && missed) {
         ch = A.apply({ capital: -16 }); head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "Nobody answered. Hale tells Kesk\u2019s people no herself, and she is furious about it. <b>No.10 trust \u221216</b>, and the officers never hear you stood up for anyone.";
       } else if (sel === "refuse") {
@@ -148,6 +148,7 @@
         head = "No.10 \u2018disappointed\u2019 as Varenia talks stall"; txt = "\u201cOn your head, C. Again.\u201d The line goes dead. Downstairs, word gets round, and somebody starts making tea for everyone.";
       } else { ch = A.apply({ capital: 6 }); head = "Hopes rise for Briton held in Varenia"; txt = "\u201cGood. Sensible.\u201d Hale rings off. Ash raises one eyebrow and says nothing."; }
       if (t) txt = "You say nothing for too long. Hale takes it as a no. " + txt;
+      if (!missed && !t && window.VOICE) VOICE.play("react_deal_" + sel); // Batch Q: Hale answers out loud
       s.heads.push(head);
       window.DESK.after(missed ? "MISSED" : { deal: "TRADED", refuse: "REFUSED", lie: "AGREED?" }[sel], sel === "deal" || missed ? "loss" : sel === "refuse" ? "win" : "mixed", "The offer from Kesk", txt, ch, head);
     };
@@ -424,5 +425,5 @@
     }[ending()];
   }
 
-  window.AH3 = { surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
+  window.AH3 = { dealCall: dealCall, surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
 })();

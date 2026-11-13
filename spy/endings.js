@@ -62,11 +62,11 @@
   // the gallery: found endings show their painting, the rest a shadow and a hint
   function gallery(back) {
     const f = foundAll(), N = NAMES(), keys = Object.keys(ART), n = keys.filter(function (e) { return f[e]; }).length;
-    A().render('<div data-screen="gallery"><div class="card dossier">' + A().LH + '<div class="kicker" style="margin-top:8px">The record \u00b7 ' + n + " of " + keys.length + ' endings</div><h2>Endings</h2>' + (A().pastGamesHTML ? A().pastGamesHTML() : "") + '<h3 class="pasth">Epilogues found</h3><div class="egrid">' +
+    A().render('<div data-screen="gallery"><div class="card dossier">' + A().LH + '<div class="kicker" style="margin-top:8px">Kept on this device</div><h2>Your record</h2>' + (A().pastGamesHTML ? A().pastGamesHTML() : "") + '<h3 class="pasth">Epilogues found \u00b7 ' + n + " of " + keys.length + '</h3><div class="egrid">' +
       keys.map(function (e) {
         return f[e] ? '<button class="etile got" data-e="' + e + '"><img src="' + ART[e] + '" alt=""><b>' + A().esc(N[e]) + "</b><small>" + ACT[e] + " \u00b7 \u25b6 epilogue</small></button>"
           : '<div class="etile"><span class="eshade" aria-hidden="true">?</span><b>Not found yet</b><small>' + ACT[e] + " \u00b7 " + HINT[e] + "</small></div>"; }).join("") +
-      '</div></div><button class="btn primary" id="gback">Back</button></div>', "Every ending you find is kept on this device.");
+      '</div></div><button class="btn primary" id="gback">Back</button></div>', "Your games and the epilogues you find are kept on this device.");
     document.querySelectorAll("[data-e]").forEach(function (b) { b.onclick = function () { play(b.getAttribute("data-e"), false, function () { gallery(back); }); }; });
     A().$("gback").onclick = back || A().title;
   }

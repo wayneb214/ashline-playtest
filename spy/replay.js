@@ -5,11 +5,11 @@
   const KEY = "albion-endings", NAMES = { win: "Home safe", mixed: "Expelled, alive", loss: "On state TV", traded: "The trade", wi_good: "What if: the quiet night", wi_bad: "What if: the long night", a2_knight: "Knighted in silence", a2_quiet: "A quiet Tuesday", a2_scandal: "On the front page", a2_resign: "Resignation by Friday" };
   const ALL = Object.keys(NAMES);
   const get = function () { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-  function found(e) { const f = get(); if (f[e]) return; f[e] = 1; try { localStorage.setItem(KEY, JSON.stringify(f)); } catch (x) {} if (window.FUN) FUN.toast && FUN.toast("Ending found: " + NAMES[e]); }
+  function found(e) { const f = get(); if (f[e]) return; f[e] = 1; try { localStorage.setItem(KEY, JSON.stringify(f)); } catch (x) {} if (window.FUN) FUN.toast && FUN.toast("Epilogue found: " + NAMES[e]); }
   const unlocked = function () { return ALL.slice(0, 4).some(function (e) { return get()[e]; }); };
   function titleHTML() {
     const n = ALL.filter(function (e) { return get()[e]; }).length;
-    return (window.ENDINGS ? '<button class="btn ghost endings" id="gallery"><span>\u2756 Endings \u00b7 ' + n + " of " + ALL.length + " found</span>" + (window.AH && AH.endingsHTML ? AH.endingsHTML() : "") + "</button>" : '<div class="endings">Endings found: ' + n + " of " + ALL.length + "</div>") + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
+    return (window.ENDINGS ? '<button class="btn ghost endings" id="gallery"><span>\u2756 Your record</span><small class="epicount">Epilogues found: ' + n + " of " + ALL.length + "</small>" + (window.AH && AH.endingsHTML ? AH.endingsHTML() : "") + "</button>" : '<div class="endings">Epilogues found: ' + n + " of " + ALL.length + "</div>") + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
   }
   function bindTitle() { const b = document.getElementById("whatif"); if (b) b.onclick = function () { scene(0, 0); }; const g = document.getElementById("gallery"); if (g) g.onclick = function () { ENDINGS.gallery(window.AH.title); }; }
 

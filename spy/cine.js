@@ -166,7 +166,7 @@
     // stay hidden until the last line has finished, or you tap Skip.
     const vo = q.voice && window.VOICE && VOICE.lines[q.voice];
     const pre = typeof q.pre === "function" ? q.pre() : q.pre || [], ctxIds = (s.ctx || []).concat(pre).filter(function (id) { return window.VOICE && VOICE.lines[id]; });
-    const ctxHTML = ctxIds.length ? '<div class="askctx">' + ctxIds.map(function (id) { const L = VOICE.lines[id]; return '<p data-line="' + id + '">' + (L.who && L.who !== "Narrator" ? "<b>" + L.who + ":</b> " : "") + L.text + "</p>"; }).join("") + "</div>" : "";
+    const ctxHTML = ctxIds.length || s.recap ? '<div class="askctx">' + (s.recap ? '<p class="recap">' + s.recap + "</p>" : "") + ctxIds.map(function (id) { const L = VOICE.lines[id]; return '<p data-line="' + id + '">' + (L.who && L.who !== "Narrator" ? "<b>" + L.who + ":</b> " : "") + L.text + "</p>"; }).join("") + "</div>" : "";
     box.innerHTML = ctxHTML + '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
       '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def && !hide ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + rl(o.d) + "</small></button>"; }).join("") +
       (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">' + (hide ? "If you say nothing, Ash decides. (Hard: you won\u2019t know which.)" : "If you say nothing: " + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase()) + "</div>" : "") + "</div>";
@@ -217,7 +217,9 @@
   // said first, inside the choice, before the options appear.
   function holdBack(r, pa, upTo) {
     pa.ctx = pa.ctx || [];
-    (pa.sfx || []).forEach(function (f, j) { if (f[1] === "voice" && f[0] <= upTo && !pa.fired[j]) { pa.fired[j] = true; pa.ctx.push(f[2]); } });
+    // Batch Q: a scene you have already watched gets a one-line written recap instead of its narration said again
+    if (r.wasSeen) { const cp = (pa.caps || []).filter(function (c) { return c[0] <= upTo; }).map(function (c) { return c[2]; }); if (cp.length) pa.recap = cp.join(" "); }
+    (pa.sfx || []).forEach(function (f, j) { if (f[1] === "voice" && f[0] <= upTo && !pa.fired[j]) { pa.fired[j] = true; if (!r.wasSeen) pa.ctx.push(f[2]); } });
   }
   function skip(r) {
     if (r.paused) return;
@@ -262,8 +264,8 @@
   function play(id, done, opts) {
     opts = opts || {};
     if (run) finish(true);
-    markSeen(id);
-    const r = build(id, opts); r.done = done;
+    const wasSeen = !!seen[id]; markSeen(id);
+    const r = build(id, opts); r.done = done; r.wasSeen = wasSeen;
     document.body.appendChild(r.el); document.body.classList.add("in-cine"); if (window.SFX && SFX.cineDuck) SFX.cineDuck(true);
     if (window.LOOK) LOOK.rain(!reduce());
     wire(r);

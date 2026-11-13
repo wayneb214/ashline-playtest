@@ -172,7 +172,8 @@
       def: "hang", hint: "Kesk learns how you play.", replySecs: 16,
       answer: function (c, t) {
         C().kesk = c; const ch = c === "hang" ? a.apply({ secrecy: 4 }) : {};
-        after(c === "talk" ? "TRACED" : "CLICK", c === "talk" ? "win" : "mixed", "Colonel Kesk", late(t) + (c === "talk" ? "Four minutes on the weather and the price of coal. Ash slides a note across: <b>a guard hut, a mile behind the barrier.</b> +8% at the barrier." : "You put the phone down. It rings again, once, and stops."), ch);
+        if (!t && window.VOICE) VOICE.play("react_kesk_" + c); // Batch Q: Kesk answers out loud
+        after(c === "talk" ? "TRACED" : "CLICK", c === "talk" ? "win" : "mixed", "Colonel Kesk", late(t) + (c === "talk" ? "\u201cCoal is very dear this winter, C.\u201d Four minutes on the weather and the price of coal. Ash slides a note across: <b>a guard hut, a mile behind the barrier.</b> +8% at the barrier." : "\u201cSo soon? Goodnight, C.\u201d You put the phone down. It rings again, once, and stops."), ch);
       },
       miss: function () { C().kesk = "missed"; after("MISSED", "loss", "An international call", "Nobody answered. The switchboard says the caller laughed. <b>He knows we\u2019re rattled:</b> \u22126% at the barrier.", {}); } });
   }
@@ -302,6 +303,6 @@
     return false;
   }
 
-  window.DESK = { timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
+  window.DESK = { keskCall: keskCall, timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
     oddsMod: oddsMod, photoLine: photoLine, PHOTO_TEXT: PHOTO_TEXT, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();
