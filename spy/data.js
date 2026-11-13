@@ -37,7 +37,7 @@ window.AH_DATA = (function () {
     },
     leak: {
       kind: "officer", title: "A file has reached the press", where: "Fleet Street, London", x: 31, y: 50, home: true, due: 13, left: true,
-      brief: "The Morning Courier has an Albion House report naming a source abroad. The first edition goes to press at three.",
+      brief: "The Morning Courier has an Albion House report naming a source abroad. The editor picks the front page at one o\u2019clock, and it prints at three in the morning.",
       approaches: [
         { t: "Lunch with the editor", d: "Explain who dies if the name runs. Ask, don\u2019t threaten.", mod: 12, risk: "low", stress: 1, win: { safety: 10, trust: 6 }, mixed: { safety: 4, secrecy: -4 }, loss: { safety: -8, secrecy: -8 } },
         { t: "Recover the copy", d: "Find the file before it\u2019s set in type.", mod: -10, risk: "high", stress: 2, win: { secrecy: 12, safety: 8 }, mixed: { trust: -8, secrecy: 4 }, loss: { trust: -16, capital: -10 } },

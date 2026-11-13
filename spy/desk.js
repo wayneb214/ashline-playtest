@@ -122,6 +122,21 @@
       miss: function () { C().hale2 = "missed"; const ch = a.apply({ capital: -8 }); S().heads.push("PM \u2018unable to reach\u2019 spy chief, say aides");
         after("MISSED", "loss", "No.10 rang", "The switchboard tried four times. Hale\u2019s private secretary writes it down.", ch, "PM \u2018unable to reach\u2019 spy chief, say aides"); } });
   }
+  // batch G: No.10 trust under 20 at the end of a day. Hale rings at midnight; next morning No.10 takes a side file.
+  function no10Warn(done) {
+    const a = A();
+    const end = function (txt) {
+      a.render('<div class="card outcome loss" data-screen="no10warn"><span class="stamp thud">FINAL WARNING</span><h2>The call from No.10</h2><p>' + txt + "</p></div>" +
+        '<button class="btn primary" id="go">Get some sleep</button>', "No.10 trust under 20 at the end of a day.");
+      a.$("go").onclick = done;
+    };
+    call({ id: "pm_warn", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-stern", ring: "The Prime Minister. At midnight.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Say it",
+      text: "C, it\u2019s Eleanor Hale. I\u2019ll be brief. <b>My trust in your service is nearly gone.</b> In the morning, my people will take one of your files off your desk. Give me a reason to trust you again.",
+      opts: [{ k: "yes", t: "\u201cUnderstood, Prime Minister.\u201d", chips: '<span class="chip risk-high">Tomorrow: No.10 takes one file</span>' }],
+      def: "yes", hint: "No.10 trust is under 20.",
+      answer: function () { end("She rings off before you can say more. <b>Tomorrow morning, No.10 takes one file off your desk.</b> It counts as a lost case. Win back her trust and it won\u2019t happen again."); },
+      miss: function () { end("You let it ring. Ash takes the message at ten past twelve: <b>tomorrow morning, No.10 takes one file off your desk.</b> It counts as a lost case."); } });
+  }
   // Day 3: Kesk on an open line
   function keskCall() {
     const a = A();
@@ -261,6 +276,6 @@
     return false;
   }
 
-  window.DESK = { timer: timer, countdown: countdown, call: call, after: after, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
+  window.DESK = { timer: timer, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
     oddsMod: oddsMod, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();

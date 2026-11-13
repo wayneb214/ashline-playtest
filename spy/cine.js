@@ -25,7 +25,7 @@
       { img: "phone", dur: 4.4, cam: [1.0, 0, 0, 1.06, 2, -2], caps: [[0.6, "Narrator", "Then, at midnight\u2026 the telephone rang."]], sfx: [[0.6, "voice", "nar_open_4"], [3.6, "ring"]] },
       { img: "phone", dur: 4.6, cam: [1.06, 2, -2, 1.1, 3, -3], inset: "ash", caps: [[0.4, "Margaret \u2018Ash\u2019 Ashby \u00b7 Chief of Staff", "Chief, we have a problem."]], sfx: [[0.4, "voice", "ash_problem"], [0, "stopRing"], [0.3, "stinger"]] }]; } },
     day1: { name: "Day 1 \u00b7 The Long Day", shots: function () { return [
-      { img: "downing", dur: 5, cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 07:10. Downing Street."]], sfx: [[0.5, "voice", "cine_day1_1"], [0.2, "chime", 2]] }]; } },
+      { img: "downing", dur: 5, cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 08:00. Downing Street."]], sfx: [[0.5, "voice", "cine_day1_1"], [0.2, "chime", 2]] }]; } },
     day2: { name: "Day 2 \u00b7 Pale Hour", shots: function () { return [
       { img: "brief", dur: 7, cam: [1.16, 0, 4, 1.02, 0, -2], caps: [[0.5, "", "Thursday. Vass is alive."], [3.4, "", "Three suspects. One night to stop them leaving."]], sfx: [[0.2, "rainUp", true], [0.4, "tele"], [0.5, "voice", "cine_day2_1"], [3.4, "voice", "cine_day2_2"]] }]; } },
     day3: { name: "Day 3 \u00b7 The Green Coat", shots: function () { return [

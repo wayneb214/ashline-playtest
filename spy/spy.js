@@ -75,6 +75,31 @@
   }
   // Service = the stored field record plus how the officers feel (loyalty and strain fold in here)
   function svc() { const r = S.roster || []; const mor = r.reduce(function (a, k) { return a + ((S.loyal[k] == null ? 3 : S.loyal[k]) - 3) * 2 - Math.max(0, (S.stress[k] || 0) - 3) * 2; }, 0); return Math.max(0, Math.min(100, Math.round(S.meters.service + mor))); }
+  // batch G: what the meters do at the ends. Service under 30: officers refuse high-risk plans until rested.
+  // Service 80+: the first plan you send each day gets +5% ("the team's flying"). No.10 trust under 20 at the end
+  // of Days 1-5: Hale rings at midnight, and next morning No.10 takes one side file off the desk (a lost case).
+  const SVC_LOW = 30, SVC_HIGH = 80, NO10_LOW = 20;
+  function svcLow() { return svc() < SVC_LOW; }
+  function flyOn() { return svc() >= SVC_HIGH && S.flyDay !== S.day; }
+  const REFUSE = "Not the loud way, C. We\u2019re running on empty. Rest us first.";
+  // files No.10 may take, in order of preference: side cases only, never a day's story case
+  const NO10_TAKE = { 2: ["safehouse", "courier"], 3: ["tail", "york"], 4: ["manchester", "watch"], 5: ["press", "recon"], 6: ["find"] };
+  function no10Due() { return S.day <= 5 && score(S.meters.capital) < NO10_LOW; }
+  function no10Flag(n) { if (no10Due()) n.no10 = { take: true, day: n.day }; else delete n.no10; return n; }
+  function no10Take() {
+    const t = S.no10; if (!t || !t.take || t.day !== S.day || t.took) return;
+    const id = (NO10_TAKE[S.day] || []).filter(function (x) { return S.order.indexOf(x) >= 0 && !S.done[x]; })[0];
+    if (!id) { t.took = "none"; return; }
+    const c = CASES()[id]; t.took = id; S.done[id] = "loss";
+    const head = c.head && c.head.loss; S.log.push({ id: id, k: null, res: "loss", appr: "Taken by No.10", head: head || "" }); if (head) S.heads.push(head);
+  }
+  function no10Took() { const t = S.no10; return t && t.day === S.day && t.took && t.took !== "none" ? t.took : null; }
+  function no10Note() {
+    const id = no10Took(); if (!id) return "";
+    return '<div class="no10take" id="no10take"><span class="stamp">NO.10 IS HANDLING IT</span><p>At seven, a man from No.10 took <b>' + esc(S.day === 2 ? window.AH2.titleOf(id) : CASES()[id].title) + "</b> off your desk. It counts as a lost case. Win back her trust.</p></div>";
+  }
+  // midnight, at the end of a day with No.10 trust under 20: Hale's final warning, then the next day
+  function no10Night(go) { if (!no10Due() || S.no10Called === S.day) return go(); S.no10Called = S.day; save("summary"); window.DESK.no10Warn(go); }
   function moodHead() { const m = S.meters.mood == null ? 55 : S.meters.mood; return m >= 65 ? "Poll: public warms to the government on security" : m >= 45 ? "Poll: voters shrug at Whitehall spy rows" : m >= 30 ? "Poll: public faith in the secret services slips" : "Poll: voters lose faith in Whitehall\u2019s spies"; }
   function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
@@ -293,6 +318,7 @@
   function briefing() {
     if (window.MINI) MINI.inject(S);
     if (S.hour >= 24) return summary();
+    no10Take();
     const gone = expire();
     if (!remaining().length) return summary();
     if (S.day === 1 && S.log.filter(function (l) { return l.k; }).length >= 2 && !S.call) return phone();
@@ -320,8 +346,9 @@
         risk: risk, late: lt > 0 && !done, soon: !done && lt <= 0 && left <= 2, due: due, left: left, lockT: lockT, lock4: lock4, off: !!(done || noOff || lockT || lock4), why: why, sub: sub };
     });
     FILES = {}; cards.forEach(function (c) { FILES[c.id] = c; });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + deskHtml(cards) +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || "Tap a file to pick it up.");
+    if (no10Took() && !S.no10.said && window.VOICE) { S.no10.said = true; save("briefing"); VOICE.play("ash_no10_took"); }
     briefVoice(line.text, line.worried);
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { deskFile(b.getAttribute("data-sit"), b); }; });
     const dk = document.querySelector(".desk-b"); if (dk) { if (window.FEEL && FEEL.reduce) dk.classList.add("go", "still"); else requestAnimationFrame(function () { dk.classList.add("go"); }); }
@@ -337,7 +364,7 @@
   // ---------- the desk: case files spread out under the lamp ----------
   const DESK_RANK = { low: 1, med: 2, high: 3 }, RISKW = ["No field risk", "Low risk", "Some risk", "High risk"];
   let FILES = {}; // today's files by id, for the lifted view
-  function dueWords(c) { return c.done ? { win: "Closed", mixed: "Partial", loss: "Failed" }[c.done] : c.late ? "Overdue \u00b7 was " + hh(c.due) : "Due " + hh(c.due) + (c.left <= 5 ? " \u00b7 " + c.left + "h left" : ""); }
+  function dueWords(c) { return c.done && c.id === no10Took() ? "No.10 is handling it" : c.done ? { win: "Closed", mixed: "Partial", loss: "Failed" }[c.done] : c.late ? "Overdue \u00b7 was " + hh(c.due) : "Due " + hh(c.due) + (c.left <= 5 ? " \u00b7 " + c.left + "h left" : ""); }
   function deskHtml(cards) {
     return '<div class="desk-b"><div class="desk-spread">' + cards.map(function (c) {
       const rot = [-2.2, 1.6, 1.2, -1.8, -1.1, 2.0, 0.8][c.i % 7], pri = c.done ? "done" : c.left <= 2 ? "red" : c.left <= 5 ? "amber" : "green";
@@ -523,6 +550,7 @@
     if (S.day >= 4) add("Kesk and the week so far", window.AH4.oddsMod(id, k, a));
     add("Earlier choices", window.DESK.oddsMod(id));
     add("Service", (svc() - 50) / 4);
+    if (flyOn()) add("The team\u2019s flying", 5);
     if (window.OPS) OPS.parts(id, k, a, add);
     let o = base + P.reduce(function (t, p) { return t + p[1]; }, 0);
     if (id === "sabotage") { if (S.belief === "split") { add("Split teams", -12); o -= 12; } else if (S.belief !== D.TRUTH) { const cap = Math.min(o, 12); add("Wrong site", cap - o); o = cap; } }
@@ -545,7 +573,7 @@
     if (n.clue === "ticket") return "\ud83d\udd12 Locked \u00b7 interview the courier at the airport to get the ferry booking.";
     return "\ud83d\udd12 Locked \u00b7 the <b>" + name + "</b> isn\u2019t on the evidence board yet.";
   }
-  function lockOf(a) { if (a.needs && !(S.unlocked || {})[a.needs]) return "needs"; if (a.pm && S.meters.capital < a.pm) return "pm"; return ""; }
+  function lockOf(a) { if (a.needs && !(S.unlocked || {})[a.needs]) return "needs"; if (a.pm && S.meters.capital < a.pm) return "pm"; if (a.risk === "high" && svcLow()) return "svc"; return ""; }
   const morale = function (k) { const l = S.loyal[k]; return l >= 5 ? "Loyal" : l >= 3 ? "Steady" : l >= 2 ? "Wavering" : "Bitter"; };
   function hoursFor(k, a, kitId) { return Math.max(1, HRS[a.risk] - (AG(k).quirk === "quick" ? 1 : 0) + (kitId ? D.KIT[kitId].hours || 0 : 0) + (window.OPS && OPS.hours ? OPS.hours() : 0)); }
 
@@ -640,8 +668,9 @@
         const lk = lockOf(a), locked = !!lk;
         const h = hoursFor(k, a, kit), ends = Math.min(24, S.hour + h);
         return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + "</p>" +
-          (lk === "pm" ? '<div class="chips"><span class="chip risk-high">Needs No.10 trust ' + a.pm + " (now " + S.meters.capital + "/100)</span></div>" : locked ? '<div class="lockwhy">' + lockHint(a) + "</div>" :
-            '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '%</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (i === rec ? '<span class="chip rec">\u2605 ' + first(k) + "\u2019s pick</span>" : sel === i ? '<span class="chip risk-high">Overrules ' + first(k) + "</span>" : "") + (S.day === 3 ? window.AH3.chips(id, k, a) : "") + "</div>") + "</button>";
+          (lk === "pm" ? '<div class="chips"><span class="chip risk-high">Needs No.10 trust ' + a.pm + " (now " + S.meters.capital + "/100)</span></div>" :
+            lk === "svc" ? '<div class="chips"><span class="chip risk-high svclock">Won\u2019t go \u00b7 Service ' + svc() + "/100, needs " + SVC_LOW + '</span></div><div class="refuse">' + esc(first(k)) + ": \u201c" + REFUSE + "\u201d</div>" : locked ? '<div class="lockwhy">' + lockHint(a) + "</div>" :
+            '<div class="chips"><span class="chip odds">' + oddsFor(id, k, a, kit) + '%</span><span class="chip time' + (ends > dueOf(id) ? " over" : "") + '">\u23f1 ' + h + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (flyOn() ? '<span class="chip fly">The team\u2019s flying +5%</span>' : "") + (i === rec ? '<span class="chip rec">\u2605 ' + first(k) + "\u2019s pick</span>" : sel === i ? '<span class="chip risk-high">Overrules ' + first(k) + "</span>" : "") + (S.day === 3 ? window.AH3.chips(id, k, a) : "") + "</div>") + "</button>";
       }).join("");
       const kits = Object.keys(D.KIT).map(function (key) {
         const n = S.kit[key] || 0, on = kit === key;
@@ -652,7 +681,9 @@
       render('<div data-screen="approach"><div class="ash-note card slimnote">' + face(k) + '<div class="note"><div class="who">' + esc(AG(k).name) + " " + condChip(k, "inline") + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just not the loud way. I\u2019m running on empty." : rec >= 0 ? "If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "How do you want it played?") + "</span></div></div>" + lesson(id, "approach") +
         '<h3 class="question">How do they play it?</h3>' + opts + (S.day === 2 && window.AH2 && AH2.boardThen && s.approaches.some(function (a) { return lockOf(a) === "needs" && canUnlock(a); }) ? '<button type="button" class="btn ghost" id="toboard">\ud83d\udccc Open the evidence board</button>' : "") + kitRow + (window.OPS ? OPS.controls(id, k, a0) : "") + dial(oddsParts(id, k, a0, kit)) +
         '<div class="sticky-go"><button class="btn primary sendbtn" id="go">Send ' + esc(first(k)) + " \u00b7 " + esc(a0.t) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
-        "Pick a plan. The dial shows the odds, and why.", drawn); drawn = true;
+        "Pick a plan. The dial shows the odds, and why.", drawn);
+      if (!drawn && window.VOICE && s.approaches.some(function (x) { return lockOf(x) === "svc"; })) setTimeout(function () { VOICE.caption(AG(k).code || first(k), REFUSE); }, 300);
+      drawn = true;
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
       if ($("toboard")) $("toboard").onclick = function () { AH2.boardThen(function () { approach(id, k); }); };
       document.querySelectorAll("[data-kit]").forEach(function (b) { b.onclick = function () { const key = b.getAttribute("data-kit"); kit = kit === key ? null : key; draw(); }; });
@@ -686,6 +717,7 @@
     op = op || {};
     S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : "Your call on the radio", op.mod]] : []) };
     const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, odds = Math.max(5, Math.min(95, oddsFor(id, k, a, kitId) + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
+    if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
     if (window.__SPY_FORCE__) res = window.__SPY_FORCE__;
@@ -936,9 +968,9 @@
     $("again").onclick = function () { store.del(SAVE); difficulty(); };
     $("paperbtn").onclick = function () { FEEL.tearThen($("flash"), function () { paper({ back: summary }); }); };
     if ($("epibtn")) $("epibtn").onclick = function () { if (window.VOICE) VOICE.stop(); ENDINGS.play(ENDINGS.current(), true); };
-    if ($("day2")) $("day2").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY2)); save("briefing"); if (S.diffAsked) window.AH2.briefingIntro(); else diffAfterDay1(function () { store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: S })); window.AH2.briefingIntro(); }); }); };
-    if ($("day3")) $("day3").onclick = function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY3)); save("briefing"); window.AH3.briefingIntro(); }); };
-    if ($("daynext")) $("daynext").onclick = function () { const nx = DAYK[S.day + 1]; FEEL.tearThen($("flash"), function () { restore(loadJSON(nx)); save("briefing"); window.AH4.briefingIntro(); }); };
+    if ($("day2")) $("day2").onclick = function () { no10Night(function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY2)); save("briefing"); if (S.diffAsked) window.AH2.briefingIntro(); else diffAfterDay1(function () { store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: S })); window.AH2.briefingIntro(); }); }); }); };
+    if ($("day3")) $("day3").onclick = function () { no10Night(function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY3)); save("briefing"); window.AH3.briefingIntro(); }); }); };
+    if ($("daynext")) $("daynext").onclick = function () { no10Night(function () { const nx = DAYK[S.day + 1]; FEEL.tearThen($("flash"), function () { restore(loadJSON(nx)); save("briefing"); window.AH4.briefingIntro(); }); }); };
     // the bulletin played over the front page; the report gets Ash's verdict on the day (subtitled)
     // Ash reads the report aloud, short version, while the full text shows: the grade, then her FLASH telegram
     setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; VOICE.seq([reportLine(grade), bulletinLine()]); } }, 900);
@@ -962,7 +994,7 @@
     n.heads = S.heads.slice(-2).concat(["Bath: police hunt three after bench collapse"]);
     n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - 1); }); // a night's sleep
     { const tired = n.roster.filter(function (k) { return n.stress[k] >= 4; }).length; n.meters.service = Math.max(0, Math.min(100, n.meters.service + (tired ? -3 * tired : 6))); } // rested officers steady the Service overnight
-    return n;
+    return no10Flag(n);
   }
 
   // Day 3 begins from the end of Day 2, carrying the flags forward
@@ -975,7 +1007,7 @@
     n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - 1); });
     { const tired = n.roster.filter(function (k) { return n.stress[k] >= 4; }).length; n.meters.service = Math.max(0, Math.min(100, n.meters.service + (tired ? -3 * tired : 6))); } // rested officers steady the Service overnight
     window.AH3.prep(n);
-    return n;
+    return no10Flag(n);
   }
 
   // Days 4-6 begin from the end of the day before, carrying every flag forward
@@ -988,7 +1020,7 @@
     n.roster.forEach(function (k) { n.stress[k] = clamp5(n.stress[k] - (d === 4 ? 3 : 1)); });
     { const tired = n.roster.filter(function (k) { return n.stress[k] >= 4; }).length; n.meters.service = Math.max(0, Math.min(100, n.meters.service + (tired ? -3 * tired : 6))); }
     window.AH4.prep(n);
-    return n;
+    return no10Flag(n);
   }
 
   // ---------- the shareable front page ----------
@@ -1004,6 +1036,7 @@
   // tonight's front page, on the summary itself: every story is one of your choices
   function choiceText(l) {
     if (l.appr === "Left on the desk") return "you left it on the desk";
+    if (l.appr === "Taken by No.10") return "No.10 took it off your desk";
     const s = CASES()[l.id] || {};
     if (l.k && s.kind !== "accuse") return "you sent " + first(l.k) + " \u00b7 " + String(l.appr).toLowerCase();
     return "you chose \u201c" + l.appr + "\u201d";
@@ -1102,7 +1135,7 @@
   // shared with day2.js
   window.AH = { caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

@@ -1341,3 +1341,10 @@ html, body { height: 100%; overflow: hidden; }
 /* batch E: the Send / Tell her bar sits in place under the choices instead of floating across the page while you scroll */
 .sticky-go { position: static; }
 .fclose:has(#fsend) { display: flex; gap: 8px; } .fclose:has(#fsend) .btn { flex: 1 1 0; margin: 0; min-width: 0; }
+/* batch G: No.10 took a file (trust under 20 overnight); officers refusing high-risk plans (Service under 30); the team's flying (Service 80+) */
+.no10take { margin: 10px 0 12px; padding: 12px 14px; border: 2px solid #8a1f1f; border-radius: 4px; background: #f3e6cf; color: #2a1d12; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+.no10take .stamp { display: inline-block; padding: 3px 8px; border: 2px solid #8a1f1f; color: #8a1f1f; font: 700 .9rem/1.2 var(--type, monospace); letter-spacing: .08em; transform: rotate(-1.5deg); }
+.no10take p { margin: 8px 0 0; font-size: 1rem; line-height: 1.4; }
+.desk-file.done .desk-stamp { white-space: normal; }
+.card.appr .refuse { margin-top: 6px; font-style: italic; color: #6b1d1d; font-size: max(14px, .95rem); line-height: 1.35; }
+.chip.fly { background: #e3f0dc; border-color: #4f7a3a; color: #234015; }
