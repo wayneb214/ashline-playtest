@@ -68,7 +68,11 @@
   function rec(S) { S.fun = S.fun || { minTrust: S.meters.capital, gold: {}, days: {} }; return S.fun; }
   function track(S) { const f = rec(S); f.minTrust = Math.min(f.minTrust == null ? 100 : f.minTrust, S.meters.capital); if (Object.keys(S.lost || {}).length || Object.keys(S.status || {}).some(function (k) { return S.status[k] === "wounded" || S.status[k] === "burned"; })) f.hurt = true; }
   // Gold / Silver / Bronze with the reason in words
+  // Batch N: on Day 6 the ending sets the medal: knighthood Gold, a quiet Tuesday Silver, the front page Bronze, and no
+  // medal at all for a resignation
+  const END_MEDAL = { knight: { m: "gold", t: "Gold", why: "Knighted in silence. The best way the week can end." }, quiet: { m: "silver", t: "Silver", why: "A quiet Tuesday. Kesk went home and nobody noticed. Gold: the knighthood." }, scandal: { m: "bronze", t: "Bronze", why: "On the front page. You kept the chair, just. Silver: a quiet Tuesday." } };
   function medal(S) {
+    if (S.day === 6 && window.AH4 && AH4.ending) { const e = AH4.ending(); return END_MEDAL[e] || { m: "none", t: "", why: "" }; }
     const sc = Math.round((A().score(S.meters.capital) + A().svc()) / 2), log = S.log.filter(function (l) { return A().CASES()[l.id]; });
     const failed = log.filter(function (l) { return l.res === "loss"; }).length, won = log.filter(function (l) { return l.res === "win"; }).length;
     const avg = "Average score " + sc + "/100, " + won + " closed clean.";
@@ -76,7 +80,7 @@
     if (sc >= 48 && failed <= 1) return { m: "silver", t: "Silver", why: (failed ? "One case got away. " : "Nothing lost, but the gauges sag. ") + avg + " Gold: no failures and 62+." };
     return { m: "bronze", t: "Bronze", why: (failed > 1 ? failed + " cases failed. " : "The gauges are low. ") + avg + " Silver: one failure at most and 48+." };
   }
-  function medalHTML(S) { const m = medal(S); return '<div class="medal ' + m.m + '"><span class="disc">' + m.t + '</span><p>' + m.why + "</p></div>"; }
+  function medalHTML(S) { const m = medal(S); if (m.m === "none") return ""; return '<div class="medal ' + m.m + '"><span class="disc">' + m.t + '</span><p>' + m.why + "</p></div>"; }
   function event(type, d) {
     const S = A().S(); if (!S) return; const f = rec(S); track(S);
     if (type === "case" && d.res === "win") unlock("first_win");
@@ -120,12 +124,37 @@
     knight: "A strong week, No.10 trust 45 or more at the end, and don\u2019t lose at Downing Street."
   };
   const NEXT_ORDER = ["first_win", "mole", "clean_day", "gold_day", "lie_detector", "home", "trust", "no_hurt", "all_gold", "eagle_eye", "leak", "codebreaker", "bridge", "every_code", "six", "knight"];
-  function nextUp(n) { return NEXT_ORDER.filter(function (id) { return !got[id]; }).slice(0, n || 3).map(function (id) { const a = ACH.filter(function (x) { return x[0] === id; })[0]; return { id: id, name: a[1], hint: HINT[id] }; }); }
+  // Batch N: prefer achievements this game can still earn. The game is the one in play, or the saved game on the title
+  // screen; with no game, everything is reachable (a new game). Ones this game has missed come last, marked "next game".
+  function gameState() {
+    if (!document.body.classList.contains("on-title")) { const st = A() && A().S && A().S(); if (st && st.roster) return st; }
+    try { const sv = JSON.parse(localStorage.getItem("albion-save-v1") || "null"); return sv && sv.S ? sv.S : null; } catch (e) { return null; }
+  }
+  function reachable(id, st) {
+    if (!st) return true;
+    const d = st.ended ? st.day + 1 : st.day, f = st.fun || {}, mw = f.mwin || {}, gold = f.gold || {};
+    switch (id) {
+      case "mole": return d <= 2;
+      case "lie_detector": case "home": return d <= 3;
+      case "trust": return d <= 3 && (f.minTrust == null || f.minTrust >= 40);
+      case "no_hurt": return d <= 3 && !f.hurt;
+      case "all_gold": return d <= 3 && [1, 2, 3].every(function (n) { return n >= d || gold[n]; });
+      case "eagle_eye": case "leak": return d <= 4;
+      case "codebreaker": case "bridge": return d <= 5;
+      case "every_code": return !!((d <= 3 || mw.lie) && (d <= 4 || mw.faces) && (d <= 5 || mw.proof));
+      default: return d <= 6;
+    }
+  }
+  function nextUp(n) {
+    const st = gameState(), open = NEXT_ORDER.filter(function (id) { return !got[id]; });
+    const yes = open.filter(function (id) { return reachable(id, st); }), no = open.filter(function (id) { return !reachable(id, st); });
+    return yes.concat(no).slice(0, n || 3).map(function (id) { const a = ACH.filter(function (x) { return x[0] === id; })[0]; return { id: id, name: a[1], hint: HINT[id], later: no.indexOf(id) >= 0 }; });
+  }
   function count() { return ACH.filter(function (a) { return got[a[0]]; }).length; }
   function screen(back) {
     const n = count(), nx = nextUp(3);
     MENU.sheet('<div class="kicker">Achievements \u00b7 ' + n + " of " + ACH.length + '</div>' +
-      (nx.length ? '<h2>Try next</h2><ul class="achs achnext">' + nx.map(function (a) { return '<li data-next="' + a.id + '"><span class="ai" aria-hidden="true">\u2606</span><span><b>' + a.name + "</b><small>" + a.hint + "</small></span></li>"; }).join("") + "</ul>" : "") +
+      (nx.length ? '<h2>Try next</h2><ul class="achs achnext">' + nx.map(function (a) { return '<li data-next="' + a.id + '"' + (a.later ? ' class="later"' : "") + '><span class="ai" aria-hidden="true">\u2606</span><span><b>' + a.name + (a.later ? " \u00b7 next game" : "") + "</b><small>" + a.hint + (a.later ? " This game has gone past it." : "") + "</small></span></li>"; }).join("") + "</ul>" : "") +
       '<h2>Your record</h2><ul class="achs">' + ACH.map(function (a) {
       return '<li class="' + (got[a[0]] ? "got" : "") + '"><span class="ai" aria-hidden="true">' + (got[a[0]] ? "\u2605" : "\u2606") + "</span><span><b>" + a[1] + "</b><small>" + a[2] + "</small></span></li>"; }).join("") +
       '</ul><p class="fine">Saved on this device.</p>' + (gcReady() ? '<button class="btn" id="ach-gc">Open Game Center</button>' : '') + '<button class="btn primary" id="ach-back">Back</button>', "settings");
@@ -158,6 +187,6 @@
     document.getElementById("promo-ok").onclick = function () { MENU.close(); promo(); };
     MENU.coach("promo", "Officers earn <b>XP</b> from successes. At 2, 5 and 8 XP they gain a new trait that lifts their odds.");
   }
-  const FUN = window.FUN = { nextUp: nextUp, count: count, total: ACH.length, HINT: HINT, traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
+  const FUN = window.FUN = { nextUp: nextUp, reachable: reachable, count: count, total: ACH.length, HINT: HINT, traits: traits, xp: xp, xpLine: xpLine, promo: promo, ACH: ACH, event: event, track: track, medal: medal, medalHTML: medalHTML, screen: screen, open: open, GC_PREFIX: GC_PREFIX, toast: toast, unlock: unlock, got: function () { return got; },
     onUnlock: function (gcId) { const P = window.Capacitor && Capacitor.Plugins; if (P && P.GameCenter && P.GameCenter.reportAchievement) P.GameCenter.reportAchievement({ id: gcId, percent: 100 }).catch(function () {}); } };
 })();

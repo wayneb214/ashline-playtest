@@ -469,9 +469,9 @@
     const t = A.score(s.meters.capital), sd = s.done.showdown;
     // Batch L thresholds, tuned on 12 bot runs with the Act 2 win-back (+5 trust per case won, +2 partial):
     // resign only when No.10 has truly gone (under 15), or the showdown is lost with trust under 30; a lost showdown
-    // with trust intact is the front page, not the sack. Knighthood: a strong week (7+ points), trust 45+, showdown not lost.
+    // with trust intact is the front page, not the sack. Knighthood (Batch N: 6+ points, was 7), trust 45+, showdown not lost.
     if (t < 15 || (sd === "loss" && t < 30)) return "resign";
-    if (p >= 7 && t >= 45 && sd !== "loss") return "knight";
+    if (p >= 6 && t >= 45 && sd !== "loss") return "knight";
     if (p >= 4 && sd !== "loss") return "quiet";
     return "scandal";
   }

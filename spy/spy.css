@@ -1362,3 +1362,7 @@ body:has(.cine-ask) #subtitle { display: none; }
 .card.replaynote .btn { min-height: 44px; margin-top: 4px; }
 .opcall { font-size: 0.9375rem; margin: 8px 0 4px; padding: 8px 10px; border: 1px dashed var(--brass); text-align: left; line-height: 1.4; }
 .achnext li { background: rgba(201,162,74,.12); } .achnext small { font-size: 0.9375rem; }
+.sit.stale .oldnote { display: inline-block; margin-top: 4px; font-size: 0.875rem; color: var(--stamp); } .sit.stale .dl { color: var(--stamp); }
+/* Batch N: the top-bar line on every result card; achievements this game has gone past */
+.barline { font-size: 0.9375rem; margin: 8px 0 4px; padding: 6px 10px; border-left: 3px solid var(--brass); text-align: left; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.achnext li.later { background: rgba(127,127,127,.10); opacity: .85; }

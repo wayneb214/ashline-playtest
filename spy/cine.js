@@ -160,12 +160,13 @@
     const q = window.DESK && DESK.askOf(s.ask.id); if (!q) { s.answered = true; return; }
     r.paused = true; sfx("heart", 2);
     const secs = r.opts.replay ? 0 : DESK.askSecs ? DESK.askSecs(q) : DESK.timer(q.secs);
+    const hide = !!(DESK.hideDef && DESK.hideDef()), rl = function (t) { return window.AH && AH.relabel ? AH.relabel(t) : t; };
     const box = document.createElement("div"); box.className = "cine-ask"; box.setAttribute("role", "group"); box.setAttribute("aria-label", q.q);
     // context first, spoken (Ash on the line); the choices appear once the line has finished
     const vo = q.voice && window.VOICE && VOICE.lines[q.voice];
     box.innerHTML = '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
-      '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + o.d + "</small></button>"; }).join("") +
-      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">If you say nothing: ' + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase() + "</div>" : "") + "</div>";
+      '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def && !hide ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + rl(o.d) + "</small></button>"; }).join("") +
+      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">' + (hide ? "If you say nothing, Ash decides. (Hard: you won\u2019t know which.)" : "If you say nothing: " + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase()) + "</div>" : "") + "</div>";
     r.el.appendChild(box); r.el.classList.add("asking");
     let tm = null, live = false;
     const pickIt = function (k, late) {

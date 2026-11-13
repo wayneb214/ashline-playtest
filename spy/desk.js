@@ -19,8 +19,10 @@
   // Batch L: a cutscene choice gives at least 10 s to think plus reading time for every word on the card
   // (question, both choices and their effects, about 3 words a second). 0 = no clock at all (reduced motion).
   function askWords(q) { return [q.q].concat(q.opts.map(function (o) { return o.t + " " + o.d; })).join(" ").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length; }
+  function hideDef() { return S().diff === "hard"; }
   function askSecs(q) {
-    const sc = window.__TIMER_SCALE__ || 1, base = timer(q.secs); if (!base) return 0;
+    // Batch N: Hard no longer shortens this clock; it hides which answer happens if you say nothing (hideDef)
+    const sc = window.__TIMER_SCALE__ || 1; if (reduce()) return 0; const base = q.secs * (S().diff === "easy" ? 1.6 : 1) * sc;
     return (Math.max(10, base / sc) + Math.ceil(askWords(q) / 3)) * sc;
   }
   // a countdown that pauses while the page is hidden
@@ -111,13 +113,13 @@
     C().panic = { k: k, photo: photo ? photo.when : null };
     call({ id: "panic", voice: "call_panic_" + k, voice2: photo ? photo.vid : null, line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
       text: "C? It\u2019s " + a.first(k) + ". There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?" + (photo ? " " + photo.text : ""),
-      opts: [{ k: "sit", t: "Sit tight. Walk out in the morning.", chips: '<span class="chip risk-low">+4 Secrecy</span><span class="chip risk-high">' + a.first(k) + " loyalty \u22121 \u00b7 stress +1</span>" },
-        { k: "home", t: "Get out now. Ash books you home.", chips: '<span class="chip risk-high">\u22124 Secrecy</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
+      opts: [{ k: "sit", t: "Sit tight. Walk out in the morning.", chips: '<span class="chip risk-low">+' + a.svcShown(3) + ' Service</span><span class="chip risk-high">' + a.first(k) + " loyalty \u22121 \u00b7 stress +1</span>" },
+        { k: "home", t: "Get out now. Ash books you home.", chips: '<span class="chip risk-high">\u2212' + Math.abs(a.svcShown(-3)) + ' Service</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
       def: "sit", hint: "Officers remember who picked up.",
       answer: function (c, t) {
         let ch; C().panic.choice = c;
-        if (c === "home") { ch = a.apply({ secrecy: -4 }); s.loyal[k] = a.clamp5(s.loyal[k] + 1); s.stress[k] = a.clamp5(s.stress[k] - 1); }
-        else { ch = a.apply({ secrecy: 4 }); s.loyal[k] = a.clamp5(s.loyal[k] - 1); s.stress[k] = a.clamp5(s.stress[k] + 1); if (window.VOICE) VOICE.play("react_panic_sit_" + k); }
+        if (c === "home") { ch = a.apply({ service: -3 }); s.loyal[k] = a.clamp5(s.loyal[k] + 1); s.stress[k] = a.clamp5(s.stress[k] - 1); }
+        else { ch = a.apply({ service: 3 }); s.loyal[k] = a.clamp5(s.loyal[k] - 1); s.stress[k] = a.clamp5(s.stress[k] + 1); if (window.VOICE) VOICE.play("react_panic_sit_" + k); }
         after(c === "home" ? "COME HOME" : "HOLD", c === "home" ? "win" : "mixed", a.first(k) + " on the line", late(t) + (c === "home" ? "Ash has " + a.first(k) + " on a dawn flight. Somebody abroad will notice the empty room." : a.first(k) + " goes quiet, then: \u201cRight then. Fine. I\u2019ll sit tight.\u201d The line clicks. The car is still there at midnight."), ch, null, k);
       },
       miss: function () {
@@ -294,6 +296,6 @@
     return false;
   }
 
-  window.DESK = { timer: timer, askSecs: askSecs, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
+  window.DESK = { timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
     oddsMod: oddsMod, photoLine: photoLine, PHOTO_TEXT: PHOTO_TEXT, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();
