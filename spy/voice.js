@@ -71,6 +71,13 @@
   const BG = {"call_pm_warn": {"who": "Eleanor Hale", "text": "C, it\u2019s Eleanor Hale. I\u2019ll be brief. My trust in your service is nearly gone. In the morning, my people will take one of your files off your desk. Give me a reason to trust you again."},
     "ash_no10_took": {"who": "Ash", "sub": true, "text": "Chief, a man from No.10 came at seven and took one of our files. They\u2019re handling it themselves now. It counts against us."}};
   Object.keys(BG).forEach(function (k) { L[k] = BG[k]; });
+  // batch J: Wren's "eyes on" alternatives (rotated, no repeat within a day) and Ash on what the Grey House is
+  const BJ = {"op_pryce_eyes_alt1": {"who": "Wren", "text": "Eyes on the door. Nobody in or out yet."},
+    "op_pryce_eyes_alt2": {"who": "Wren", "text": "Eyes on. Someone at the upstairs window."},
+    "op_pryce_eyes_alt3": {"who": "Wren", "text": "Eyes on. A man on the corner, collar up, waiting."},
+    "op_pryce_eyes_alt4": {"who": "Wren", "text": "Eyes on the target. Quiet street. Too quiet."},
+    "op_ash_greyhouse": {"who": "Ash", "text": "Chief, for the file. The Grey House is Varenia\u2019s secret service. Our opposite number."}};
+  Object.keys(BJ).forEach(function (k) { L[k] = BJ[k]; });
   Object.keys(L).forEach(function (k) { L[k].src = L[k].src || "audio/voice/" + k + ".mp3"; });
   // Clip lengths (seconds) come from voicelen.js, so cutscenes can stretch to a line. Measuring them here meant
   // opening hundreds of audio elements at start-up, which on iPhone crowded out the opening film's voices.

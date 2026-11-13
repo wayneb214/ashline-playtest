@@ -1339,3 +1339,8 @@ html, body { height: 100%; overflow: hidden; }
 .desk-file.done .desk-stamp { white-space: normal; }
 .card.appr .refuse { margin-top: 6px; font-style: italic; color: #6b1d1d; font-size: max(14px, .95rem); line-height: 1.35; }
 .chip.fly { background: #e3f0dc; border-color: #4f7a3a; color: #234015; }
+
+/* batch J: live ops. Skip to decision; no reply clock; what the Grey House is */
+[data-screen="op"] .opskip { display: block; width: 100%; min-height: 46px; margin-top: 10px; font-size: 1rem; }
+[data-screen="op"] .opwait { grid-column: 1 / -1; margin: 6px 0 0; text-align: center; font-size: .9375rem; opacity: .8; }
+.ghnote { font-size: .9375rem; border-left: 3px solid var(--oxblood); padding-left: 8px; margin-top: 8px; }

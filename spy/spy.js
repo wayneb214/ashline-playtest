@@ -413,9 +413,11 @@
     if (o.act) $("fsend").onclick = function () { d.remove(); o.act.fn(); };
     if (window.VOICE && o.voice) VOICE.play(o.voice);
   }
+  // a case that mentions the Grey House says what it is (batch J: players met the name with no explanation)
+  function ghNote(t) { return /Grey House/.test(t || "") ? '<p class="ghnote"><b>The Grey House:</b> Varenia\u2019s secret service, our opposite number. Its officers watch, follow and recruit, as we do.</p>' : ""; }
   function caseFile(id) {
     const s = CASES()[id];
-    dossier({ tab: "CASE FILE", stamp: "CONFIDENTIAL", kicker: s.where + " \u00b7 due by " + hh(dueOf(id)), title: s.title, img: "img/h-" + HEADS[id] + ".jpg", alt: "Painting of " + s.where, body: "<p>" + esc(s.brief || "") + "</p>", voice: "ash_case_d" + S.day + "_" + id });
+    dossier({ tab: "CASE FILE", stamp: "CONFIDENTIAL", kicker: s.where + " \u00b7 due by " + hh(dueOf(id)), title: s.title, img: "img/h-" + HEADS[id] + ".jpg", alt: "Painting of " + s.where, body: "<p>" + esc(s.brief || "") + "</p>" + ghNote(s.brief), voice: "ash_case_d" + S.day + "_" + id });
   }
   function officerFile(k, send) {
     const a = AG(k), st = S.stress[k], v = vetOf(k);
@@ -845,7 +847,7 @@
     const id = second ? "mole2" : "mole", s = CASES()[id];
     const draw = function () {
       const cards = S.roster.map(function (k) { return agentCard(k, "", sel === k, false, "data-m"); }).join("");
-      render('<div class="card dossier">' + chead(second ? "mole2" : "mole") + LH + '<span class="stamp corner">EYES ONLY</span><div class="kicker">Albion House \u00b7 by ' + hh(dueOf(id)) + '</div><h2 style="margin-top:8px;padding-right:110px">' + (second ? "The mole, second chance" : "Someone inside is talking") + "</h2><p>" + esc(second ? "Somebody rang the Bath team\u2019s phone from the street outside this building last night. The mole is still here. One more try before they run." : s.brief) + "</p>" +
+      render('<div class="card dossier">' + chead(second ? "mole2" : "mole") + LH + '<span class="stamp corner">EYES ONLY</span><div class="kicker">Albion House \u00b7 by ' + hh(dueOf(id)) + '</div><h2 style="margin-top:8px;padding-right:110px">' + (second ? "The mole, second chance" : "Someone inside is talking") + "</h2><p>" + esc(second ? "Somebody rang the Bath team\u2019s phone from the street outside this building last night. The mole is still here. One more try before they run." : s.brief) + "</p>" + (second ? "" : ghNote(s.brief)) +
         '<p class="clue"><b>What we know:</b> ' + esc(D.AGENTS[S.mole].clue) + (second ? " The porter, again: <b>" + esc(D.AGENTS[S.mole].look) + "</b>." : "") + "</p></div>" +
         (window.VOICE ? (VOICE.once("ash_accuse"), "") : "") + ash("Look at their file notes. Think about the porter, and anything odd in the debriefs. If you name the wrong one, we lose a good officer and the real one goes quiet.", true) + lesson("mole", "accuse") +
         '<div class="kicker" style="margin:4px 0 8px">Who do you accuse? (takes 2 hours)</div><div class="agents">' + cards +
@@ -1135,7 +1137,7 @@
   // shared with day2.js
   window.AH = { caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
+    briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
