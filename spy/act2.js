@@ -340,6 +340,18 @@
   }
 
   // ---------- the showdown (Day 6) ----------
+  // Batch L: the readable tell. Kesk has studied how you played all week (your most-used risk level) and is ready
+  // for it: that choice loses 12% (18% if your name leaked). The same clue is intercepted at the end of Day 5.
+  const STYLEW = { low: "careful", med: "steady", high: "bold" };
+  function showdownClue() {
+    const f = fav();
+    if (!f) return "Kesk has tried to read you all week, Chief, and can\u2019t. Good. Your trust with No.10 and how the chase went count most now.";
+    return "Kesk has studied how you work, Chief. His file says you play it <b>" + STYLEW[f] + "</b>, and he is ready for that. Whatever he expects, don\u2019t give it to him. Your trust with No.10 and the chase count too.";
+  }
+  function interceptClue() {
+    const f = fav(); if (!f) return "";
+    return '<div class="card intercept"><div class="kicker">Intercept \u00b7 Grey House, Kessgrad</div><p>A cable to Kesk, decoded tonight: <b>\u201cC plays it ' + STYLEW[f] + '. Be ready for it.\u201d</b></p><p class="fine">Tomorrow, at Downing Street, the choice he expects will be the hardest. \u2014 Ash</p></div>';
+  }
   function showdown() {
     const s = S(); let sel = null;
     if (s.hour < 18) { A.advance(18 - s.hour); A.save("briefing"); A.meters(); }
@@ -351,6 +363,7 @@
     const draw = function () {
       A.render('<figure class="no10 d2fig"><img src="' + pic("no10") + '" alt="The study at Number 10"><figcaption>10 Downing Street \u00b7 ' + A.hh(s.hour) + '</figcaption></figure><div class="card dossier">' + A.LH + '<span class="stamp corner">NO.10</span><div class="kicker">Day 6 \u00b7 the last file</div><h2 style="margin-top:8px;padding-right:110px">Downing Street</h2>' +
         "<p>Kesk is in the waiting room at Number 10, with a trade minister\u2019s appointment and a tractor brochure. Hale is in the study next door. She turns to you. <b>\u201cWell, C? He\u2019s in my house.\u201d</b></p></div>" +
+        (window.VOICE && fav() ? (VOICE.once("ash_showdown_clue"), "") : "") + A.ash(showdownClue(), !!fav()) +
         OPTS.map(function (o, i) { const locked = o.pm && s.meters.capital < o.pm; return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + o.t + '</div><p style="margin:0">' + o.d + '</p><div class="chips">' + (locked ? '<span class="chip risk-high">Hale won\u2019t risk it \u00b7 needs No.10 trust ' + o.pm + "</span>" : '<span class="chip odds">' + odds(o) + '% chance</span><span class="chip risk-' + o.risk + '">' + RISK[o.risk] + "</span>" + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this</span>' : "")) + "</div></button>"; }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + '>' + (sel == null ? "Decide" : "Open the door") + "</button></div>", "Everything from the last six days counts here.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
@@ -445,14 +458,21 @@
   function open(id) { const k = cases(S().day)[id].kind; if (k === "leak") return leakCase(); if (k === "swap") return swap(); if (k === "chase") return chase(); if (k === "showdown") return showdown(); }
 
   // ---------- day ends ----------
+  function endingInputs() {
+    const s = S(), d = days(), sw = (d[5] || {}).swap || "loss", e3 = (d[3] || {}).end || "loss";
+    const p = { win: 2, mixed: 1, loss: 0, traded: 0 }[e3] + { win: 2, mixed: 1, loss: 0 }[sw] + ({ win: 2, mixed: 1, loss: 0 }[s.done.chase] || 0) + ({ win: 3, mixed: 1, loss: 0 }[s.done.showdown] || 0) + (s.leakCaught || (d[4] || {}).leak === "win" ? 1 : 0);
+    return { p: p, t: A.score(s.meters.capital), showdown: s.done.showdown || null };
+  }
   function ending() {
     const s = S(), d = days(), sw = (d[5] || {}).swap || "loss", e3 = (d[3] || {}).end || "loss";
     let p = { win: 2, mixed: 1, loss: 0, traded: 0 }[e3] + { win: 2, mixed: 1, loss: 0 }[sw] + ({ win: 2, mixed: 1, loss: 0 }[s.done.chase] || 0) + ({ win: 3, mixed: 1, loss: 0 }[s.done.showdown] || 0) + (s.leakCaught || (d[4] || {}).leak === "win" ? 1 : 0);
-    const t = A.score(s.meters.capital);
-    if (s.done.showdown === "loss" && t < 35) return "resign";
-    if (p >= 8 && t >= 50) return "knight";
-    if (p >= 5) return "quiet";
-    if (s.done.showdown === "loss" || t < 30) return "resign";
+    const t = A.score(s.meters.capital), sd = s.done.showdown;
+    // Batch L thresholds, tuned on 12 bot runs with the Act 2 win-back (+5 trust per case won, +2 partial):
+    // resign only when No.10 has truly gone (under 15), or the showdown is lost with trust under 30; a lost showdown
+    // with trust intact is the front page, not the sack. Knighthood: a strong week (7+ points), trust 45+, showdown not lost.
+    if (t < 15 || (sd === "loss" && t < 30)) return "resign";
+    if (p >= 7 && t >= 45 && sd !== "loss") return "knight";
+    if (p >= 4 && sd !== "loss") return "quiet";
     return "scandal";
   }
   const END = {
@@ -478,6 +498,6 @@
   function bulletinId() { const s = S(); if (s.day === 4) return "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
-  window.AH4 = { ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
+  window.AH4 = { endingInputs: endingInputs, showdownClue: showdownClue, interceptClue: interceptClue, ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
     locked: locked, lockWhy: lockWhy, lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
 })();

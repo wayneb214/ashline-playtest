@@ -43,7 +43,7 @@ window.AH_DATA = (function () {
         { t: "Recover the copy", d: "Find the file before it\u2019s set in type.", mod: -10, risk: "high", stress: 2, win: { secrecy: 12, safety: 8 }, mixed: { trust: -8, secrecy: 4 }, loss: { trust: -16, capital: -10 } },
         { t: "Have No.10 get ahead of it", d: "A No.10 statement before the presses roll.", mod: 20, risk: "med", stress: 0, win: { trust: 12, secrecy: -10 }, mixed: { trust: 4, secrecy: -10, safety: -4 }, loss: { trust: -6, secrecy: -14 } }
       ],
-      head: { win: "Courier runs spy story without naming sources", mixed: "Leaked spy report dominates the first edition", loss: "Courier names Albion House informant; uproar in the Commons" }
+      head: { win: "Courier to run spy story tonight, without naming sources", mixed: "Leaked spy report to lead tonight\u2019s edition; no names", loss: "Courier to name Albion House informant tonight; uproar in the Commons" }
     },
     sabotage: {
       kind: "judge", art: "v-cable", title: "A threat to a sea cable", where: "Bergen or Rotterdam?", x: 49, y: 33, due: 22, flash: true,

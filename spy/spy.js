@@ -138,7 +138,10 @@
     return '<div class="ash-note card"><img class="portrait" src="' + pic(worried ? "ash-worried" : "ash") + '" alt="Margaret Ashby, Chief of Staff"><div class="note"><div class="who">Ash \u00b7 Chief of Staff</div><span class="tx">' + text + "</span></div></div>";
   }
   // a first-run tip card; gone once dismissed, and switched off after Day 1
-  function tip(key) { return S.day > 1 && S.tips && PREFS.get("tips") && !S.tipSeen[key] ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
+  // Batch L: a tip card shows once per game. It stays while you are on the screen where it first appeared
+  // (same day and hour), then never again in this game, whether or not you pressed Got it.
+  function tipFresh(key) { const at = S.day + ":" + S.hour; S.tipSeen = S.tipSeen || {}; if (S.tipSeen[key] === true) return false; if (!S.tipSeen[key]) S.tipSeen[key] = at; return S.tipSeen[key] === at; }
+  function tip(key) { return S.day > 1 && S.tips && PREFS.get("tips") && tipFresh(key) ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
   function pips(n, cls, label) { let s = ""; for (let i = 1; i <= 5; i++) s += '<i class="' + (i <= n ? "on" : "") + '"></i>'; return '<div class="tr ' + cls + '">' + label + '<div class="pips">' + s + "</div></div>"; }
   const mname = function (m) { return D.METERS.filter(function (x) { return x.id === m; })[0].name; };
   function deltas(ch) { return '<div class="deltas">' + Object.keys(ch).map(function (m) { return '<span class="' + (ch[m] >= 0 ? "up" : "down") + '">' + (ch[m] >= 0 ? "+" : "") + ch[m] + " " + mname(m) + "</span>"; }).join("") + "</div>"; }
@@ -236,7 +239,7 @@
   // ---------- the cold open: Standard, straight in; the Prime Minister rings within the minute ----------
   function coldOpen() {
     store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); });
-    fresh("standard", !store.get(TIPS_DONE)); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S }));
+    PREFS.set("tips", true); fresh("standard", true); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S }));
     // the opening film first (if cutscenes are on), then the How it works cards once, then Downing Street and the phone
     const day1 = function () { if (!CINE.maybe("day1", pm0)) pm0(); };
     const howto = function () { if (window.HOWTO && HOWTO.due()) HOWTO.show(day1, true); else day1(); };
@@ -272,15 +275,15 @@
     draw();
   }
   function difficulty() {
-    let pick = "standard", tips = !store.get(TIPS_DONE);
+    let pick = "standard", tips = true;
     const draw = function () {
       render('<div class="card dossier">' + LH + '<div class="kicker" style="margin-top:8px">Before you take the chair</div><h2>How hard a day?</h2>' +
         Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k], lock = k === "hard" && window.REPLAY && !REPLAY.unlocked(); return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"' + (lock ? " disabled" : "") + '><div class="t">' + d.name + (lock ? " \ud83d\udd12 finish Day 3 to unlock" : "") + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
-        '<label class="tipsopt"><input type="checkbox" id="tips"' + (tips ? " checked" : "") + "> Show tips on the first day</label>" + "</div>" +
+        '<label class="tipsopt"><input type="checkbox" id="tips"' + (tips ? " checked" : "") + "> Show tips (you can switch them off in Settings)</label>" + "</div>" +
         '<div class="sticky-go"><button class="btn primary" id="go">Begin \u00b7 ' + D.DIFFICULTY[pick].name + '</button></div><button class="btn ghost" id="back">Back</button>', "You can change this next time you start a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
       $("tips").onchange = function () { tips = $("tips").checked; };
-      $("go").onclick = function () { store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); }); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); const go = function () { if (!CINE.maybe("day1", intro)) intro(); }; if (window.HOWTO && HOWTO.due()) HOWTO.show(go, true); else go(); };
+      $("go").onclick = function () { store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); }); PREFS.set("tips", tips); fresh(pick, tips); store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S })); const go = function () { if (!CINE.maybe("day1", intro)) intro(); }; if (window.HOWTO && HOWTO.due()) HOWTO.show(go, true); else go(); };
       $("back").onclick = title;
     };
     draw();
@@ -435,7 +438,7 @@
   };
   // Day 1 lessons are Ash talking you through it: the same line on screen and in your ear, once each
   function lesson(id, step) {
-    const L = S.day === 1 && LESSONS[id]; if (!L || !L[step]) return "";
+    const L = S.day === 1 && PREFS.get("tips") && LESSONS[id]; if (!L || !L[step]) return "";
     const vid = "tut_" + id + "_" + step, V = window.VOICE && VOICE.lines[vid];
     S.tutHeard = S.tutHeard || {};
     if (V && !S.tutHeard[vid]) {
@@ -838,15 +841,19 @@
     S.because = (S.because || []).concat(out.slice(0, 1).map(function (t) { return { id: id, t: t, res: res }; })).slice(-8);
     return '<div class="because" aria-label="Why it went this way">' + out.map(function (t) { return "<p><b>Because</b> " + t + ".</p>"; }).join("") + "</div>";
   }
+  const NO10_BACK = { win: 5, mixed: 2 };
   function finishCase(id, res, k, appr, head, ch, stampWord, body, imgHtml, hintTxt) {
     if (S.done[id]) return; // already closed today (a double tap during the evidence still)
+    // Batch L: in Act 2 the Prime Minister hears about every case you close, so good work wins No.10 trust back
+    let back = 0; const planCh = ch;
+    if (S.day >= 4 && NO10_BACK[res]) { const b = Math.min(NO10_BACK[res], 100 - S.meters.capital); if (b > 0) { S.meters.capital += b; ch = Object.assign({}, ch || {}); ch.capital = (ch.capital || 0) + b; S.no10Back = (S.no10Back || 0) + b; back = b; } }
     S.done[id] = res; S.heads.push(head); S.log.push({ id: id, k: k, res: res, appr: appr, head: head, fit: S.lastWhy && S.lastWhy.id === id && S.lastWhy.k === k ? S.lastWhy.fit : null, rec: S.lastWhy && S.lastWhy.id === id && S.lastWhy.k === k ? S.lastWhy.rec : null });
     if (S.lastWhy && S.lastWhy.id === id && S.lastWhy.k === k) S.craft = (S.craft || []).concat([(S.lastWhy.fit ? 0.7 : 0) + (S.lastWhy.rec ? 0.3 : 0)]);
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
     if (window.SFX && SFX.sting) SFX.sting(res);
     evidThen(id, res, head, function () {
     caseReadout(id, res);
-    render('<div class="card outcome ' + res + '" id="case-result"><span class="stamp thud">' + stampWord + "</span>" + (imgHtml || "") + "<h2>" + esc(CASES()[id].title) + "</h2><p>" + body + "</p>" + because(id, k, appr, ch, res) + deltas(ch) + headline(head) + '</div><button class="btn primary" id="go">Back to the desk</button>', hintTxt || "");
+    render('<div class="card outcome ' + res + '" id="case-result"><span class="stamp thud">' + stampWord + "</span>" + (imgHtml || "") + "<h2>" + esc(CASES()[id].title) + "</h2><p>" + body + "</p>" + because(id, k, appr, planCh, res) + deltas(ch) + (back ? '<p class="no10back">\u260e No.10 heard about it: <b>+' + back + " trust</b>. Closed cases win the Prime Minister back.</p>" : "") + headline(head) + '</div><button class="btn primary" id="go">Back to the desk</button>', hintTxt || "");
     $("go").onclick = briefing;
     }, stampWord);
     S.lastWhy = null;
@@ -978,8 +985,9 @@
     if (window.FUN) FUN.event("day");
     // the order at the end of every day: the full front page with the news bulletin first, then this report
     if (S.paperDay !== S.day) return paper({ first: true });
-    const verdict = { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
+    const verdict = S.day === 6 && window.AH4 && AH4.ending ? END6_LETTER[AH4.ending()] : { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
     render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
+      (S.day === 5 && window.AH4 && AH4.interceptClue ? AH4.interceptClue() : "") +
       (function () { const g = gradeParts(); return '<p class="gradeparts">Graded on: No.10 trust and Service (top bar) \u00b7 cases closed <b>' + g.record + "%</b> \u00b7 tradecraft <b>" + g.craft + "%</b>" + (g.bonus ? " \u00b7 Easy +" + g.bonus : "") + (S.diff !== "easy" && g.craft < 75 ? '<br><small>An A needs 75% tradecraft over the week, a B 60%: the right officer, on the plan they rate best.</small>' : "") + "</p>"; })() + (window.FUN ? FUN.medalHTML(S) : "") +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
@@ -1001,7 +1009,9 @@
     // Ash reads the report aloud, short version, while the full text shows: the grade, then her FLASH telegram
     setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; VOICE.seq([reportLine(grade), bulletinLine()]); } }, 900);
   }
-  function reportLine(g) { return "rep_" + (/[A-E]/.test(g) ? g : "C"); }
+  // Batch L: on Day 6 the letter and Ash's read-out follow the ending, never the day grade, so a resignation is never "held the line"
+  const END6_LETTER = { knight: "The Prime Minister is delighted, and there is talk of the Palace. Don\u2019t let it go to your head.", quiet: "The street is quiet, and Kesk has flown home. The Prime Minister says that will do. From her, that\u2019s praise.", scandal: "It\u2019s all over the papers. The Prime Minister is furious, but you still have the chair.", resign: "The Prime Minister has asked for your resignation letter by Friday. Ash says it\u2019s been an honour." };
+  function reportLine(g) { if (S.day === 6 && window.AH4 && AH4.ending) return "rep6_" + AH4.ending(); return "rep_" + (/[A-E]/.test(g) ? g : "C"); }
   function bulletinLine() {
     if (S.day === 1) return S.defector ? "flash_d1_def" : "flash_d1_nodef";
     if (S.day === 2) return "flash_d2_" + (S.done.exit || "loss");

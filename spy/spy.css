@@ -1352,3 +1352,7 @@ html, body { height: 100%; overflow: hidden; }
 .opbtn small.optrade i { font-style: normal; font-weight: 700; }
 /* a choice inside a cutscene already shows its question: no caption panel over the answers */
 body:has(.cine-ask) #subtitle { display: none; }
+.no10back { font-size: 0.9375rem; margin: 6px 0 2px; color: var(--green-2); }
+/* Batch L: the Day 5 intercept that points at the showdown */
+.card.intercept { text-align: left; border-left: 4px solid var(--stamp); margin: 10px 0; font-size: 1rem; }
+.card.intercept .fine { font-size: 0.875rem; opacity: .85; }

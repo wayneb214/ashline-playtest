@@ -26,7 +26,13 @@
   // One pop-up at a time: toasts queue, wait while a cutscene, sheet or coach mark is up, and dock over the ticker
   // (the one band with nothing to tap), so they never cover the report or a control.
   const TQ = []; let tBusy = false;
-  const blocked = function () { return document.body.classList.contains("in-cine") || !!document.querySelector(".cine, .cine-gate, .sheet-bg, .coach, .epi"); };
+  const blocked = function () { return document.body.classList.contains("in-cine") || !!document.querySelector(".cine, .cine-gate, .sheet-bg, .coach, .epi, .dk-file, [aria-modal=true]"); };
+  // Batch L: a toast may not sit over the menu button or any other control outside the page (an open file's buttons)
+  const overControl = function (t) {
+    const r = t.getBoundingClientRect(), obs = window.POLISH && POLISH.obstacles ? POLISH.obstacles(true) : [], mb = document.getElementById("menu");
+    if (mb) obs.push(mb.getBoundingClientRect());
+    return obs.some(function (o) { return o !== r && o.width > 1 && Math.min(r.bottom, o.bottom) - Math.max(r.top, o.top) > 1 && Math.min(r.right, o.right) - Math.max(r.left, o.left) > 1; });
+  };
   function toast(html, cls) { if (TQ.some(function (q) { return q[0] === html; })) return; TQ.push([html, cls]); pump(); }
   function pump() {
     if (tBusy || !TQ.length) return;
@@ -41,8 +47,12 @@
     host.appendChild(t);
     // Larger text can make a docked toast taller than the top bar, spilling over the page; drop the description then
     if (host.classList.contains("docked") && host.getBoundingClientRect().top + t.offsetTop + t.offsetHeight > hud.getBoundingClientRect().bottom + 1) t.classList.add("short");
+    if (overControl(t)) { t.remove(); TQ.unshift(q); tBusy = false; setTimeout(pump, 600); return; }
     requestAnimationFrame(function () { t.classList.add("on"); });
-    setTimeout(function () { t.classList.remove("on"); setTimeout(function () { t.remove(); tBusy = false; setTimeout(pump, 250); }, 350); }, q[1] === "ach" ? 3200 : 2800);
+    let over = false; const end = function () { if (over) return; over = true; clearInterval(watch); t.classList.remove("on"); setTimeout(function () { t.remove(); tBusy = false; setTimeout(pump, 250); }, 350); };
+    // if a file or pop-up opens while the toast is up, the toast gets out of the way at once
+    const watch = setInterval(function () { if (blocked()) end(); }, 200);
+    setTimeout(end, q[1] === "ach" ? 3200 : 2800);
   }
   function askReview() {
     if (window.REVIEW && REVIEW.requestReview && !document.body.classList.contains("in-cine")) REVIEW.requestReview(); // once ever, native only

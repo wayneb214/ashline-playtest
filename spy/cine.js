@@ -159,7 +159,7 @@
   function askNow(r, s) {
     const q = window.DESK && DESK.askOf(s.ask.id); if (!q) { s.answered = true; return; }
     r.paused = true; sfx("heart", 2);
-    const secs = r.opts.replay ? 0 : DESK.timer(q.secs);
+    const secs = r.opts.replay ? 0 : DESK.askSecs ? DESK.askSecs(q) : DESK.timer(q.secs);
     const box = document.createElement("div"); box.className = "cine-ask"; box.setAttribute("role", "group"); box.setAttribute("aria-label", q.q);
     // context first, spoken (Ash on the line); the choices appear once the line has finished
     const vo = q.voice && window.VOICE && VOICE.lines[q.voice];

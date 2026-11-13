@@ -65,7 +65,7 @@
         "<h2>Motion</h2>" + seg("rd", [["auto", "Device (" + (FEEL.deviceReduce ? "reduced" : "full") + ")"], ["off", "Full motion"], ["on", "Reduced"]], rdNow) +
         '<p class="fine">Reduced motion shows still paintings instead of moving cutscenes.</p>' +
         
-        (window.REVIEW && REVIEW.rateHTML && REVIEW.played() ? "<h2>Enjoying it?</h2>" + REVIEW.rateHTML("mn-rate") : "") + "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") +
+        (window.REVIEW && REVIEW.rateHTML && REVIEW.played() ? "<h2>Enjoying it?</h2>" + REVIEW.rateHTML("mn-rate") : "") + "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") + '<p class="fine">Tips switch back on with every new game, in case someone else is playing.</p>' +
         (document.body.classList.contains("on-title") && A().canReplayDay && A().canReplayDay() ? '<h2>Replay a day</h2><button class="btn ghost" id="st-days">Replay a day</button>' : "") +
         (window.CINE ? '<h2>Cutscenes</h2><button class="btn ghost" id="st-cine">Cutscenes and replays</button>' : "") +
         (window.HOWTO ? '<h2>How to play</h2><button class="btn ghost" id="st-howto">How to play</button>' : "") +
@@ -111,17 +111,20 @@
   }
 
   // ---------- one-time coach marks: a short tip the first time a mechanic appears ----------
-  const CKEY = "albion-coach";
-  let seenC = {}; try { seenC = JSON.parse(localStorage.getItem(CKEY) || "{}"); } catch (e) {}
+  // Batch L: coach marks are remembered per game, not per device, so the next person to start a New Game on
+  // this phone gets them too. Inside one game a card never shows twice.
+  let seenLoose = {};
+  const seenMap = function () { const st = window.AH && AH.S && AH.S(); if (!st) return seenLoose; st.coachSeen = st.coachSeen || {}; return st.coachSeen; };
   const coachQ = [];
   let coachOn = "";
   function coach(key, html) {
+    const seenC = seenMap();
     if (seenC[key] || !PREFS.get("tips") || /[?&]nocoach=1/.test(location.search)) return;
     // one tip per screen: anything else waits until the next time its trigger fires on a new screen
     const scr = document.querySelector("#view [data-screen]"), here = (scr ? scr.getAttribute("data-screen") : "") + "|" + (window.AH && AH.S && AH.S() ? AH.S().day + ":" + AH.S().hour : "");
     if ($("coach") || coachOn === here) return;
     coachOn = here;
-    seenC[key] = 1; try { localStorage.setItem(CKEY, JSON.stringify(seenC)); } catch (e) {}
+    seenC[key] = 1;
     const old = $("coach"); if (old) old.remove();
     const c = document.createElement("div"); c.id = "coach"; c.className = "coach"; c.setAttribute("role", "status");
     c.innerHTML = "<b>New</b><span>" + html + '</span><button type="button" aria-label="Dismiss tip">Got it</button>';

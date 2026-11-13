@@ -16,6 +16,13 @@
     const m = { easy: 1.6, standard: 1, hard: 0.75 }[S().diff] || 1;
     return base * m * (window.__TIMER_SCALE__ || 1);
   }
+  // Batch L: a cutscene choice gives at least 10 s to think plus reading time for every word on the card
+  // (question, both choices and their effects, about 3 words a second). 0 = no clock at all (reduced motion).
+  function askWords(q) { return [q.q].concat(q.opts.map(function (o) { return o.t + " " + o.d; })).join(" ").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length; }
+  function askSecs(q) {
+    const sc = window.__TIMER_SCALE__ || 1, base = timer(q.secs); if (!base) return 0;
+    return (Math.max(10, base / sc) + Math.ceil(askWords(q) / 3)) * sc;
+  }
   // a countdown that pauses while the page is hidden
   function countdown(secs, bar, out) {
     if (!secs) return { stop: function () {} };
@@ -278,6 +285,6 @@
     return false;
   }
 
-  window.DESK = { timer: timer, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
+  window.DESK = { timer: timer, askSecs: askSecs, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
     oddsMod: oddsMod, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();
