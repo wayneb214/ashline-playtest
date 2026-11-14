@@ -189,7 +189,7 @@
     const flashHTML = preIds.length ? '<div class="askflash" role="group" aria-label="Flash, most immediate"><div class="fbar"><span class="fstamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="ftime">' + (q.preTag || "") + "</span></div>" + preIds.map(function (id) { return '<p data-line="' + id + '">' + VOICE.lines[id].text + "</p>"; }).join("") + "</div>" : "";
     box.innerHTML = ctxHTML + flashHTML + '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
       '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def && !hide ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + rl(o.d) + "</small></button>"; }).join("") +
-      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">' + (hide ? "If you say nothing, Ash decides. (Hard: you won\u2019t know which.)" : "If you say nothing: " + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase()) + "</div>" : "") + "</div>";
+      (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">' + (hide ? "If you say nothing, Ash decides. (Hard: you won\u2019t know which.)" : "If you say nothing: " + (function (t) { return t.charAt(0).toLowerCase() + t.slice(1); })(q.opts.filter(function (o) { return o.k === q.def; })[0].t)) + "</div>" : "") + "</div>";
     if (vo || ctxIds.length) box.insertAdjacentHTML("beforeend", '<button type="button" class="askskip" id="askskip">Skip to the choice</button>');
     r.el.appendChild(box); r.el.classList.add("asking");
     let tm = null, live = false;

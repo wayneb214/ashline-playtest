@@ -1260,7 +1260,7 @@ html.text-lg .desk-why, html.text-lg .dk-chip, html.text-lg .otile .o-tab, html.
 .evid.cctv.loss .ev-frame img { animation: evlost 1.6s 1.2s forwards; }
 @keyframes evlost { 60% { filter: grayscale(1) contrast(2) brightness(.6); } 100% { filter: grayscale(1) contrast(3) brightness(.3) blur(2px); } }
 .ev-cam, .ev-time, .ev-note { position: absolute; font: 600 0.875rem/1.2 "Courier New", ui-monospace, monospace; color: #e8f2e0; text-shadow: 0 1px 2px #000; letter-spacing: .04em; }
-.ev-cam { left: 10px; top: 8px; right: 118px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-cam { left: 10px; top: 8px; right: 9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ev-cam .rec { color: #ff4a3d; animation: askdots 1s infinite; }
 .ev-time { right: 10px; top: 8px; }
 .ev-note { left: 10px; bottom: 8px; background: rgba(0,0,0,.45); padding: 2px 6px; }

@@ -136,10 +136,14 @@
     const st = oc.querySelector(".stamp"), stTx = st ? st.textContent.trim() : "";
     announce((stTx ? stTx.charAt(0) + stTx.slice(1).toLowerCase() + ". " : "") + tx + (alertTx ? " " + alertTx : ""));
   }
+  // the top-bar clock always shows the game's real hour on every screen, so a call card or live op stamped 14:00
+  // never sits under a stale 08:00 (the clock used to change only when the meters were redrawn)
+  function syncClock() { const c = $("clock"); if (c && S && S.hour != null) { const t = hh(S.hour); if (c.textContent !== t) c.textContent = t; } }
   function render(html, h, keep) {
     LOOK.rain(false); if (!keep) LOOK.fade();
     const vw = $("view"), y = vw.scrollTop;
     vw.innerHTML = relabel(html);
+    syncClock();
     barMark(vw);
     if (!keep && !FEEL.reduce) { vw.classList.remove("xf"); void vw.offsetWidth; vw.classList.add("xf"); }
     const mm = /data-music="(\w+)"/.exec(html);
