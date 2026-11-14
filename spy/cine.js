@@ -32,11 +32,11 @@
       { img: "york", dur: 4.4, pan: [10, 60], cam: [1.05, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Friday. York."]], sfx: [[0.2, "engine", 3], [0.5, "voice", "cine_day3_1"]] },
       { img: "green", dur: 4, cam: [1.12, 0, 3, 1.02, 0, 0], caps: [[0.3, "Ash", "The woman in green isn\u2019t one of theirs, C. She\u2019s ours."]], sfx: [[0.3, "voice", "ash_green_ours"], [0.2, "stinger"]] }]; } },
     bath: { name: "Bath, 23:47", shots: function () { return [
-      { img: "bath", dur: 9, ask: { id: "bath", at: 7.9 }, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."]], sfx: [[0.1, "rainUp", true], [5.9, "stinger"], [0.5, "voice", "cine_bath_1"], [3.2, "voice", "cine_bath_2"]] }]; } },
+      { img: "bath", dur: 9, ask: { id: "bath", at: 8.9 }, cam: [1.02, 0, -4, 1.2, 0, 5], caps: [[0.5, "", "23:47. Bath."], [3.2, "", "A man collapses on a bench near the Circus."]], sfx: [[0.1, "rainUp", true], [5.9, "stinger"], [0.5, "voice", "cine_bath_1"], [3.2, "voice", "cine_bath_2"]] }]; } },
     ferry: { name: "Harwich, 23:10", shots: function () { const r = S().done && S().done.exit; return [
-      { img: "ferry", dur: 8.5, ask: { id: "ferry", at: 6.9 }, cam: [1.18, 0, 2, 1.0, 0, -3], caps: [[0.5, "", "Harwich. 23:10. The night ferry."], [3.8, "", r === "win" ? "Plain clothes at the gangway. Now." : r === "mixed" ? "One taken at the services. Two still aboard." : "The ferry clears the harbour wall."]], sfx: [[0.3, "horn"], [3.2, "engine", 4], [0.5, "voice", "cine_ferry_1"], [3.8, "voice", "cine_ferry_" + (r === "win" || r === "mixed" ? r : "loss")]] }]; } },
+      { img: "ferry", dur: 8.5, ask: { id: "ferry", at: 8.4 }, cam: [1.18, 0, 2, 1.0, 0, -3], caps: [[0.5, "", "Harwich. 23:10. The night ferry."], [3.8, "", r === "win" ? "Plain clothes at the gangway. Now." : r === "mixed" ? "One taken at the services. Two still aboard." : "The ferry clears the harbour wall."]], sfx: [[0.3, "horn"], [3.2, "engine", 4], [0.5, "voice", "cine_ferry_1"], [3.8, "voice", "cine_ferry_" + (r === "win" || r === "mixed" ? r : "loss")]] }]; } },
     border: { name: "The border", shots: function () { return [
-      { img: "border", dur: 9, ask: { id: "border", at: 8.7 }, pan: [70, 25], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "The Varenian border. A queue of cars in the dark."], [4.0, "", "She is in the boot, under a picnic blanket."], [6.8, "", "A guard. A dog."]], sfx: [[0.1, "engine", 6], [3.4, "heart", 5], [0.5, "voice", "cine_border_1"], [4.0, "voice", "cine_border_2"], [6.8, "voice", "cine_border_3"]] }]; } },
+      { img: "border", dur: 9, ask: { id: "border", at: 8.9 }, pan: [70, 25], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "The Varenian border. A queue of cars in the dark."], [4.0, "", "She is in the boot, under a picnic blanket."], [6.8, "", "A guard. A dog."]], sfx: [[0.1, "engine", 6], [3.4, "heart", 5], [0.5, "voice", "cine_border_1"], [4.0, "voice", "cine_border_2"], [6.8, "voice", "cine_border_3"]] }]; } },
     end3: { name: "The Green Coat ends", shots: function () { const s = S(), e = s.deal === "deal" ? "traded" : (s.done && s.done.exfil) || "loss"; return [
       { img: "end-" + e, dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.16, 0, -4], caps: [[0.5, "", { win: "Pine forest. Our side of the line.", mixed: "She\u2019s out. One of ours isn\u2019t.", loss: "The barrier. A grey car. Gone.", traded: "A deal is a deal." }[e]], [4, "", { win: "She asks for a cup of tea.", mixed: "Kesk will want a trade.", loss: "Kesk wins this round.", traded: "Nobody mentions a woman in green." }[e]]], sfx: [[0.2, e === "win" ? "chime" : "stinger", 2], [0.5, "voice", "cine_end3_" + e + "_1"], [4, "voice", "cine_end3_" + e + "_2"]] }]; } },
     day4: { name: "Act 2 \u00b7 Day 4 \u00b7 The Letter", shots: function () { return [
@@ -144,7 +144,9 @@
     });
     const s = r.shots[cur], local = e - s.t0; let cap = null;
     (s.caps || []).forEach(function (c) { if (local >= c[0]) cap = c; });
-    if (s.ask && !s.answered && local >= s.ask.at && !r.paused) askNow(r, s);
+    // Panel 5 (Wayne): the choice waits for the scene to play out, its narration included; the picture holds meanwhile
+    const holdAsk = s.ask && !s.answered;
+    if (holdAsk && local >= s.ask.at && !r.paused) { if (!s.waitFrom) s.waitFrom = e; if (s.jumped || !(window.VOICE && VOICE.busy()) || e - s.waitFrom > 8) askNow(r, s); } // a tap or a seen scene jumps straight in
     if (s.answered && s.resCap) cap = [0, "", s.resCap];
     const key = cap ? cur + ":" + cap[2] : "";
     if (key !== r.cap) {
@@ -153,7 +155,7 @@
       if (cap) { void box.offsetWidth; box.classList.add("show"); }
     }
     r.el.classList.toggle("bars", e > 0.05 && !s.card && !s.title);
-    if (e >= r.total || (r.endAt && r.elapsed >= r.endAt)) finish(false);
+    if (!holdAsk && (e >= r.total || (r.endAt && r.elapsed >= r.endAt))) finish(false);
   }
   // a timed choice: the scene holds while you decide
   function askNow(r, s) {
@@ -166,8 +168,10 @@
     // stay hidden until the last line has finished, or you tap Skip.
     const vo = q.voice && window.VOICE && VOICE.lines[q.voice];
     const pre = typeof q.pre === "function" ? q.pre() : q.pre || [], ctxIds = (s.ctx || []).concat(pre).filter(function (id) { return window.VOICE && VOICE.lines[id]; });
-    const ctxHTML = ctxIds.length || s.recap ? '<div class="askctx">' + (s.recap ? '<p class="recap">' + s.recap + "</p>" : "") + ctxIds.map(function (id) { const L = VOICE.lines[id]; return '<p data-line="' + id + '">' + (L.who && L.who !== "Narrator" ? "<b>" + L.who + ":</b> " : "") + L.text + "</p>"; }).join("") + "</div>" : "";
-    box.innerHTML = ctxHTML + '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
+    const preIds = ctxIds.filter(function (id) { return pre.indexOf(id) >= 0; }), narIds = ctxIds.filter(function (id) { return pre.indexOf(id) < 0; });
+    const ctxHTML = narIds.length || s.recap ? '<div class="askctx">' + (s.recap ? '<p class="recap">' + s.recap + "</p>" : "") + narIds.map(function (id) { const L = VOICE.lines[id]; return '<p data-line="' + id + '">' + (L.who && L.who !== "Narrator" ? "<b>" + L.who + ":</b> " : "") + L.text + "</p>"; }).join("") + "</div>" : "";
+    const flashHTML = preIds.length ? '<div class="askflash" role="group" aria-label="Flash, most immediate"><div class="fbar"><span class="fstamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="ftime">' + (q.preTag || "") + "</span></div>" + preIds.map(function (id) { return '<p data-line="' + id + '">' + VOICE.lines[id].text + "</p>"; }).join("") + "</div>" : "";
+    box.innerHTML = ctxHTML + flashHTML + '<div class="q">' + (vo ? '<span class="asker"><img src="img/ash.jpg" alt=""><b>' + vo.who + "</b></span>" : "") + q.q + "</div>" +
       '<div class="askopts">' + q.opts.map(function (o) { return '<button type="button" data-ask="' + o.k + '"' + (o.k === q.def && !hide ? ' data-def="1"' : "") + "><b>" + o.t + "</b><small>" + rl(o.d) + "</small></button>"; }).join("") +
       (secs ? '<div class="cd" aria-hidden="true"><i id="askbar"></i></div><div class="cdt">' + (hide ? "If you say nothing, Ash decides. (Hard: you won\u2019t know which.)" : "If you say nothing: " + q.opts.filter(function (o) { return o.k === q.def; })[0].t.toLowerCase()) + "</div>" : "") + "</div>";
     if (vo || ctxIds.length) box.insertAdjacentHTML("beforeend", '<button type="button" class="askskip" id="askskip">Skip to the choice</button>');
@@ -183,15 +187,16 @@
     };
     box.querySelectorAll("[data-ask]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); pickIt(b.getAttribute("data-ask"), false); }); });
     const ready = function () {
-      if (live || run !== r) return; live = true; box.classList.add("ready"); const skb = box.querySelector("#askskip"); if (skb) skb.remove(); window.__CINE_ASK_READY__ = { id: s.ask.id, at: Date.now() };
+      if (live || run !== r) return; live = true; box.classList.remove("preq"); box.classList.add("ready"); const skb = box.querySelector("#askskip"); if (skb) skb.remove(); window.__CINE_ASK_READY__ = { id: s.ask.id, at: Date.now() };
       const f = box.querySelector("[data-ask]"); if (f) f.focus({ preventScroll: true });
       tm = DESK.countdown(secs, "askbar", function () { pickIt(q.def, true); });
     };
-    const ids = ctxIds.concat(vo ? [q.voice] : []); let i = 0, waited = 0;
+    const ids = narIds.concat(preIds, vo ? [q.voice] : []); let i = 0, waited = 0;
+    if (vo && ids.length > 1) box.classList.add("preq"); // Ash and the options wait until the scene's lines and the Flash are said
     const said = function (id) { box.querySelectorAll("[data-line]").forEach(function (pEl) { pEl.classList.toggle("now", pEl.getAttribute("data-line") === id); }); };
     const next = function () {
       if (live || run !== r) return; if (i >= ids.length) { said(null); return ready(); }
-      const id = ids[i++]; said(id); window.__CINE_SAID__ = (window.__CINE_SAID__ || []).concat([id]);
+      const id = ids[i++]; said(id); if (id === q.voice) box.classList.remove("preq"); window.__CINE_SAID__ = (window.__CINE_SAID__ || []).concat([id]);
       VOICE.now(id, { nosub: true, cut: true }); VOICE.after(id, function () { setTimeout(next, 200); });
     };
     // a scene line still being said when the choice arrives finishes first (it is never cut off by the question)
@@ -224,7 +229,7 @@
   function skip(r) {
     if (r.paused) return;
     const pa = pendingAsk(r);
-    if (pa && !r.opts.replay) { holdBack(r, pa, pa.ask.at); r.elapsed = (pa.t0 + pa.ask.at) * 1000; r.last = 0; frame(r); return; }
+    if (pa && !r.opts.replay) { pa.jumped = true; holdBack(r, pa, pa.ask.at); r.elapsed = (pa.t0 + pa.ask.at) * 1000; r.last = 0; frame(r); return; }
     finish(true);
   }
   function finish(skipped) {
@@ -240,7 +245,7 @@
     r.total = timeShots(r.shots);
     run = r; r.nodes = Array.prototype.slice.call(r.el.querySelectorAll(".shot"));
     r.t0 = clockNow(); r.elapsed = 0;
-    if (r.opts.askOnly) { const pa = pendingAsk(r); if (pa) { holdBack(r, pa, pa.ask.at); r.elapsed = (pa.t0 + pa.ask.at - 0.6) * 1000; } }
+    if (r.opts.askOnly) { const pa = pendingAsk(r); if (pa) { pa.jumped = true; holdBack(r, pa, pa.ask.at); r.elapsed = (pa.t0 + pa.ask.at - 0.6) * 1000; } }
     frame(r); r.raf = requestAnimationFrame(loop);
   }
   function wire(r) {
@@ -265,6 +270,7 @@
     opts = opts || {};
     if (run) finish(true);
     const wasSeen = !!seen[id]; markSeen(id);
+    if (window.VOICE && !opts.trailer) VOICE.hush(); document.querySelectorAll("#toasts .toast").forEach(function (t) { t.remove(); });
     const r = build(id, opts); r.done = done; r.wasSeen = wasSeen;
     document.body.appendChild(r.el); document.body.classList.add("in-cine"); if (window.SFX && SFX.cineDuck) SFX.cineDuck(true);
     if (window.LOOK) LOOK.rain(!reduce());

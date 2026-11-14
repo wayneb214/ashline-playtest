@@ -229,7 +229,7 @@
   // ---------- timed choices inside cutscenes ----------
   const ASKS = {
     // Batch P: the Flash from Bath (who he is, what was used) is said before the choice, not on tonight's report after it
-    bath: { q: "Our man is down. The ambulance is two minutes out.", voice: "ask_bath_now", pre: function () { return [S().defector ? "flash_d1_def" : "flash_d1_nodef"]; }, def: "away", secs: 9,
+    bath: { q: "Our man is down. The ambulance is two minutes out.", voice: "ask_bath_now", preTag: "23:47 \u00b7 BATH", pre: function () { return [S().defector ? "flash_d1_def" : "flash_d1_nodef"]; }, def: "away", secs: 9,
       opts: [{ k: "doctor", t: "Send our doctor in with it", d: "\u22126 Secrecy \u00b7 Vass may talk: +10% on the ferry tomorrow" }, { k: "away", t: "Stay out of sight", d: "+4 Secrecy" }],
       res: { doctor: "Our doctor rides in the back. Vass grips her hand.", away: "Our people melt into the rain." } },
     // the ask matches how Harwich went: the same two choices (+10% in York, or +4 Secrecy), worded for what is in front of you

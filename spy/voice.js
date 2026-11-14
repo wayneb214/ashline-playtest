@@ -134,7 +134,7 @@
     el.classList.add("on");
     clearTimeout(subT); subT = setTimeout(function () { el.classList.remove("on"); }, total);
   }
-  let queue = [], playingId = null;
+  let queue = [], playingId = null, gap = null; // gap: the breath between two queued lines (still busy)
   const queued = function (id) { return queue.some(function (q) { return q[0] === id; }); };
   const speaking = function () { return !!(cur && cur.src && cur.src !== HUSH && !cur.paused && !cur.ended && !cur.muted && !cur._held); };
   function start(id, opt) {
@@ -147,7 +147,7 @@
         a.addEventListener("ended", un); a.addEventListener("pause", un); a.addEventListener("error", un);
         a.addEventListener("playing", function () { if (a.src !== HUSH && window.SFX && SFX.voiceDuck) SFX.voiceDuck(true); });
         // the next waiting line starts a breath after this one ends
-        const next = function () { playingId = null; const q = queue.shift(); if (q) setTimeout(function () { start(q[0], q[1]); }, 180); };
+        const next = function () { playingId = null; const q = queue.shift(); if (q) { clearTimeout(gap); gap = setTimeout(function () { gap = null; start(q[0], q[1]); }, 180); } };
         a.addEventListener("ended", next); a.addEventListener("error", next);
       }
       const pr = a.play();
@@ -171,7 +171,7 @@
       const vv = window.PREFS ? PREFS.vol("voice") : 1;
       if (!o.src || (window.SFX && SFX.muted) || !vv) { if (o.sub && !(opt && opt.nosub)) subtitle(o); return; }
       if (speaking() && !(opt && opt.cut)) { if (!queued(id) && playingId !== id) queue.push([id, opt]); return; }
-      queue = []; if (opt && opt.cut) blocked = null; start(id, opt);
+      queue = []; clearTimeout(gap); gap = null; if (opt && opt.cut) blocked = null; start(id, opt);
     },
     // run fn once the line has finished playing (or after a reading pause when it can't play)
     after: function (id, fn) {
@@ -192,11 +192,11 @@
     seq: function (ids) { const self = this; let i = 0; const next = function () { if (i >= ids.length) return; const id = ids[i++]; self.now(id); self.after(id, function () { setTimeout(next, 250); }); }; setTimeout(next, 60); },
     // a line that belongs to a screen you can redraw (choosing on the screen): said once per visit to the game
     once: function (id) { this._said = this._said || {}; if (this._said[id]) return; this._said[id] = 1; this.play(id); },
-    hush: function () { queue = []; blocked = null; if (cur) cur.pause(); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
-    busy: function () { return speaking() || queue.length > 0; },
+    hush: function () { queue = []; clearTimeout(gap); gap = null; blocked = null; if (cur) cur.pause(); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
+    busy: function () { return speaking() || queue.length > 0 || !!gap; },
     // app backgrounded or a call came in: hold the line where it is, carry on from there when we're back
     hold: function () { if (cur && !cur.paused && !cur.ended) { cur._held = true; cur.pause(); return true; } return false; },
     unhold: function () { if (cur && cur._held) { cur._held = false; const p = cur.play(); if (p && p.catch) p.catch(function () {}); } },
-    stop: function () { queue = []; if (cur) { cur.pause(); cur.muted = false; } const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }
+    stop: function () { queue = []; clearTimeout(gap); gap = null; if (cur) { cur.pause(); cur.muted = false; } const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }
   };
 })();

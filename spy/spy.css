@@ -1399,3 +1399,12 @@ body:has(.cine-ask) #subtitle { display: none; }
 .restorebk { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Batch Q: the call's Skip is secondary: outlined, not the gold primary */
 #view .callskip, #view .btn.ghost.callskip { background: transparent !important; background-image: none !important; color: #f3ead2 !important; border: 1px solid rgba(226,195,114,.7) !important; box-shadow: none !important; font-weight: 600; text-shadow: none !important; }
+
+/* Panel 5 (Wayne): after the Bath scene, the Flash comes first as a telegram, then Ash's question, then the options */
+.cine-ask .askflash { margin: 0 0 10px; padding: 10px 12px; background: #f1e6c8; color: #2a2116; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,.5); font: 0.9375rem/1.45 Georgia, serif; }
+.cine-ask .askflash .fbar { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid rgba(122,30,30,.35); font: 700 0.875rem "Courier New", monospace; letter-spacing: .04em; color: #7a1e1e; }
+.cine-ask .askflash p { margin: 0; }
+.cine-ask.preq .q, .cine-ask.preq .askopts { display: none; }
+.flash-card.had { min-height: 0; padding-top: 52px; background: linear-gradient(180deg, rgba(8,9,9,.6), rgba(8,9,9,.95)), url(img/flash-bath.jpg) center 30% / cover no-repeat; }
+.cine-ask .askflash p, .cine-ask .askflash p.now { color: #2a2116 !important; opacity: 1 !important; }
+.cine-ask .askflash .fbar { flex-wrap: wrap; } .cine-ask .askflash .fbar span { white-space: nowrap; }
