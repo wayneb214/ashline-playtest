@@ -7,7 +7,7 @@
   const mq = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   // player preferences, shared by sound, haptics, motion and tips. Stored on this device only.
   const PKEY = "albion-prefs";
-  const PDEF = { mode: "all", music: 0.8, voice: 1, fx: 0.8, haptics: true, reduce: null, tips: true, text: "lg" };
+  const PDEF = { mode: "all", music: 0.8, voice: 1, fx: 0.8, haptics: true, reduce: null, tips: true, text: "lg", timers: true };
   let P = Object.assign({}, PDEF);
   try { Object.assign(P, JSON.parse(localStorage.getItem(PKEY) || "{}")); } catch (e) {}
   // sound modes are now All (music, voices, effects) or No music; voices always play unless sound is Off.

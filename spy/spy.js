@@ -449,7 +449,7 @@
     });
     FILES = {}; cards.forEach(function (c) { FILES[c.id] = c; });
     render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + replayCard() + lowTrustCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
-      (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || "Tap a file to pick it up.");
+      (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || lowWarn() || "Tap a file to pick it up.");
     if (no10Took() && !S.no10.said && window.VOICE) { S.no10.said = true; save("briefing"); VOICE.play("ash_no10_took"); }
     briefVoice(line.text, line.worried);
     document.querySelectorAll("[data-sit]").forEach(function (b) { b.onclick = function () { deskFile(b.getAttribute("data-sit"), b); }; });
@@ -834,6 +834,7 @@
     const ch = {};
     const d2 = fold(delta);
     if (d2.service < 0) d2.service = Math.round(d2.service * 0.65); // setbacks bruise the Service; a run of them breaks it
+    if (S.diff === "easy") ["capital", "service"].forEach(function (m) { if (d2[m] < 0) d2[m] = Math.round(d2[m] * 0.7); }); // Easy: setbacks cost less, so a slow, careful week still keeps the chair
     Object.keys(d2).forEach(function (m) { const before = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, before + d2[m])); if (m !== "mood" && S.meters[m] !== before) ch[m] = S.meters[m] - before; });
     return ch;
   }
@@ -975,7 +976,7 @@
     if (w && w.id === id && w.k === k) w.parts.filter(function (p) { return Math.abs(p[1]) >= 4; }).sort(function (x, y) { return Math.abs(y[1]) - Math.abs(x[1]); }).slice(0, 2).forEach(function (p) { out.push(becauseOne(p, k)); });
     else if (appr) {
       const big = Object.keys(ch || {}).sort(function (x, y) { return Math.abs(ch[y]) - Math.abs(ch[x]); })[0];
-      out.push("you went with \u201c" + esc(String(appr)) + "\u201d" + (big ? ", " + mname(big) + " moved " + (ch[big] > 0 ? "+" : "\u2212") + Math.abs(ch[big]) : ""));
+      out.push((id === "chase" && S.chase ? "your watchers scored " + S.chase.score + " of 9 across London" : "you went with \u201c" + esc(String(appr)) + "\u201d") + (big ? ", " + mname(big) + " moved " + (ch[big] > 0 ? "+" : "\u2212") + Math.abs(ch[big]) : ""));
     }
     if (!out.length) return "";
     S.because = (S.because || []).concat(out.slice(0, 1).map(function (t) { return { id: id, t: t, res: res }; })).slice(-8);
@@ -1135,8 +1136,8 @@
     if (window.FUN) FUN.event("day");
     // the order at the end of every day: the full front page with the news bulletin first, then this report
     if (S.paperDay !== S.day) return paper({ first: true });
-    const verdict = S.day === 6 && window.AH4 && AH4.ending ? END6_LETTER[AH4.ending()] : { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
-    render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
+    const verdict = S.day === 6 && window.AH4 && AH4.ending ? end6Letter(AH4.ending()) : { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
+    render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"gradelbl\">" + (S.day === 6 ? "Today\u2019s grade \u00b7 your ending is the medal below" : "Day " + S.day + " grade") + "</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
       (S.day === 5 && window.AH4 && AH4.interceptClue ? AH4.interceptClue() : "") + (S.day === 6 && window.AH4 && AH4.knightGap ? '<p class="knightgap">' + AH4.knightGap() + "</p>" : "") +
       (function () { const g = gradeParts(); return '<p class="gradeparts">Graded on: No.10 trust and Service (top bar) \u00b7 cases closed <b>' + g.record + "%</b> \u00b7 tradecraft <b>" + g.craft + "%</b>" + (g.bonus ? " \u00b7 Easy +" + g.bonus : "") + (S.diff !== "easy" && g.craft < 75 ? '<br><small>An A needs 75% tradecraft over the week, a B 60%: the right officer, on the plan they rate best.</small>' : "") + "</p>"; })() + (window.FUN ? FUN.medalHTML(S) : "") +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
@@ -1180,6 +1181,8 @@
     return '<h3 class="pasth">Your past games</h3>' + (list.length ? '<ol class="pastgames">' + list.map(function (x) { const en = window.AH4 && AH4.END[x.e]; return '<li class="e-' + x.e + '"><b>' + esc(en ? en.name : x.e) + "</b><span>" + esc((DIFFW[x.d] || "Standard") + " \u00b7 " + (x.at || "")) + "</span></li>"; }).join("") + "</ol>" : '<p class="fine">Finish Day 6 and your ending is kept here.</p>');
   }
   // Batch L: on Day 6 the letter and Ash's read-out follow the ending, never the day grade, so a resignation is never "held the line"
+  // the scandal letter follows how much the Prime Minister still trusts you (a scandal can come from losing the showdown, not her)
+  function end6Letter(e) { if (e === "scandal" && S.meters.capital >= 60) return "It\u2019s all over the papers. The Prime Minister is shaken, but she stands by you, and you still have the chair."; if (e === "scandal" && S.meters.capital >= 35) return "It\u2019s all over the papers. The Prime Minister is cross, but you still have the chair."; return END6_LETTER[e]; }
   const END6_LETTER = { knight: "The Prime Minister is delighted, and there is talk of the Palace. Don\u2019t let it go to your head.", quiet: "The street is quiet, and Kesk has flown home. The Prime Minister says that will do. From her, that\u2019s praise.", scandal: "It\u2019s all over the papers. The Prime Minister is furious, but you still have the chair.", resign: "The Prime Minister has asked for your resignation letter by Friday. Ash says it\u2019s been an honour." };
   function reportLine(g) { if (S.day === 6 && window.AH4 && AH4.ending) return "rep6_" + AH4.ending(); return "rep_" + (/[A-E]/.test(g) ? g : "C"); }
   function bulletinLine() {
@@ -1239,10 +1242,18 @@
     if (S.day === 1) { d.lead = "MAN FIGHTS FOR LIFE AFTER BATH BENCH COLLAPSE"; d.sub = "Former foreign official found near the Circus \u00b7 Police cordon overnight \u00b7 Downing Street \u2018monitoring\u2019"; }
     return d;
   }
+  // a plain warning on the desk when a gauge is close to ending the week
+  function lowWarn() {
+    const m = S.meters || {};
+    if (m.capital != null && m.capital <= 25) return "No.10 trust is low (" + m.capital + "/100). Wins win it back.";
+    if (m.service != null && m.service <= 25) return "Service is low (" + m.service + "/100). Safer plans and the right officer protect it.";
+    return "";
+  }
   // tonight's front page, on the summary itself: every story is one of your choices
   function choiceText(l) {
     if (l.appr === "Left on the desk") return "you left it on the desk";
     if (l.appr === "Taken by No.10") return "No.10 took it off your desk";
+    if (l.id === "chase" && S.chase) return "of the chase across London: your watchers scored " + S.chase.score + " of 9";
     const s = CASES()[l.id] || {};
     if (l.k && s.kind !== "accuse") return "you sent " + first(l.k) + " \u00b7 " + String(l.appr).toLowerCase();
     return "you chose \u201c" + l.appr + "\u201d";
@@ -1341,7 +1352,7 @@
   // shared with day2.js
   window.AH = { caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE };
+    phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

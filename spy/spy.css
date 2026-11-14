@@ -1408,3 +1408,10 @@ body:has(.cine-ask) #subtitle { display: none; }
 .flash-card.had { min-height: 0; padding-top: 52px; background: linear-gradient(180deg, rgba(8,9,9,.6), rgba(8,9,9,.95)), url(img/flash-bath.jpg) center 30% / cover no-repeat; }
 .cine-ask .askflash p, .cine-ask .askflash p.now { color: #2a2116 !important; opacity: 1 !important; }
 .cine-ask .askflash .fbar { flex-wrap: wrap; } .cine-ask .askflash .fbar span { white-space: nowrap; }
+/* coach tip: a second button to switch every tip off */
+.coach .cbtns { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.coach .coachoff { font-size: .875rem; }
+
+/* the "Tap a file" hint is hidden while a file is open on the desk */
+body:has(#dk-file) #hintbar { visibility: hidden; }
+.gradelbl { font: 600 0.875rem var(--type, monospace); letter-spacing: .06em; text-transform: uppercase; color: var(--paper-ink); opacity: .8; margin-top: 6px; }

@@ -6,7 +6,8 @@
   const A = function () { return window.AH; };
   const S = function () { return window.AH.S(); };
   const C = function () { const s = S(); s.cons = s.cons || {}; s.cons.ink = s.cons.ink || {}; return s.cons; };
-  const reduce = function () { return window.FEEL && FEEL.reduce; };
+  // no clock with reduced motion, or with Settings > Answer clocks off: the call or question simply waits
+  const reduce = function () { return (window.FEEL && FEEL.reduce) || (window.PREFS && PREFS.get("timers") === false); };
   const sfx = function (n, a) { if (window.SFX && SFX[n]) SFX[n](a); };
   const buzz = function (k) { if (window.FEEL) FEEL.buzz(k); };
 
@@ -210,7 +211,7 @@
       if (held || heat > 0) raf = requestAnimationFrame(step); else raf = 0;
     };
     paper.addEventListener("pointerdown", function (e) { if (e.target.closest("button")) return; held = true; y0 = e.clientY; dy = 0; last = 0; paper.classList.add("warming"); try { paper.setPointerCapture(e.pointerId); } catch (er) {} if (!raf) raf = requestAnimationFrame(step); });
-    paper.addEventListener("pointermove", function (e) { if (!held) return; dy = Math.max(0, Math.min(160, e.clientY - y0)); if (!reduce()) paper.style.translate = "0 " + dy + "px"; });
+    paper.addEventListener("pointermove", function (e) { if (!held) return; dy = Math.max(0, Math.min(160, e.clientY - y0)); if (!(window.FEEL && FEEL.reduce)) paper.style.translate = "0 " + dy + "px"; });
     const up = function () { held = false; dy = 0; paper.style.translate = ""; paper.classList.remove("warming"); };
     paper.addEventListener("pointerup", up); paper.addEventListener("pointercancel", up);
     paper.addEventListener("contextmenu", function (e) { e.preventDefault(); });

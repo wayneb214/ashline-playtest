@@ -81,7 +81,7 @@ window.AH_DATA = (function () {
   };
 
   const DIFFICULTY = {
-    easy: { name: "Easy", txt: "Kinder odds (+10%), deadlines an hour later, two bugs in the locker.", odds: 10, due: 1, kit: { bug: 2, passport: 1, car: 1, key: 1 } },
+    easy: { name: "Easy", txt: "Kinder odds (+10%), deadlines an hour later, setbacks cost less, two bugs in the locker.", odds: 10, due: 1, kit: { bug: 2, passport: 1, car: 1, key: 1 } },
     standard: { name: "Standard", txt: "The day as written.", odds: 0, due: 0, kit: { bug: 1, passport: 1, car: 1, key: 1 } },
     hard: { name: "Hard", txt: "Harsher odds (\u221210%), deadlines an hour earlier, less time to decide in the field, no safe-house key.", odds: -10, due: -1, kit: { bug: 1, passport: 1, car: 1, key: 0 } }
   };

@@ -66,6 +66,8 @@
         '<p class="fine">Larger is the default. Standard is a little smaller, and never under 14px.</p>' +
         "<h2>Motion</h2>" + seg("rd", [["auto", "Device (" + (FEEL.deviceReduce ? "reduced" : "full") + ")"], ["off", "Full motion"], ["on", "Reduced"]], rdNow) +
         '<p class="fine">Reduced motion shows still paintings instead of moving cutscenes.</p>' +
+        "<h2>Answer clocks</h2>" + seg("tmr", [["1", "On"], ["0", "Off"]], PREFS.get("timers") === false ? "0" : "1") +
+        '<p class="fine">Off: phone calls and Ash\u2019s questions wait for you, with no countdown and no answer picked for you.</p>' +
         
         (window.REVIEW && REVIEW.rateHTML && REVIEW.played() ? "<h2>Enjoying it?</h2>" + REVIEW.rateHTML("mn-rate") : "") + "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") + '<p class="fine">Tips switch back on with every new game, in case someone else is playing.</p>' +
         (document.body.classList.contains("on-title") && A().canReplayDay && A().canReplayDay() ? '<h2>Replay a day</h2><button class="btn ghost" id="st-days">Replay a day</button>' : "") +
@@ -77,6 +79,7 @@
       document.querySelectorAll("[data-vol]").forEach(function (r) { r.oninput = function () { PREFS.set(r.getAttribute("data-vol"), r.value / 100); }; r.onchange = function () { if (window.SFX) SFX.tick(1); }; });
       document.querySelectorAll("[data-mode]").forEach(function (b) { b.onclick = function () { const m = b.getAttribute("data-mode"); if (window.SFX) { SFX.unlock(); SFX.setMuted(m === "off"); } if (m !== "off") PREFS.set("mode", m); A().muteBtn(); draw(); }; });
       document.querySelectorAll("[data-hap]").forEach(function (b) { b.onclick = function () { PREFS.set("haptics", b.getAttribute("data-hap") === "1"); FEEL.buzz("stamp"); draw(); }; });
+      document.querySelectorAll("[data-tmr]").forEach(function (b) { b.onclick = function () { PREFS.set("timers", b.getAttribute("data-tmr") === "1"); draw(); }; });
       document.querySelectorAll("[data-ts]").forEach(function (b) { b.onclick = function () { PREFS.set("textSet", true); PREFS.set("text", b.getAttribute("data-ts")); draw(); }; });
       document.querySelectorAll("[data-rd]").forEach(function (b) { b.onclick = function () { const v = b.getAttribute("data-rd"); PREFS.set("reduce", v === "auto" ? null : v === "on"); draw(); }; });
       if (window.REVIEW && REVIEW.bindRate) REVIEW.bindRate("mn-rate");
@@ -132,10 +135,12 @@
     seenC[key] = 1;
     const old = $("coach"); if (old) old.remove();
     const c = document.createElement("div"); c.id = "coach"; c.className = "coach"; c.setAttribute("role", "status");
-    c.innerHTML = "<b>New</b><span>" + html + '</span><button type="button" aria-label="Dismiss tip">Got it</button>';
+    c.innerHTML = "<b>New</b><span>" + html + '</span><span class="cbtns"><button type="button" aria-label="Dismiss tip">Got it</button><button type="button" class="coachoff" aria-label="No more tips">No more tips</button></span>';
     document.body.appendChild(c); requestAnimationFrame(function () { c.classList.add("on"); });
     let gone = false; const go = function () { if (gone) return; gone = true; c.classList.remove("on"); setTimeout(function () { c.remove(); }, 300); };
-    c.querySelector("button").onclick = function (e) { e.stopPropagation(); go(); }; setTimeout(go, 9000);
+    c.querySelector("button").onclick = function (e) { e.stopPropagation(); go(); };
+    c.querySelector(".coachoff").onclick = function (e) { e.stopPropagation(); PREFS.set("tips", false); go(); if (window.FUN && FUN.toast) FUN.toast("Tips off. Switch them back on in Settings."); };
+    setTimeout(go, 9000);
   }
 
   window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, confirm: confirm, sheet: sheet };
