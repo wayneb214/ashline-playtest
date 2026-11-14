@@ -9,9 +9,10 @@
   const store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   let seen = {}; try { seen = JSON.parse(store.get(SEEN) || "{}") || {}; } catch (e) { seen = {}; }
   const reduce = function () { return window.FEEL && FEEL.reduce; };
-  const sfx = function (n, a) { if (window.SFX && SFX[n]) SFX[n](a); };
+  // a film's voice lines show only in the film caption (Ash included), never in the game's subtitle card
+  const sfx = function (n, a) { if (n === "voice") { if (window.VOICE) setTimeout(function () { VOICE.now(a, { nosub: true }); }, 60); return; } if (window.SFX && SFX[n]) SFX[n](a); };
   // moving paintings: each plays once, then holds its last frame; the layered stills stay underneath as the fallback
-  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1, "d4-letter": 1, "d5-bridge": 1, "d6-london": 1, "end2-good": 1, "end2-bad": 1 }; // york: video retired (car morphed), the painted still with parallax is used
+  const MOVE = { thames: 1, cab: 1, phone: 1, bath: 1, border: 1, brief: 1, cable: 1, ferry: 1, green: 1, no10: 1, tail: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1, "d4-letter": 1, "d5-bridge": 1, "d6-london": 1, "end2-good": 1, "end2-bad": 1, downing: 1, "day1-hall": 1, "d4-envelope": 1, "d5-airport": 1, "d6-arrival": 1 }; // york: video retired (car morphed), the painted still with parallax is used
   const WIDE = { york: 1, border: 1, no10: 1, cable: 1, "end-win": 1, "end-mixed": 1, "end-loss": 1, "end-traded": 1, "d6-london": 1, "end2-good": 1, "end2-bad": 1 };
   const S = function () { return window.AH ? window.AH.S() : {}; };
 
@@ -25,7 +26,8 @@
       { img: "phone", dur: 4.4, cam: [1.0, 0, 0, 1.06, 2, -2], caps: [[0.6, "Narrator", "Then, at midnight\u2026 the telephone rang."]], sfx: [[0.6, "voice", "nar_open_4"], [3.6, "ring"]] },
       { img: "phone", dur: 4.6, cam: [1.06, 2, -2, 1.1, 3, -3], inset: "ash", caps: [[0.4, "Margaret \u2018Ash\u2019 Ashby \u00b7 Chief of Staff", "Chief, we have a problem."]], sfx: [[0.4, "voice", "ash_problem"], [0, "stopRing"], [0.3, "stinger"]] }]; } },
     day1: { name: "Day 1 \u00b7 The Long Day", shots: function () { return [
-      { img: "downing", dur: 5, cam: [1.04, 0, 0, 1.12, 0, -2], caps: [[0.5, "", "Wednesday. 08:00. Downing Street."]], sfx: [[0.5, "voice", "cine_day1_1"], [0.2, "chime", 2]] }]; } },
+      { img: "downing", dur: 4.2, cam: [1.02, 0, 0, 1.1, 0, -2], caps: [[0.5, "", "Wednesday. 08:00. Downing Street."]], sfx: [[0.5, "voice", "cine_day1_1"], [0.2, "chime", 2]] },
+      { img: "day1-hall", dur: 3.6, cam: [1.02, 0, 2, 1.1, 0, -1] }]; } },
     day2: { name: "Day 2 \u00b7 Pale Hour", shots: function () { return [
       { img: "brief", dur: 7, cam: [1.16, 0, 4, 1.02, 0, -2], caps: [[0.5, "", "Thursday. Vass is alive."], [3.4, "", "Three suspects. One night to stop them leaving."]], sfx: [[0.2, "rainUp", true], [0.4, "tele"], [0.5, "voice", "cine_day2_1"], [3.4, "voice", "cine_day2_2"]] }]; } },
     day3: { name: "Day 3 \u00b7 The Green Coat", shots: function () { return [
@@ -40,13 +42,16 @@
     end3: { name: "The Green Coat ends", shots: function () { const s = S(), e = s.deal === "deal" ? "traded" : (s.done && s.done.exfil) || "loss"; return [
       { img: "end-" + e, dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.16, 0, -4], caps: [[0.5, "", { win: "Pine forest. Our side of the line.", mixed: "She\u2019s out. One of ours isn\u2019t.", loss: "The barrier. A grey car. Gone.", traded: "A deal is a deal." }[e]], [4, "", { win: "She asks for a cup of tea.", mixed: "Kesk will want a trade.", loss: "Kesk wins this round.", traded: "Nobody mentions a woman in green." }[e]]], sfx: [[0.2, e === "win" ? "chime" : "stinger", 2], [0.5, "voice", "cine_end3_" + e + "_1"], [4, "voice", "cine_end3_" + e + "_2"]] }]; } },
     day4: { name: "Act 2 \u00b7 Day 4 \u00b7 The Letter", shots: function () { return [
-      { img: "d4-letter", dur: 7, cam: [1.14, 0, 3, 1.02, 0, -2], caps: [[0.5, "", "Tuesday. Albion House."], [2.6, "Ash", "Chief. A letter came for you this morning. Hand delivered. To this address."]], sfx: [[0.2, "rainUp", true], [0.5, "voice", "cine_day4_1"], [2.6, "voice", "ash_d4_open"], [6.2, "stinger"]] }]; } },
+      { img: "d4-letter", dur: 3, cam: [1.14, 0, 3, 1.06, 0, 0], caps: [[0.5, "", "Tuesday. Albion House."]], sfx: [[0.2, "rainUp", true], [0.5, "voice", "cine_day4_1"]] },
+      { img: "d4-envelope", dur: 5, cam: [1.02, 0, 0, 1.12, 0, -2], caps: [[0.3, "Ash", "Chief. A letter came for you this morning. Hand delivered. To this address."]], sfx: [[0.3, "voice", "ash_d4_open"], [3.9, "stinger"]] }]; } },
     day5: { name: "Day 5 \u00b7 The Bridge", shots: function () { return [
-      { img: "phone", dur: 6.5, cam: [1.0, 0, 0, 1.1, 3, -3], inset: "ash", caps: [[0.5, "", "Wednesday. 06:40."], [2.6, "Ash", "They\u2019ve taken one of ours, Chief. At the airport in Kessgrad, this morning."]], sfx: [[0.2, "ring"], [0.5, "voice", "cine_day5_1"], [1.8, "stopRing"], [2.6, "voice", "ash_d5_open"]] }]; } },
+      { img: "phone", dur: 3, cam: [1.0, 0, 0, 1.06, 2, -2], inset: "ash", caps: [[0.5, "", "Wednesday. 06:40."]], sfx: [[0.2, "ring"], [0.5, "voice", "cine_day5_1"], [1.8, "stopRing"]] },
+      { img: "d5-airport", dur: 5, cam: [1.02, 0, 0, 1.12, 0, -2], caps: [[0.3, "Ash", "They\u2019ve taken one of ours, Chief. At the airport in Kessgrad, this morning."]], sfx: [[0.3, "voice", "ash_d5_open"]] }]; } },
     bridge: { name: "The bridge at dawn", shots: function () { return [
       { img: "d5-bridge", dur: 8, cam: [1.02, 0, -2, 1.16, 0, 3], caps: [[0.5, "", "05:40. The Vell bridge. Fog on the water."], [4.2, "", "Two cars. One each end. Nobody wants to go first."]], sfx: [[0.1, "rainUp", true], [4, "heart", 3], [0.5, "voice", "cine_bridge_1"], [4.2, "voice", "cine_bridge_2"]] }]; } },
     day6: { name: "Day 6 \u00b7 Kesk in London", shots: function () { return [
-      { img: "d6-london", dur: 7.5, pan: [20, 65], cam: [1.04, 0, 0, 1.14, 0, -2], caps: [[0.5, "", "Thursday. London. Rain."], [2.9, "Ash", "He\u2019s here, Chief. Kesk is in London. He landed an hour ago, under another name."]], sfx: [[0.2, "rainUp", true], [0.3, "bigben", 3], [0.5, "voice", "cine_day6_1"], [2.9, "voice", "ash_d6_open"]] }]; } },
+      { img: "d6-london", dur: 3.6, pan: [20, 50], cam: [1.04, 0, 0, 1.1, 0, -1], caps: [[0.5, "", "Thursday. London. Rain."]], sfx: [[0.2, "rainUp", true], [0.3, "bigben", 3], [0.5, "voice", "cine_day6_1"]] },
+      { img: "d6-arrival", dur: 5, cam: [1.02, 0, 0, 1.12, 0, -2], caps: [[0.3, "Ash", "He\u2019s here, Chief. Kesk is in London. He landed an hour ago, under another name."]], sfx: [[0.3, "voice", "ash_d6_open"]] }]; } },
     end6: { name: "Act 2 ends", shots: function () { const e = window.AH4 ? AH4.ending() : "quiet", ok = e === "knight" || e === "quiet"; return [
       { img: ok ? "end2-good" : "end2-bad", dur: 8, pan: [40, 60], cam: [1.02, 0, 0, 1.14, 0, -3], caps: [[0.5, "", window.AH4 ? AH4.END[e].name : ""]], sfx: [[0.2, ok ? "chime" : "stinger", 1], [0.5, "voice", "cine_end6_" + e]] }]; } },
     trailer: { name: "Trailer", shots: function () { return [
@@ -65,6 +70,11 @@
       { img: "green", dur: 2.4, cam: [1.14, 0, 3, 1.02, 0, 0] },
       { title: true, dur: 3, sfx: [[0.2, "chime", 1]] }]; } }
   };
+  // E: a dip to black and a short title card between the desk and each film (not the opening, the trailer or a question-only replay)
+  const TITLES = { day1: ["Day 1", "Wednesday \u00b7 London"], bath: ["Day 1", "23:47 \u00b7 Bath"], day2: ["Day 2", "Thursday \u00b7 London"], ferry: ["Day 2", "23:10 \u00b7 Harwich"],
+    day3: ["Day 3", "Friday \u00b7 York"], border: ["Day 3", "Night \u00b7 The Varenian border"], end3: ["Day 3", "The Green Coat ends"], day4: ["Day 4", "Tuesday \u00b7 Albion House"],
+    day5: ["Day 5", "Wednesday \u00b7 London"], bridge: ["Day 5", "Dawn \u00b7 The Vell bridge"], day6: ["Day 6", "Thursday \u00b7 London"], end6: ["Day 6", "The week ends"] };
+  const DIP = 1.8;
   const ORDER = ["open", "day1", "bath", "day2", "ferry", "day3", "border", "end3", "day4", "day5", "bridge", "day6", "end6"];
 
   // ---------- engine ----------
@@ -74,6 +84,7 @@
   const lerp = function (a, b, p) { return a + (b - a) * p; };
   const clockNow = function () { return window.__CINE_CLOCK__ != null ? window.__CINE_CLOCK__ * 1000 : performance.now(); };
   function shotHTML(sh) {
+    if (sh.dip) return '<div class="shot dipshot"><div class="dipcard"><small>' + sh.dip[0] + "</small><span>" + sh.dip[1] + "</span></div></div>";
     if (sh.card) return '<div class="shot cardshot"><div class="tagline">' + sh.card + "</div></div>";
     if (sh.title) return '<div class="shot titleshot"><div class="tt">' + ((window.AH_DATA && AH_DATA.EMBLEM) || "") + '<h1>Albion House</h1><div class="sub">Spymaster</div><div class="flagband" aria-hidden="true"></div><div class="soon">A work of fiction</div></div></div>';
     if (sh.ui) return '<div class="shot uishot"><div class="ly" style="background-image:url(img/cine/thames-0.jpg)"></div><div class="device"><img src="img/cine/tr-' + sh.ui + '.jpg" alt=""></div></div>';
@@ -94,6 +105,7 @@
   }
   function build(id, opts) {
     const shots = SCENES[id].shots();
+    if (TITLES[id] && !opts.trailer && !opts.askOnly) shots.unshift({ dip: TITLES[id], dur: DIP });
     shots.forEach(function (s, i) { s.hold = i > 0 && !!s.img && shots[i - 1].img === s.img; });
     const t = timeShots(shots);
     const el = document.createElement("div"); el.className = "cine" + (reduce() ? " still" : "") + (opts.trailer ? " trailer" : ""); el.id = "cine";
@@ -127,6 +139,9 @@
         else if (!s.hold && v.paused && !v.ended && !r.paused && i === cur) { const pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
         else if (r.paused && !v.paused) v.pause();
         if (s.pan) v.style.objectPosition = lerp(s.pan[0], s.pan[1], p).toFixed(2) + "% 50%";
+        // C: the same slow push-in as the painted layers, so a moving shot drifts like a camera (never with reduced motion: no video then)
+        if (s.cam && !still) { const c = s.cam, sc = Math.max(1, lerp(c[0], c[3], p)), lim = (sc - 1) * 50, tx = clamp(lerp(c[1], c[4], p) * 0.5, -lim, lim), ty = clamp(lerp(c[2], c[5], p) * 0.5, -lim, lim);
+          v.style.transform = "translate3d(" + tx.toFixed(2) + "%," + ty.toFixed(2) + "%,0) scale(" + sc.toFixed(4) + ")"; }
       }
       if (s.cam) {
         const c = s.cam, sc = lerp(c[0], c[3], p), x = lerp(c[1], c[4], p), y = lerp(c[2], c[5], p);
@@ -139,6 +154,7 @@
         const ins = n.querySelector(".inset"); if (ins) ins.style.opacity = String(clamp(local / 0.6, 0, 1));
       }
       if (s.ui) { const im = n.querySelector(".device img"); if (im) im.style.transform = "translateY(" + (-p * 12).toFixed(2) + "%)"; const dv = n.querySelector(".device"); if (dv) dv.style.transform = "perspective(900px) rotateY(" + lerp(-9, 5, p).toFixed(2) + "deg) rotateX(4deg) scale(" + lerp(0.94, 1.0, p).toFixed(3) + ")"; }
+      if (s.dip) { const k = n.firstChild; k.style.opacity = still ? "1" : String(clamp(Math.min((local - 0.25) / 0.45, (s.dur - 0.3 - local) / 0.45), 0, 1)); }
       if (s.card || s.title) { const k = n.firstChild; k.style.transform = still ? "" : "scale(" + lerp(1.06, 1.0, p).toFixed(4) + ")"; k.style.letterSpacing = s.card && !still ? lerp(0.02, 0.09, p).toFixed(3) + "em" : ""; }
       if (i === cur) (s.sfx || []).forEach(function (f, j) { if (local >= f[0] && !s.fired[j]) { s.fired[j] = true; sfx(f[1], f[2]); } });
     });
@@ -321,5 +337,5 @@
   }
 
   window.CINE = { play: play, maybe: maybe, enabled: enabled, auto: auto, trailer: trailer, tick: tick, settings: settings, seen: function () { return Object.assign({}, seen); },
-    total: function (id) { return SCENES[id].shots().reduce(function (t, s) { return t + s.dur; }, 0); }, skip: function () { finish(true); }, running: function () { return run ? run.id : gated ? gated.id : null; }, ORDER: ORDER };
+    total: function (id) { return SCENES[id].shots().reduce(function (t, s) { return t + s.dur; }, TITLES[id] ? DIP : 0); }, titles: TITLES, skip: function () { finish(true); }, running: function () { return run ? run.id : gated ? gated.id : null; }, ORDER: ORDER };
 })();

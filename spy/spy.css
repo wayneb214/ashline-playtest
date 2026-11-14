@@ -1415,3 +1415,11 @@ body:has(.cine-ask) #subtitle { display: none; }
 /* the "Tap a file" hint is hidden while a file is open on the desk */
 body:has(#dk-file) #hintbar { visibility: hidden; }
 .gradelbl { font: 600 0.875rem var(--type, monospace); letter-spacing: .06em; text-transform: uppercase; color: var(--paper-ink); opacity: .8; margin-top: 6px; }
+/* E: dip to black and a short title card before each film */
+.cine .dipshot { background: #000; display: flex; align-items: center; justify-content: center; text-align: center; }
+.cine .dipcard { opacity: 0; padding: 0 10%; }
+.cine .dipcard small { display: block; font: 600 1rem/1.3 system-ui, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #e2c372; margin-bottom: 10px; }
+.cine .dipcard span { display: block; font: italic 400 1.625rem/1.3 Georgia, "Times New Roman", serif; color: #f3ead2; }
+.cine .dipcard span::after { content: ""; display: block; width: 56px; height: 2px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, #c9a24a, transparent); }
+/* C: moving shots push in from their centre, like the painted layers */
+.cine .shot video.mv { transform-origin: 50% 55%; will-change: transform; }
