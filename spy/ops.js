@@ -25,24 +25,41 @@
   };
   const CHOICE = { push: { t: "Push" }, hold: { t: "Hold" }, abort: { t: "Abort" } };
   // the trade-off under each answer, from the same numbers resolve() applies (opmodel.js via A.opTerms).
-  // op-balance v4 (Wayne): three short lines per button, a few words each: what you get, what it can cost, the odds.
-  // Neutral and true to the effects; no percentages, no advice. The working (+14%, the trap's cut) is on the result card.
-  // The chance is in words on every mode (A.oddsBand) with a short reason true to the state (what moves those odds).
-  const BURNW = function (p) { return p < 30 ? "small chance" : p < 50 ? "real chance" : p < 70 ? "likely" : "very likely"; };
+  // op-balance v5 (Wayne): the same three labelled lines on every button (Best case / Worst case / Odds), so they compare at
+  // a glance. Short, neutral and
+  // true to the effects; plain words (no percentages, no sums). The odds are a band in words on every mode (A.oddsBand)
+  // with a short reason true to the state. The working (+14%, the trap's cut) is on the result card afterwards.
+  // ALL the button wording lives in WORDS: change it here and nowhere else. {placeholders} are filled from the real state:
+  //   {nm} officer's code name, {svc} Service on a failed push, {burn} WORDS.burn (the chance a failed push blows cover),
+  //   {trust} No.10 trust change, {loyal} WORDS.loyal, {band} the odds band (WORDS.band), {why} WORDS.why.
+  const WORDS = {
+    labels: { best: "Best case", worst: "Worst case", odds: "Odds" },
+    push: { best: "big payoff", worst: "full damage, Service {svc}, cover blown ({burn})", odds: "{band} \u00b7 {why}" },
+    hold: { best: "case won, {nm} safe", worst: "half damage, No.10 trust {trust}", odds: "{band} \u00b7 {why}" },
+    holdTrap: { best: "case won, {nm} safe", worst: "{nm} hurt, full damage, No.10 trust {trust}", odds: "{band} \u00b7 {why}" },
+    abort: { best: "{nm} home safe, {loyal}", worst: "case lost, No.10 trust {trust}", odds: "certain" },
+    loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
+    why: { push: "moving helps", pushTired: "{nm} tired", pushTrap: "route known", hold: "trail cooling", holdTrap: "exits watched" },
+    burn: [[30, "small chance"], [50, "real chance"], [70, "likely"], [101, "very likely"]],
+    band: function (t) { return t.replace(/ odds$/, ""); } // "strong odds" -> "strong"
+  };
+  const wfill = function (t, v) { return t.replace(/\{(\w+)\}/g, function (x, k) { return v[k] != null ? v[k] : x; }); };
+  const BURNW = function (p) { for (let i = 0; i < WORDS.burn.length; i++) if (p < WORDS.burn[i][0]) return WORDS.burn[i][1]; return WORDS.burn[WORDS.burn.length - 1][1]; };
   function terms(A, id, k, a, kit, trap) {
     const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
-    const S = A.S(), cap = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
-    const tired = (S.stress || {})[k] >= 3, why = {
-      push: trap ? "route known" : tired ? nm + " tired" : "moving helps",
-      hold: trap ? "exits watched" : "trail cooling" };
-    const ch = function (p, c) { return cap(A.oddsBand(p)) + " \u00b7 " + why[c]; };
-    const L = {
-      push: { gain: "Big win: \u00d7" + T.push.winX, risk: "Fail: Service " + m(T.push.failService) + ", cover at risk (" + BURNW(T.push.burnP) + ")", chance: ch(T.push.odds, "push") },
-      hold: T.hold.safe ? { gain: nm + " safe \u00b7 half damage if it fails", risk: "Odds drop \u00b7 trust " + m(T.hold.trust), chance: ch(T.hold.odds, "hold") }
-        : { gain: "Case stays alive", risk: "Fail: " + nm + " hurt, full damage \u00b7 trust " + m(T.hold.trust), chance: ch(T.hold.odds, "hold") },
-      abort: { gain: nm + " safe \u00b7 " + (T.abort.loyalGain ? "loyalty " + m(T.abort.loyalGain) : "loyalty at the top"), risk: "Case lost \u00b7 trust " + m(T.abort.trust), chance: "Certain" } };
-    const html = function (o) { return '<span class="og">' + o.gain + '</span><span class="or">' + o.risk + '</span><span class="oc">' + o.chance + "</span>"; };
-    return { T: T, L: L, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
+    const S = A.S(), tired = (S.stress || {})[k] >= 3, W = WORDS;
+    const base = { nm: nm, svc: m(T.push.failService), burn: BURNW(T.push.burnP) };
+    const V = {
+      push: Object.assign({}, base, { band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
+      hold: Object.assign({}, base, { trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
+      abort: Object.assign({}, base, { trust: m(T.abort.trust), loyal: T.abort.loyalGain ? wfill(W.loyal.gain, { n: m(T.abort.loyalGain) }) : W.loyal.top }) };
+    const tpl = { push: W.push, hold: T.hold.safe ? W.hold : W.holdTrap, abort: W.abort }, L = {};
+    Object.keys(tpl).forEach(function (c) {
+      const t = tpl[c], o = { best: wfill(t.best, V[c]), worst: wfill(t.worst, V[c]), odds: wfill(t.odds, V[c]) };
+      o.lines = [W.labels.best + ": " + o.best, W.labels.worst + ": " + o.worst, W.labels.odds + ": " + o.odds]; L[c] = o;
+    });
+    const html = function (o) { return '<span class="og"><b class="ol">' + W.labels.best + ':</b> ' + o.best + '</span><span class="or"><b class="ol">' + W.labels.worst + ':</b> ' + o.worst + '</span><span class="oc"><b class="ol">' + W.labels.odds + ':</b> ' + o.odds + "</span>"; };
+    return { T: T, L: L, V: V, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
   }
   let timer = null;
   // core officers have recorded radio lines (voice.js op_<k>_<beat>); the radio log shows exactly what is said
@@ -243,5 +260,5 @@
     const r = document.getElementById("pace"); if (r) r.onchange = function () { cur.pace = +r.value; if (window.SFX && SFX.tick) SFX.tick(); draw(); };
     MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide toward <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
   }
-  window.OPS = { terms: terms, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
+  window.OPS = { terms: terms, WORDS: WORDS, wfill: wfill, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
 })();

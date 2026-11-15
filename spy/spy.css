@@ -1447,3 +1447,10 @@ body:has(#dk-file) #hintbar { visibility: hidden; }
 .frontpage.sacked + .sticky-go .btn { min-height: 44px; }
 /* op-balance v2: the three-line buttons make the op screen taller; leave room under Push for the caption bar */
 [data-screen="op"] #opask { padding-bottom: 72px; }
+/* op-balance v5: all three answers share one layout: a fixed label column, the three lines left-aligned from the same x */
+.opchoice .opbtn { justify-content: flex-start; align-items: center; text-align: left; }
+.opchoice .opbtn { gap: 8px; padding: 8px 10px; }
+.opchoice .opbtn > b { flex: 0 0 3.3em; width: 3.3em; text-align: left; }
+.opchoice .opbtn small.optrade { flex: 1 1 0; min-width: 0; text-align: left; }
+.opbtn small.optrade .ol { font-weight: 700; }
+.opbtn small.optrade .oc { font-weight: 400; margin-top: 0; }
