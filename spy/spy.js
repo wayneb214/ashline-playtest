@@ -909,11 +909,16 @@
     Object.keys(o).forEach(function (k) { o[k] = Math.round(o[k]); if (!o[k]) delete o[k]; });
     return o;
   }
-  function apply(delta) {
-    const ch = {};
+  // what apply() really does to the meters for a delta (before the 0..100 clamp)
+  function shape(delta) {
     const d2 = fold(delta);
     if (d2.service < 0) d2.service = Math.round(d2.service * 0.65); // setbacks bruise the Service; a run of them breaks it
     if (S.diff === "easy") ["capital", "service"].forEach(function (m) { if (d2[m] < 0) d2[m] = Math.round(d2[m] * 0.7); }); // Easy: setbacks cost less, so a slow, careful week still keeps the chair
+    return d2;
+  }
+  function apply(delta) {
+    const ch = {};
+    const d2 = shape(delta);
     Object.keys(d2).forEach(function (m) { const before = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, before + d2[m])); if (m !== "mood" && S.meters[m] !== before) ch[m] = S.meters[m] - before; });
     return ch;
   }
@@ -943,6 +948,30 @@
     else what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds" + ptr + " (" + oddsTxt(L.odds) + "). " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
     return '<p class="opcall">' + what + "</p>" + (op.abort ? '<p class="opafter">' + esc(op.trap ? "Back at the car, " + nm + " sits for a long minute before turning the key." : nm + " gets home tired, but in one piece.") + "</p>" : "");
   }
+  const wrongSiteOf = function (id) { return id === "sabotage" && S.belief && S.belief !== D.TRUTH && S.belief !== "split"; };
+  // the delta a case's result puts through apply() (before the radio call's own price): one place, used by resolve() and the
+  // buttons' worst cases (opLoss), so what the button says is what happens
+  function caseDelta(id, k, a, kitId, op, res) {
+    op = op || {};
+    if (op.abort) return {}; // a clean exit: the Service holds steady, the case is simply lost
+    const kitD = kitId ? D.KIT[kitId] || {} : {}, wrongSite = wrongSiteOf(id);
+    let delta = a[res];
+    if (op.push && res === "win") { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * OPT.push.winX : a.win[m]; }); } // pushed and won: the big payoff
+    if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
+    else if (res === "loss" && op.hold && !wrongSite && OPM.holdLossX(!!op.trap) !== 1) { const x = OPM.holdLossX(!!op.trap); delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] * x); }); } // held back: the plan's losses x0.5 (rounded)
+    // Good tradecraft keeps the Service healthy: the right officer on the plan they recommend steadies it, a mismatch drains it.
+    const fitK = AG(k).good.indexOf(id) >= 0, recK = recIdx(id, k) === CASES()[id].approaches.indexOf(a);
+    const craft = res === "loss" ? (fitK ? 0 : -6) : (fitK ? 1 : -4) + (recK ? 2 : 0);
+    delta = Object.assign({}, delta); delta.service = (delta.service || 0) + craft;
+    return delta;
+  }
+  // the radio call's own price, paid straight onto the meters
+  function callPrice(op, res) { return op.abort ? { capital: OPT.abort.trust } : op.hold ? { capital: OPT.hold.trust } : op.push && res === "loss" ? { service: OPT.push.failService } : {}; }
+  // the on-screen meters (No.10 trust, Service) if this call fails: the case's losses as apply() shapes them, plus the call's price
+  function opLoss(id, k, a, kitId, choice, trap) {
+    const op = { push: choice === "push", hold: choice === "hold", abort: choice === "abort", trap: !!trap }, d = shape(caseDelta(id, k, a, kitId, op, "loss")), x = callPrice(op, "loss");
+    return { capital: (d.capital || 0) + (x.capital || 0), service: (d.service || 0) + (x.service || 0) };
+  }
   function resolve(id, k, a, kitId, op) {
     if (S.done[id]) return; // a case closes once: a second tap while the result is showing changes nothing
     op = op || {};
@@ -955,11 +984,13 @@
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
-    const wrongSite = id === "sabotage" && S.belief && S.belief !== D.TRUTH && S.belief !== "split";
+    const wrongSite = wrongSiteOf(id);
     if (wrongSite) res = "loss"; // the wrong site: the real target goes dark whatever happens where we were
     if (window.__SPY_FORCE__) res = window.__SPY_FORCE__;
+    const delta = caseDelta(id, k, a, kitId, op, res); // before the officer's stress and loyalty move (the officer's own pick is read from them)
     if (kitId) S.kit[kitId]--;
     const st0 = S.stress[k], lo0 = S.loyal[k], over = recIdx(id, k) !== s.approaches.indexOf(a), worked = st0 >= 4;
+    const fitK = AG(k).good.indexOf(id) >= 0, recK = !over; // for the log (the Service side is in caseDelta)
     S.styles = S.styles || { low: 0, med: 0, high: 0 }; S.styles[a.risk]++;
     const planStress = kitD.calm || (AG(k).quirk === "steady" && a.risk === "high") ? 0 : a.stress;
     // what the radio call does to the officer (opmodel.js). No call (a case resolved straight off): the old rules.
@@ -968,18 +999,9 @@
     if (!op.abort) S.stress[k] = clamp5(S.stress[k] + (O.plan ? planStress : 0) + O.stress + (res === "loss" && !kitD.soft && !wrongSite ? O.lossStress : res === "win" ? -1 : 0));
     if (!op.abort) S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
     else S.loyal[k] = clamp5(S.loyal[k] + O.loyal);
-    let delta = a[res];
-    if (op.push && res === "win") { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * OPT.push.winX : a.win[m]; }); } // pushed and won: the big payoff
-    if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
-    else if (res === "loss" && op.hold && !wrongSite && OPM.holdLossX(!!op.trap) !== 1) { const x = OPM.holdLossX(!!op.trap); delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] * x); }); } // held back: half the damage
-    // Good tradecraft keeps the Service healthy: the right officer on the plan they recommend steadies it, a mismatch drains it.
-    const fitK = AG(k).good.indexOf(id) >= 0, recK = !over;
-    const craft = res === "loss" ? (fitK ? 0 : -6) : (fitK ? 1 : -4) + (recK ? 2 : 0);
-    delta = Object.assign({}, delta); delta.service = (delta.service || 0) + craft;
-    if (op.abort) delta = {}; // a clean exit: the Service holds steady, the case is simply lost
     const ch = apply(delta);
     // the price of the radio call, exactly as the button said
-    const extra = op.abort ? { capital: OPT.abort.trust } : op.hold ? { capital: OPT.hold.trust } : op.push && res === "loss" ? { service: OPT.push.failService } : {};
+    const extra = callPrice(op, res);
     const paid = {};
     Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; paid[m] = d; if (d) ch[m] = (ch[m] || 0) + d; });
     const back = no10Back(res, ch);
@@ -1450,7 +1472,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, burnTxt: burnTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
+    opLoss: opLoss, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, burnTxt: burnTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

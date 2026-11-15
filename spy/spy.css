@@ -1449,8 +1449,10 @@ body:has(#dk-file) #hintbar { visibility: hidden; }
 [data-screen="op"] #opask { padding-bottom: 72px; }
 /* op-balance v5: all three answers share one layout: a fixed label column, the three lines left-aligned from the same x */
 .opchoice .opbtn { justify-content: flex-start; align-items: center; text-align: left; }
-.opchoice .opbtn { gap: 8px; padding: 8px 10px; }
-.opchoice .opbtn > b { flex: 0 0 3.3em; width: 3.3em; text-align: left; }
+.opchoice .opbtn { gap: 6px; padding: 8px 8px 8px 10px; }
+.opchoice .opbtn > b { flex: 0 0 2.9em; width: 2.9em; text-align: left; }
 .opchoice .opbtn small.optrade { flex: 1 1 0; min-width: 0; text-align: left; }
 .opbtn small.optrade .ol { font-weight: 700; }
 .opbtn small.optrade .oc { font-weight: 400; margin-top: 0; }
+/* op-balance v7: a little more width for the real numbers on the worst-case lines (stays inside the card) */
+[data-screen="op"] .opchoice { margin-left: -10px; margin-right: -10px; }

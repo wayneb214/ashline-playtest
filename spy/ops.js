@@ -25,20 +25,22 @@
   };
   const CHOICE = { push: { t: "Push" }, hold: { t: "Hold" }, abort: { t: "Abort" } };
   // the trade-off under each answer, from the same numbers resolve() applies (opmodel.js via A.opTerms).
-  // op-balance v5 (Wayne): the same three labelled lines on every button (Best case / Worst case / Odds), so they compare at
-  // a glance. Short, neutral and
-  // true to the effects; plain words (no percentages, no sums). The odds are a band in words on every mode (A.oddsBand)
-  // with a short reason true to the state. The working (+14%, the trap's cut) is on the result card afterwards.
+  // op-balance v5/v7 (Wayne): three labelled lines on every button, in one aligned layout. Hold and Push: Best case / Worst case /
+  // Odds. Abort has only one result, so: Outcome / Cost / Odds. Short, neutral, true to the effects; plain words, no percentages.
+  // The odds are a band in words (A.oddsBand) with a short reason true to the state. The working is on the result card afterwards.
   // ALL the button wording lives in WORDS: change it here and nowhere else. {placeholders} are filled from the real state:
-  //   {nm} officer's code name, {svc} Service on a failed push, {burn} WORDS.burn (the chance a failed push blows cover),
+  //   {nm} officer's code name, {loss} the on-screen meters if the call fails (A.opLoss: the plan's own losses as the game applies
+  //   them, halved on a non-trap Hold, plus the call's price), {burn} WORDS.burn (the chance a failed push blows cover),
   //   {trust} No.10 trust change, {loyal} WORDS.loyal, {band} the odds band (WORDS.band), {why} WORDS.why.
   const WORDS = {
-    labels: { best: "Best case", worst: "Worst case", odds: "Odds" },
-    push: { best: "big payoff", worst: "full damage, Service {svc}, cover blown ({burn})", odds: "{band} \u00b7 {why}" },
-    hold: { best: "case won, {nm} safe", worst: "half damage, No.10 trust {trust}", odds: "{band} \u00b7 {why}" },
-    holdTrap: { best: "case won, {nm} safe", worst: "{nm} hurt, full damage, No.10 trust {trust}", odds: "{band} \u00b7 {why}" },
-    abort: { best: "{nm} home safe, {loyal}", worst: "case lost, No.10 trust {trust}", odds: "certain" },
+    labels: { best: "Best case", worst: "Worst case", outcome: "Outcome", cost: "Cost", odds: "Odds" },
+    push: [["best", "big payoff"], ["worst", "{loss}, cover blown ({burn})"], ["odds", "{band} \u00b7 {why}"]],
+    hold: [["best", "case won, {nm} safe"], ["worst", "half losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
+    holdTrap: [["best", "case won, {nm} safe"], ["worst", "{nm} hurt, full losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
+    abort: [["outcome", "{nm} home safe, case lost"], ["cost", "No.10 trust {trust}, {loyal}"], ["odds", "certain"]],
     loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
+    // the meters by their on-screen names (D.METERS), in the order the top bar shows them; nothing lost: WORDS.lossNone
+    meters: [["capital", "No.10 trust"], ["service", "Service"]], lossNone: "no meter change",
     // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
     why: { push: "{sv} still ahead of {p} tail", pushTired: "{nm} is exhausted", pushTrap: "they know {p} route", hold: "waiting lets them get closer", holdTrap: "they\u2019re watching the exits" },
     // officer pronouns for the reasons (anyone not listed gets they/their)
@@ -51,18 +53,22 @@
   function terms(A, id, k, a, kit, trap) {
     const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
     const S = A.S(), tired = (S.stress || {})[k] >= 3, W = WORDS;
-    const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: pr.sv, p: pr.p, svc: m(T.push.failService), burn: BURNW(T.push.burnP) };
+    const lossTxt = function (o) { const t = W.meters.filter(function (x) { return o[x[0]]; }).map(function (x) { return (x[1] + " " + m(o[x[0]])).replace(/ /g, "\u00a0"); }); return t.length ? t.join(", ") : W.lossNone; };
+    const loss = { push: A.opLoss(id, k, a, kit, "push", trap), hold: A.opLoss(id, k, a, kit, "hold", trap) };
+    const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: pr.sv, p: pr.p, burn: BURNW(T.push.burnP) };
     const V = {
-      push: Object.assign({}, base, { band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
-      hold: Object.assign({}, base, { trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
+      push: Object.assign({}, base, { loss: lossTxt(loss.push), band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
+      hold: Object.assign({}, base, { loss: lossTxt(loss.hold), trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
       abort: Object.assign({}, base, { trust: m(T.abort.trust), loyal: T.abort.loyalGain ? wfill(W.loyal.gain, { n: m(T.abort.loyalGain) }) : W.loyal.top }) };
     const tpl = { push: W.push, hold: T.hold.safe ? W.hold : W.holdTrap, abort: W.abort }, L = {};
     Object.keys(tpl).forEach(function (c) {
-      const t = tpl[c], o = { best: wfill(t.best, V[c]), worst: wfill(t.worst, V[c]), odds: wfill(t.odds, V[c]) };
-      o.lines = [W.labels.best + ": " + o.best, W.labels.worst + ": " + o.worst, W.labels.odds + ": " + o.odds]; L[c] = o;
+      const o = { rows: tpl[c].map(function (r) { return [r[0], W.labels[r[0]], wfill(r[1], V[c])]; }) };
+      o.rows.forEach(function (r) { o[r[0]] = r[2]; });
+      o.lines = o.rows.map(function (r) { return r[1] + ": " + r[2]; }); L[c] = o;
     });
-    const html = function (o) { return '<span class="og"><b class="ol">' + W.labels.best + ':</b> ' + o.best + '</span><span class="or"><b class="ol">' + W.labels.worst + ':</b> ' + o.worst + '</span><span class="oc"><b class="ol">' + W.labels.odds + ':</b> ' + o.odds + "</span>"; };
-    return { T: T, L: L, V: V, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
+    const CLS = { best: "og", outcome: "og", worst: "or", cost: "or", odds: "oc" };
+    const html = function (o) { return o.rows.map(function (r) { return '<span class="' + CLS[r[0]] + '"><b class="ol">' + r[1] + ":</b> " + r[2] + "</span>"; }).join(""); };
+    return { T: T, L: L, V: V, loss: loss, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
   }
   let timer = null;
   // core officers have recorded radio lines (voice.js op_<k>_<beat>); the radio log shows exactly what is said
@@ -212,7 +218,7 @@
       const TD = terms(A, id, k, a, kit, trap).d;
       $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p></div>';
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
-      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> for a bigger win, but a fail can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> keeps them safe (unless it\u2019s a trap) and halves the damage if it fails, but the trail cools. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
+      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> for a bigger win, but a fail can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> keeps them safe (unless it\u2019s a trap), and if it fails you lose half of what the plan risks, but the trail cools. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
     };
     if (timer) clearInterval(timer);
     moveMark(0, st);
