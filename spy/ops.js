@@ -39,7 +39,10 @@
     holdTrap: { best: "case won, {nm} safe", worst: "{nm} hurt, full damage, No.10 trust {trust}", odds: "{band} \u00b7 {why}" },
     abort: { best: "{nm} home safe, {loyal}", worst: "case lost, No.10 trust {trust}", odds: "certain" },
     loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
-    why: { push: "moving helps", pushTired: "{nm} tired", pushTrap: "route known", hold: "trail cooling", holdTrap: "exits watched" },
+    // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
+    why: { push: "{sv} still ahead of {p} tail", pushTired: "{nm} is exhausted", pushTrap: "they know {p} route", hold: "waiting lets them get closer", holdTrap: "they\u2019re watching the exits" },
+    // officer pronouns for the reasons (anyone not listed gets they/their)
+    pron: { macrae: { sv: "she\u2019s", p: "her" }, pryce: { sv: "he\u2019s", p: "his" }, hartley: { sv: "he\u2019s", p: "his" }, other: { sv: "they\u2019re", p: "their" } },
     burn: [[30, "small chance"], [50, "real chance"], [70, "likely"], [101, "very likely"]],
     band: function (t) { return t.replace(/ odds$/, ""); } // "strong odds" -> "strong"
   };
@@ -48,7 +51,7 @@
   function terms(A, id, k, a, kit, trap) {
     const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
     const S = A.S(), tired = (S.stress || {})[k] >= 3, W = WORDS;
-    const base = { nm: nm, svc: m(T.push.failService), burn: BURNW(T.push.burnP) };
+    const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: pr.sv, p: pr.p, svc: m(T.push.failService), burn: BURNW(T.push.burnP) };
     const V = {
       push: Object.assign({}, base, { band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
       hold: Object.assign({}, base, { trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
