@@ -25,24 +25,23 @@
   };
   const CHOICE = { push: { t: "Push" }, hold: { t: "Hold" }, abort: { t: "Abort" } };
   // the trade-off under each answer, from the same numbers resolve() applies (opmodel.js via A.opTerms).
-  // op-balance v2 (Wayne): plain and neutral. One Gain line, one Risk line, one chance figure. No sums and no advice:
-  // the player picks what feels right. The working (+14%, the trap's cut) is on the result card afterwards.
-  const BURNW = function (p) { return p < 30 ? "a small chance" : p < 50 ? "a real chance" : p < 70 ? "likely" : "very likely"; };
+  // op-balance v4 (Wayne): three short lines per button, a few words each: what you get, what it can cost, the odds.
+  // Neutral and true to the effects; no percentages, no advice. The working (+14%, the trap's cut) is on the result card.
+  // The chance is in words on every mode (A.oddsBand) with a short reason true to the state (what moves those odds).
+  const BURNW = function (p) { return p < 30 ? "small chance" : p < 50 ? "real chance" : p < 70 ? "likely" : "very likely"; };
   function terms(A, id, k, a, kit, trap) {
     const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
-    // op-balance v3 (Wayne): the chance is in words on every mode (A.oddsBand), never a percentage, so no button looks like
-    // the answer. A short in-world reason, true to the state, follows: what moves that answer's odds. Never a verdict.
     const S = A.S(), cap = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
     const tired = (S.stress || {})[k] >= 3, why = {
-      push: trap ? "they know the route" : tired ? nm + "\u2019s tired" : "moving now helps",
-      hold: trap ? "they\u2019re watching the exits" : "the trail\u2019s going cold" };
-    const ch = function (p, c) { return "Chance: " + cap(A.oddsBand(p)) + " \u00b7 " + why[c]; };
+      push: trap ? "route known" : tired ? nm + " tired" : "moving helps",
+      hold: trap ? "exits watched" : "trail cooling" };
+    const ch = function (p, c) { return cap(A.oddsBand(p)) + " \u00b7 " + why[c]; };
     const L = {
-      push: { gain: "A win pays off big: " + (T.push.winX === 1.5 ? "half as much again" : T.push.winX === 2 ? "double" : "more than usual") + ".", risk: "If it fails: Service " + m(T.push.failService) + ", and " + nm + "\u2019s cover may be blown (" + BURNW(T.push.burnP) + ").", chance: ch(T.push.odds, "push") },
-      hold: T.hold.safe ? { gain: nm + " stays safe. If it fails, half the damage.", risk: "The trail cools, so the odds drop. No.10 trust " + m(T.hold.trust) + ".", chance: ch(T.hold.odds, "hold") }
-        : { gain: "The case stays alive.", risk: "If it fails, " + nm + " is hurt and the full damage lands. No.10 trust " + m(T.hold.trust) + ".", chance: ch(T.hold.odds, "hold") },
-      abort: { gain: nm + " comes home safe: no wound, no stress, " + (T.abort.loyalGain ? "loyalty " + m(T.abort.loyalGain) : "loyalty already at the top") + ".", risk: "The case counts as lost. No.10 trust " + m(T.abort.trust) + ".", chance: "Certain: case lost" } };
-    const html = function (o) { return '<span class="og"><span class="ol">Gain:</span> ' + o.gain + '</span><span class="or"><span class="ol">Risk:</span> ' + o.risk + '</span><span class="oc">' + o.chance + "</span>"; };
+      push: { gain: "Big win: \u00d7" + T.push.winX, risk: "Fail: Service " + m(T.push.failService) + ", cover at risk (" + BURNW(T.push.burnP) + ")", chance: ch(T.push.odds, "push") },
+      hold: T.hold.safe ? { gain: nm + " safe \u00b7 half damage if it fails", risk: "Odds drop \u00b7 trust " + m(T.hold.trust), chance: ch(T.hold.odds, "hold") }
+        : { gain: "Case stays alive", risk: "Fail: " + nm + " hurt, full damage \u00b7 trust " + m(T.hold.trust), chance: ch(T.hold.odds, "hold") },
+      abort: { gain: nm + " safe \u00b7 " + (T.abort.loyalGain ? "loyalty " + m(T.abort.loyalGain) : "loyalty at the top"), risk: "Case lost \u00b7 trust " + m(T.abort.trust), chance: "Certain" } };
+    const html = function (o) { return '<span class="og">' + o.gain + '</span><span class="or">' + o.risk + '</span><span class="oc">' + o.chance + "</span>"; };
     return { T: T, L: L, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
   }
   let timer = null;

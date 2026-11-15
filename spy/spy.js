@@ -29,7 +29,7 @@
   function fresh(diff, tips) {
     const keys = Object.keys(D.AGENTS);
     S = { day: 1, diff: diff || "standard", tips: tips !== false, tipSeen: {}, hour: 8,
-      meters: { capital: 55, service: 58, mood: 55 }, order: ["leak", "defector", "mole"], done: {}, used: {}, stress: {}, loyal: {},
+      meters: { capital: D.DIFFICULTY[diff || "standard"].start.capital, service: D.DIFFICULTY[diff || "standard"].start.service, mood: 55 }, order: ["leak", "defector", "mole"], done: {}, used: {}, stress: {}, loyal: {},
       roster: keys.slice(), lost: {}, pendingRecruit: 0, kit: Object.assign({}, D.DIFFICULTY[diff || "standard"].kit),
       heads: ["Rain over London as the Commons returns"], log: [], belief: null, flashShown: false, defector: false,
       mole: keys[Math.floor(rnd() * keys.length)], accused: null, call: null, porter: false, ended: false, screen: "briefing", chimed: false };
@@ -379,9 +379,15 @@
         Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k], lock = k === "hard" && window.REPLAY && !REPLAY.unlocked(); return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"' + (lock ? " disabled" : "") + '><div class="t">' + d.name + (k === "standard" ? " \u00b7 recommended" : "") + (lock ? " \ud83d\udd12 finish Day 3 to unlock" : "") + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
         '</div><div class="sticky-go"><button class="btn primary" id="go">Carry on \u00b7 ' + D.DIFFICULTY[pick].name + "</button></div>", "You can change it again from a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
-      $("go").onclick = function () { S.diffAsked = true; if (pick !== S.diff) { S.diff = pick; S.kit = Object.assign({}, D.DIFFICULTY[pick].kit); } save("briefing"); next(); };
+      $("go").onclick = function () { S.diffAsked = true; if (pick !== S.diff) { shiftStart(S.diff, pick); S.diff = pick; S.kit = Object.assign({}, D.DIFFICULTY[pick].kit); } save("briefing"); next(); };
     };
     draw();
+  }
+  // op-balance v4: each difficulty starts the week at its own meters (Easy 55/58, Standard 50/50, Hard 40/45). Changing it
+  // after Day 1 moves both meters by the gap between the two starts, so the rest of the week plays as if begun there.
+  function shiftStart(from, to) {
+    const a = D.DIFFICULTY[from || "standard"].start, b = D.DIFFICULTY[to].start;
+    S.meters.capital = score(S.meters.capital + b.capital - a.capital); S.meters.service = score(S.meters.service + b.service - a.service);
   }
   function difficulty() {
     let pick = "standard", tips = true;
@@ -499,7 +505,8 @@
   // Still under 10 the next night: you're out (Easy: one more night's grace). Counted in summary(), before the next day's
   // start is saved, so the count carries into tomorrow.
   const SACK_LOW = 10, sackNights = function () { return S.diff === "easy" ? 3 : 2; };
-  function sackCount() { if (S.day > 5) return; S.under10 = score(S.meters.capital) < SACK_LOW ? (S.under10 || 0) + 1 : 0; }
+  // window.__SPY_NOSACK__: test hook, so the random-tap playthrough can play all six days
+  function sackCount() { if (S.day > 5 || window.__SPY_NOSACK__) return; S.under10 = score(S.meters.capital) < SACK_LOW ? (S.under10 || 0) + 1 : 0; }
   const DAYNAME = function (d) { return d >= 4 ? window.AH4.DAYWORD[d] : d === 3 ? "Friday" : d === 2 ? "Thursday" : "Wednesday"; };
   function sacked() {
     S.sacked = S.day; S.ended = true; chrome(true); meters(); ticker();

@@ -81,9 +81,9 @@ window.AH_DATA = (function () {
   };
 
   const DIFFICULTY = {
-    easy: { name: "Easy", txt: "Kinder odds (+10%), deadlines an hour later, setbacks cost less, two bugs in the locker.", odds: 10, due: 1, kit: { bug: 2, passport: 1, car: 1, key: 1 } },
-    standard: { name: "Standard", txt: "The day as written.", odds: 0, due: 0, kit: { bug: 1, passport: 1, car: 1, key: 1 } },
-    hard: { name: "Hard", txt: "Harsher odds (\u221210%), deadlines an hour earlier, less time to decide in the field, no safe-house key.", odds: -10, due: -1, kit: { bug: 1, passport: 1, car: 1, key: 0 } }
+    easy: { name: "Easy", txt: "Kinder odds (+10%), deadlines an hour later, setbacks cost less, two bugs in the locker. Starts at No.10 trust 55, Service 58.", odds: 10, due: 1, start: { capital: 55, service: 58 }, kit: { bug: 2, passport: 1, car: 1, key: 1 } },
+    standard: { name: "Standard", txt: "The day as written. Starts at No.10 trust 50, Service 50.", odds: 0, due: 0, start: { capital: 50, service: 50 }, kit: { bug: 1, passport: 1, car: 1, key: 1 } },
+    hard: { name: "Hard", txt: "Harsher odds (\u221210%), deadlines an hour earlier, less time to decide in the field, no safe-house key. Starts at No.10 trust 40, Service 45.", odds: -10, due: -1, start: { capital: 40, service: 45 }, kit: { bug: 1, passport: 1, car: 1, key: 0 } }
   };
 
   // first-run tips (shown once each, can be switched off)
