@@ -1423,3 +1423,27 @@ body:has(#dk-file) #hintbar { visibility: hidden; }
 .cine .dipcard span::after { content: ""; display: block; width: 56px; height: 2px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, #c9a24a, transparent); }
 /* C: moving shots push in from their centre, like the painted layers */
 .cine .shot video.mv { transform-origin: 50% 55%; will-change: transform; }
+
+/* op-balance: the trap tell in the radio log, and Ash's word after a good abort */
+.radio p.warn { color: #ffb38a; font-weight: 700; border-left: 3px solid #e0583a; padding-left: 8px; }
+.radio p.warn::before { content: ""; }
+[data-screen="op"] .radio p.warn { color: #fff1e4; background: rgba(200,50,30,.38); font-weight: 700; border-left: 3px solid #ff6a4a; padding: 2px 6px 2px 8px; }
+.optell { margin: 8px 0 6px; padding: 8px 10px; font-size: 1rem; line-height: 1.4; color: #fff1e4; background: #4a150d; border-left: 4px solid #ff6a4a; border-radius: 4px; }
+.optell b { color: #ffb39b; }
+[data-screen="op"] .radio p.warn::before { content: ""; }
+.outcome .opafter { font-style: italic; } .outcome .ashsays, .outcome .opafter { font-size: 1rem; margin: 6px 0; padding: 6px 10px; border-left: 3px solid #b8892f; background: rgba(184,137,47,.10); }
+[data-screen="op"] #opask p.optell { color: #fff1e4; opacity: 1; font-style: normal; text-transform: none; animation: none; }
+
+/* op-balance v2: Gain / Risk / Chance, one per line, plain */
+.opbtn small.optrade > span { display: block; }
+.opbtn small.optrade .ol { font-weight: 700; }
+.opbtn small.optrade .oc { font-weight: 700; margin-top: 2px; }
+/* op-balance v2: story echoes and the early sacking */
+.card.echo { border-left: 4px solid #8a6d3b; }
+.card.echo p { font-size: max(14px, 1em); margin: 6px 0; }
+.calltally { font-size: max(14px, 0.95em); }
+.frontpage.sacked .kbwrap { margin: 8px 0; }
+.frontpage.sacked .vignette { width: 100%; max-height: 34vh; object-fit: cover; display: block; filter: grayscale(0.6) contrast(1.1); }
+.frontpage.sacked + .sticky-go .btn { min-height: 44px; }
+/* op-balance v2: the three-line buttons make the op screen taller; leave room under Push for the caption bar */
+[data-screen="op"] #opask { padding-bottom: 72px; }

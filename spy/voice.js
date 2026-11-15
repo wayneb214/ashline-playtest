@@ -78,6 +78,12 @@
     "op_pryce_eyes_alt4": {"who": "Wren", "text": "Eyes on the target. Quiet street. Too quiet."},
     "op_ash_greyhouse": {"who": "Ash", "text": "Chief, for the file. The Grey House is Varenia\u2019s secret service. Our opposite number."}};
   Object.keys(BJ).forEach(function (k) { L[k] = BJ[k]; });
+  // op-balance v2 (gen6, British): the early sacking. The PM's final warning, the bulletin and the "Sacked" epilogue.
+  const OB = { call_pm_sack_warn: { who: "Eleanor Hale", text: "C, it\u2019s Eleanor Hale. My trust in you is all but gone. One more night like this, C, and I\u2019ll want your letter." },
+    bulletin_sacked: { who: B, sub: true, text: B + ". " + "The head of a little known government department has left the post after only days in the job. Downing Street has named a replacement." },
+    epi_sacked_1: { who: "Narrator", sub: true, text: "The letter is two lines long. You write it at the kitchen table, before the sun is up." },
+    epi_sacked_2: { who: "Narrator", sub: true, text: "By lunchtime, someone else has your chair. Almost nobody knew your name. Now nobody ever will." } };
+  Object.keys(OB).forEach(function (k) { L[k] = OB[k]; });
   Object.keys(L).forEach(function (k) { L[k].src = L[k].src || "audio/voice/" + k + ".mp3"; });
   // Clip lengths (seconds) come from voicelen.js, so cutscenes can stretch to a line. Measuring them here meant
   // opening hundreds of audio elements at start-up, which on iPhone crowded out the opening film's voices.

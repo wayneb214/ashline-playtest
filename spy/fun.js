@@ -113,7 +113,7 @@
     lie_detector: "Day 3, York: two rounds of watchers\u2019 stories. Each time, tap the story the clues rule out. Get both right.",
     home: "Day 3: win the exfil and bring her home. Trading her doesn\u2019t count.",
     trust: "Keep No.10 trust at 40 or above from Day 1 to the end of Day 3.",
-    no_hurt: "Through Day 3, nobody wounded, burned or lost. Holding on the radio keeps an officer safe if it goes wrong.",
+    no_hurt: "Through Day 3, nobody wounded, burned or lost. Aborting on the radio always brings an officer home safe; holding does too, unless it\u2019s a trap.",
     all_gold: "Gold on Days 1, 2 and 3 of the same game.",
     eagle_eye: "Day 4, \u2018Faces at the window\u2019: tap the face that is in both photos.",
     leak: "Day 4: clear suspects before you name the leak. Three cleared leaves one.",

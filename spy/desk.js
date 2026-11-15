@@ -304,6 +304,23 @@
     return false;
   }
 
-  window.DESK = { keskCall: keskCall, timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
+  // op-balance v2: No.10 trust under 10 at midnight (Days 1-5). The grave final warning; the spoken line is call_pm_sack_warn.
+  // n: nights in a row under 10 so far; max: the night that ends it (2, or 3 on Easy).
+  function sackWarn(done, n, max) {
+    const a = A(), left = max - n;
+    const rule = left === 1 ? "If No.10 trust ends tomorrow under 10, you\u2019re out." : "Easy mode gives you one more night\u2019s grace, but if trust ends under 10 " + (left === 2 ? "the next two nights" : left + " more nights") + " running, you\u2019re out.";
+    const end = function (txt) {
+      a.render('<div class="card outcome loss" data-screen="sackwarn"><span class="stamp thud">FINAL WARNING</span><h2>The Prime Minister wants your letter</h2><p>' + txt + "</p><p><b>" + rule + "</b> In the morning No.10 also takes one file off your desk; it counts as a lost case.</p></div>" +
+        '<button class="btn primary" id="go">Get some sleep</button>', "No.10 trust under 10 at the end of a day.");
+      a.$("go").onclick = done;
+    };
+    call({ id: "pm_sack_warn", line: "NO.10 SWITCHBOARD \u00b7 SECURE LINE", img: "pm-stern", ring: "The Prime Minister. At midnight.", who: "Eleanor Hale \u00b7 Prime Minister", say: "Say it",
+      text: "C, it\u2019s Eleanor Hale. <b>My trust in you is all but gone.</b> One more night like this, C, and I\u2019ll want your letter.",
+      opts: [{ k: "yes", t: "\u201cUnderstood, Prime Minister.\u201d", chips: '<span class="chip risk-high">' + (left === 1 ? "Under 10 tomorrow night: sacked" : "Easy: one more night\u2019s grace") + "</span>" }],
+      def: "yes", hint: "No.10 trust is under 10.",
+      answer: function () { end("She rings off. Her voice was very quiet, and very calm."); },
+      miss: function () { end("You let it ring. Ash takes the message at ten past twelve and leaves it on your desk, word for word: <i>one more night like this, and I\u2019ll want your letter.</i>"); } });
+  }
+  window.DESK = { keskCall: keskCall, timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, sackWarn: sackWarn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
     oddsMod: oddsMod, photoLine: photoLine, PHOTO_TEXT: PHOTO_TEXT, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();

@@ -11,18 +11,39 @@
       "{n}: Curtain moved upstairs. Nobody came out.", "{n}: Taxi dropped someone at the corner. Not our one.", "{n}: Quiet. Too quiet for this street.", "{n}: Delivery van, no markings. Nobody\u2019s unloading."],
     ask: ["{n}: They\u2019ve doubled up. I can push through, or sit tight. Your call, C.", "{n}: Something\u2019s off. Push now, or wait it out?", "{n}: I\u2019ve been spotted, maybe. Push, hold, or pull me out?"],
     push: "{n}: Understood. Going now. Hard.", hold: "{n}: Holding. Nice and slow.", abort: "{n}: Pulling out. Back the long way.",
-    end: ["{n}: Almost done\u2026", "Static. Then breathing. Then: \u2018Done.\u2019", "{n}: Wrapping up."]
+    end: ["{n}: Almost done\u2026", "Static. Then breathing. Then: \u2018Done.\u2019", "{n}: Wrapping up."],
+    // op-balance: the tell on a trap op, said just before the officer asks for the call. Plain and fair: something has
+    // been set up for them. Radio text only (no recorded audio for these yet).
+    trap: ["{n}: Two cars I don\u2019t recognise. Same plates as yesterday.",
+      "{n}: The street\u2019s been cleared. No buses, no dog walkers, nobody. Someone\u2019s emptied it.",
+      "{n}: Same man in the grey coat. Third time tonight, and now he isn\u2019t even hiding.",
+      "{n}: The back door\u2019s propped open. They never leave it open. Never.",
+      "{n}: Van with blacked-out windows, parked right across my way out. They know my route.",
+      "{n}: Wrong reply to the recognition phrase. That isn\u2019t our contact.",
+      "{n}: Every light on the floor just went off at once. They\u2019re waiting for someone.",
+      "{n}: There\u2019s a man on the roof opposite with a long lens. Pointed at my door, not theirs."]
   };
   const CHOICE = { push: { t: "Push" }, hold: { t: "Hold" }, abort: { t: "Abort" } };
-  // the trade-off under each answer, from the same numbers resolve() applies
-  function terms(A, id, k, a, kit) {
-    const T = A.opTerms(id, k, a, kit), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
-    // Batch O: on Hard the odds show in words (A.oddsTxt), not a percentage
-    const hard = A.S().diff === "hard", cap = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
-    return { T: T, d: {
-      push: "<i>" + cap(A.oddsTxt(T.push.odds)) + (hard ? "." : " chance.") + "</i> Win: the big payoff (\u00d7" + T.push.winX + "). Fail: Service " + m(T.push.failService) + ", and " + nm + "\u2019s cover may be blown.",
-      hold: nm + " stays safe. The trail cools: <i>" + A.oddsTxt(T.hold.odds) + (hard ? "" : " chance") + "</i> (" + m(T.hold.mod) + "%). No.10 trust " + m(T.hold.trust) + ".",
-      abort: "Clean exit, Service steady. The case counts as lost. No.10 trust " + m(T.abort.trust) + "." } };
+  // the trade-off under each answer, from the same numbers resolve() applies (opmodel.js via A.opTerms).
+  // op-balance v2 (Wayne): plain and neutral. One Gain line, one Risk line, one chance figure. No sums and no advice:
+  // the player picks what feels right. The working (+14%, the trap's cut) is on the result card afterwards.
+  const BURNW = function (p) { return p < 30 ? "a small chance" : p < 50 ? "a real chance" : p < 70 ? "likely" : "very likely"; };
+  function terms(A, id, k, a, kit, trap) {
+    const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
+    // op-balance v3 (Wayne): the chance is in words on every mode (A.oddsBand), never a percentage, so no button looks like
+    // the answer. A short in-world reason, true to the state, follows: what moves that answer's odds. Never a verdict.
+    const S = A.S(), cap = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
+    const tired = (S.stress || {})[k] >= 3, why = {
+      push: trap ? "they know the route" : tired ? nm + "\u2019s tired" : "moving now helps",
+      hold: trap ? "they\u2019re watching the exits" : "the trail\u2019s going cold" };
+    const ch = function (p, c) { return "Chance: " + cap(A.oddsBand(p)) + " \u00b7 " + why[c]; };
+    const L = {
+      push: { gain: "A win pays off big: " + (T.push.winX === 1.5 ? "half as much again" : T.push.winX === 2 ? "double" : "more than usual") + ".", risk: "If it fails: Service " + m(T.push.failService) + ", and " + nm + "\u2019s cover may be blown (" + BURNW(T.push.burnP) + ").", chance: ch(T.push.odds, "push") },
+      hold: T.hold.safe ? { gain: nm + " stays safe. If it fails, half the damage.", risk: "The trail cools, so the odds drop. No.10 trust " + m(T.hold.trust) + ".", chance: ch(T.hold.odds, "hold") }
+        : { gain: "The case stays alive.", risk: "If it fails, " + nm + " is hurt and the full damage lands. No.10 trust " + m(T.hold.trust) + ".", chance: ch(T.hold.odds, "hold") },
+      abort: { gain: nm + " comes home safe: no wound, no stress, " + (T.abort.loyalGain ? "loyalty " + m(T.abort.loyalGain) : "loyalty already at the top") + ".", risk: "The case counts as lost. No.10 trust " + m(T.abort.trust) + ".", chance: "Certain: case lost" } };
+    const html = function (o) { return '<span class="og"><span class="ol">Gain:</span> ' + o.gain + '</span><span class="or"><span class="ol">Risk:</span> ' + o.risk + '</span><span class="oc">' + o.chance + "</span>"; };
+    return { T: T, L: L, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
   }
   let timer = null;
   // core officers have recorded radio lines (voice.js op_<k>_<beat>); the radio log shows exactly what is said
@@ -97,6 +118,9 @@
     // No reply clock: the radio waits for your call, and nothing is ever chosen for you (Wayne, batch J)
     let t = 0, asked = false, ready = false, chosen = null, logged = 0, skipped = false;
     const lost = A.rnd() < 0.35, ckey = "d" + A.S().day + "_" + id, st = { lostAt: null, abortAt: null };
+    // op-balance: is this one a trap? Decided once, before anything is said; the tell comes just before the question
+    const trap = A.trapFor ? A.trapFor(id, k) : false; A.S().opsRun = (A.S().opsRun || 0) + 1;
+    let tellTxt = null; // what the officer saw, repeated over the buttons so it can't scroll away
     pron = PRON[ckey] || null; eyesId = eyesFor(k, A);
     // Ash's two lines for this mission: one after the officer has eyes on, one just before the question
     const caseId = function (n) { const c = "op_case_" + ckey + "_" + n; return window.VOICE && VOICE.lines[c] ? c : null; };
@@ -114,7 +138,7 @@
     const AT = [0, ARR, 0.3, askAt, 0.62, 0.82], KIND = ["travel", "pos", "eyes", "ask", lost ? "lost" : "mid", "end"]; // when each beat is due (fraction of the op)
     const line = function (i) { const L = voiced(k, vb[i]); if (L) { speak(k, vb[i]); if (vb[i] === "lost") st.lostAt = t / total; return said(L); } if (vb[i] === "lost") st.lostAt = t / total; return fill(beats[i], A, k, id); };
     A.render('<div data-screen="op" data-music="tense">' + mapHTML(A, id, k, a) + '<div class="card opcard"><div class="kicker">Live \u00b7 ' + esc(A.CASES()[id].where) + '</div><h2>' + esc(A.CASES()[id].title) + '</h2>' +
-      '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 ' + A.oddsFor(id, k, a, kit) + '% odds</span></div></div>' +
+      '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 ' + A.oddsBand(A.oddsFor(id, k, a, kit)) + '</span></div></div>' +
       '<div class="radio" id="radio"></div><div class="sr-only" id="radiosr" aria-live="polite"></div><div class="opbarw"><div id="opbar" style="width:0%"></div></div><div id="opask"></div>' +
       '<button type="button" class="btn ghost opskip" id="opskip">Skip to decision \u23ed</button></div></div>', "Live operation. Listen to the radio, or skip to the decision.");
     // radio captions come through like a teletype: a crackle, then the words tap out
@@ -128,7 +152,7 @@
       let i = 0; p.classList.add("typing");
       const iv = setInterval(function () { i += 2; p.textContent = txt.slice(0, i); r.scrollTop = r.scrollHeight; if (i >= txt.length || !p.isConnected) { clearInterval(iv); p.textContent = txt; p.classList.remove("typing"); } }, 24);
     };
-    const finish = function () { clearInterval(timer); timer = null; const T = A.opTerms(id, k, a, kit); A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: T.push.mod } : chosen === "abort" ? { abort: true } : { hold: true, mod: T.hold.mod }); cur.id = null; };
+    const finish = function () { clearInterval(timer); timer = null; const T = A.opTerms(id, k, a, kit, trap); A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: T.push.mod, trap: trap } : chosen === "abort" ? { abort: true, trap: trap } : { hold: true, mod: T.hold.mod, trap: trap }); cur.id = null; };
     const choose = function (c) {
       if (chosen) return; chosen = c; FEEL.buzz(c === "abort" ? "heavy" : "tap");
       $("opask").innerHTML = '<p class="opchose">' + esc(CHOICE[c].t) + '</p>'; const Lc = voiced(k, c); say(Lc ? said(Lc) : fill(LINES[c], A, k, id), "me", c); if (Lc) speak(k, c);
@@ -141,7 +165,9 @@
       ashSays(2, officerAsks);
     };
     const officerAsks = function () {
-      if (!$("opask") || chosen) return; const La = voiced(k, "ask"); say(La ? said(La) : fill(pick(LINES.ask, A), A, k, id), "ask", "ask"); if (La) speak(k, "ask");
+      if (!$("opask") || chosen) return;
+      if (trap && !tellTxt) { tellTxt = fill(fresh(LINES.trap, A), A, k, id); say("\u26a0 " + tellTxt, "warn", "tell"); } // the tell, before the question and the buttons
+      const La = voiced(k, "ask"); say(La ? said(La) : fill(pick(LINES.ask, A), A, k, id), "ask", "ask"); if (La) speak(k, "ask");
       // Push / Hold / Abort only appear once the officer has finished the question
       const scr = document.querySelector('[data-screen="op"]'); if (scr) scr.classList.add("asking");
       const show = function () { if (!$("opask") || chosen) return; ready = true; buttons(); heart(); const q = $("opask"); if (q && q.scrollIntoView) q.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); };
@@ -164,10 +190,10 @@
       beat(); hb = setInterval(function () { if (chosen || !$("opask")) { clearInterval(hb); const c = document.querySelector(".opcard"); if (c) c.classList.remove("heartbeat"); return; } beat(); }, 900);
     };
     const buttons = function () {
-      const TD = terms(A, id, k, a, kit).d;
-      $("opask").innerHTML = '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p></div>';
+      const TD = terms(A, id, k, a, kit, trap).d;
+      $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p></div>';
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
-      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> for a bigger win at a risk to them and the Service. <b>Hold</b> keeps them safe but the trail cools. <b>Abort</b> is a clean exit, but the case is lost and No.10 notices. They wait for your answer.");
+      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> for a bigger win, but a fail can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> keeps them safe (unless it\u2019s a trap) and halves the damage if it fails, but the trail cools. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
     };
     if (timer) clearInterval(timer);
     moveMark(0, st);

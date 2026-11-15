@@ -100,7 +100,12 @@
     return '<div class="no10take" id="no10take"><span class="stamp">NO.10 IS HANDLING IT</span><p>At seven, a man from No.10 took <b>' + esc(S.day === 2 ? window.AH2.titleOf(id) : CASES()[id].title) + "</b> off your desk. It counts as a lost case. Win back her trust.</p></div>";
   }
   // midnight, at the end of a day with No.10 trust under 20: Hale's final warning, then the next day
-  function no10Night(go) { if (!no10Due() || S.no10Called === S.day) return go(); S.no10Called = S.day; save("summary"); window.DESK.no10Warn(go); }
+  function no10Night(go) {
+    // op-balance v2: under 10 at midnight (Days 1-5). The count was taken in summary(), before tomorrow's start was saved.
+    if (S.day <= 5 && S.under10 >= sackNights()) return sacked();
+    if (S.day <= 5 && S.under10 > 0 && S.sackCalled !== S.day) { S.sackCalled = S.day; S.no10Called = S.day; save("summary"); return window.DESK.sackWarn(go, S.under10, sackNights()); }
+    if (!no10Due() || S.no10Called === S.day) return go(); S.no10Called = S.day; save("summary"); window.DESK.no10Warn(go);
+  }
   function moodHead() { const m = S.meters.mood == null ? 55 : S.meters.mood; return m >= 65 ? "Poll: public warms to the government on security" : m >= 45 ? "Poll: voters shrug at Whitehall spy rows" : m >= 30 ? "Poll: public faith in the secret services slips" : "Poll: voters lose faith in Whitehall\u2019s spies"; }
   function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
@@ -110,6 +115,7 @@
   // differently the line says so (otherwise "+2 Service" beside "Service 62\u219262" looks like a mistake)
   const SVC_NOTE = " The top-bar Service includes officer stress and loyalty.";
   const LOW_ALERT = function (t) { return "No.10 trust has just dropped under 20 (now " + t + "). " + (S.day === 6 ? "Under 15 at the end of today means resigning." : "Under 15 at the end of Day 6 means resigning, and under 20 at midnight No.10 takes a file.") + " Each case you close wins back +3."; };
+  const SACK_ALERT = function (t) { return "No.10 trust has just dropped under " + SACK_LOW + " (now " + t + "). " + sackRule(); };
   function barText() {
     const b = S && S.bar0; if (!b) return "";
     const t1 = score(S.meters.capital), v1 = svc(), mood = b.m != null && (v1 - b.v) !== (Math.round(S.meters.service) - b.m);
@@ -131,7 +137,8 @@
     if (after) after.insertAdjacentElement("afterend", pEl); else { const hd = oc.querySelector(".headline"); if (hd) oc.insertBefore(pEl, hd); else oc.appendChild(pEl); }
     // Batch P: the moment No.10 trust drops under 20 in Act 2, the result card says so (once a day), as an alert
     let alertTx = ""; const t1 = score(S.meters.capital);
-    if (S.day >= 4 && S.bar0 && S.bar0.t >= NO10_LOW && t1 < NO10_LOW && S.lowAlerted !== S.day) { S.lowAlerted = S.day; alertTx = LOW_ALERT(t1); const al = document.createElement("p"); al.className = "lowalert"; al.setAttribute("role", "alert"); al.textContent = alertTx; pEl.insertAdjacentElement("beforebegin", al); }
+    const sackX = S.day <= 5 && S.bar0 && S.bar0.t >= SACK_LOW && t1 < SACK_LOW && S.sackAlerted !== S.day;
+    if (sackX || (S.day >= 4 && S.bar0 && S.bar0.t >= NO10_LOW && t1 < NO10_LOW && S.lowAlerted !== S.day)) { if (sackX) S.sackAlerted = S.day; S.lowAlerted = S.day; alertTx = sackX ? SACK_ALERT(t1) : LOW_ALERT(t1); const al = document.createElement("p"); al.className = "lowalert"; al.setAttribute("role", "alert"); al.textContent = alertTx; pEl.insertAdjacentElement("beforebegin", al); }
     // Batch P: screen readers hear the stamp first (CLOSED, PARTIAL, FAILED...), then the top bar
     const st = oc.querySelector(".stamp"), stTx = st ? st.textContent.trim() : "";
     announce((stTx ? stTx.charAt(0) + stTx.slice(1).toLowerCase() + ". " : "") + tx + (alertTx ? " " + alertTx : ""));
@@ -260,7 +267,7 @@
     if (!snap) { fresh(S.diff); } else restore(snap);
     S.seenIntro = true; save("briefing"); chrome(true); meters(); ticker(); briefing();
   }
-  function resume() { chrome(true); meters(); ticker(); S.screen === "summary" ? summary() : briefing(); }
+  function resume() { chrome(true); meters(); ticker(); S.screen === "sacked" ? sacked() : S.screen === "summary" ? summary() : briefing(); }
   // Batch M: after Replay a day, one card says what stands from the days before and what starts again, read from the
   // restored state itself (so it is always true). It stays until the first case of the replayed day is closed, or Got it.
   function markReplay() { S.replayOf = S.day; S.replayFirst = true; staleAfter(S.day); }
@@ -434,7 +441,7 @@
     if (S.day >= 2 && window.AH3.interrupt()) return;
     if (S.day >= 4 && window.AH4.interrupt()) return;
     if (stuck()) return summary();
-    meters(); ticker(); save("briefing");
+    echoHeads(); meters(); ticker(); save("briefing");
     if (!S.chimed) { S.chimed = true; if (window.SFX) SFX.chime(S.hour); }
     const line = S.day >= 4 ? window.AH4.line(gone) : S.day === 3 ? window.AH3.line(gone) : S.day === 2 ? window.AH2.line(gone) : day1Line(gone);
     let warnTxt = "";
@@ -452,7 +459,7 @@
         risk: risk, late: lt > 0 && !done, soon: !done && lt <= 0 && left <= 2, due: due, left: left, lockT: lockT, lock4: lock4, off: !!(done || noOff || lockT || lock4), why: why, sub: sub };
     });
     FILES = {}; cards.forEach(function (c) { FILES[c.id] = c; });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + replayCard() + lowTrustCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + deskHtml(cards) +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + replayCard() + lowTrustCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + echoCard() + deskHtml(cards) +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || lowWarn() || "Tap a file to pick it up.");
     if (no10Took() && !S.no10.said && window.VOICE) { S.no10.said = true; save("briefing"); VOICE.play("ash_no10_took"); }
     briefVoice(line.text, line.worried);
@@ -466,12 +473,59 @@
     $("endday").onclick = function () { S.hour = 24; summary(); };
     if (S.replayFirst) { S.replayFirst = false; save("briefing"); } // Batch O: tips come back from the second screen of a replay
   }
+  // op-balance v2: each radio call leaves a mark on the story. Yesterday's calls come back in today's brief (a file note)
+  // and the ticker (a headline); every call is kept on the officer's file and in the epilogue. All print, nothing spoken.
+  const CALLW = { push: "pushed", hold: "held", abort: "pulled out" };
+  function placeOf(E) { const w = String(E.where || ""); return / or |\?/.test(w) ? "\u2018" + E.title + "\u2019" : w.split(",")[0]; }
+  function echoOf(E) {
+    const n = AG(E.k) ? first(E.k) : "your officer", w = placeOf(E), d = "on Day " + E.day;
+    if (E.c === "abort") return { k: E.k, note: E.gone ? "" : n + " hasn\u2019t forgotten " + w + ", when you called the pull-out. Ash says " + n + " was in before eight this morning.", file: "Pulled out of " + w + " " + d + ". Remembers you had their back.", fate: "Never forgot the night you pulled them out of " + w + "." };
+    if (E.c === "push" && E.res === "win") return { k: E.k, note: "No.10 heard about " + w + ". Someone in Downing Street called it \u2018bold\u2019.", head: "Whitehall whispers of a daring night in " + w, file: "Pushed on in " + w + " " + d + ", and pulled it off.", fate: "Still dines out on " + w + "." };
+    if (E.c === "push" && E.res === "loss") return { k: E.k, note: w + " still stings. The corridor knows " + n + " was pushed too hard" + (E.burned ? ", and paid for it with their cover." : "."), head: "Questions over a botched night in " + w, file: "Pushed too hard in " + w + " " + d + (E.burned ? ". Cover blown." : "."), fate: "Doesn\u2019t talk about " + w + "." };
+    if (E.c === "push") return { k: E.k, note: w + " got done, loudly. People are talking.", file: "Pushed on in " + w + " " + d + ". It half worked.", fate: "Still argues about " + w + "." };
+    if (E.res !== "win") return { k: E.k, note: "The target who slipped away in " + w + " has surfaced again: a watcher thinks they were seen at a London terminus. Ash has opened a file note.", file: "Held in " + w + " " + d + ". The target slipped away.", fate: "Still wonders who got away in " + w + "." };
+    return { k: E.k, note: "Patience paid in " + w + ". " + n + " is quietly pleased about it.", file: "Held in " + w + " " + d + ", and it worked.", fate: "Learned patience in " + w + "." };
+  }
+  function echoesOf(day) { return (S.echoes || []).filter(function (E) { return E.day === day; }).map(echoOf); }
+  function echoCard() {
+    const L = echoesOf(S.day - 1).filter(function (e) { return e.note; }).slice(-2); if (!L.length) return "";
+    return '<div class="card echo" role="note" data-screen-note="echo"><div class="kicker">From yesterday\u2019s radio calls</div>' + L.map(function (e) { return "<p>" + esc(e.note) + "</p>"; }).join("") + "</div>";
+  }
+  function echoHeads() { if (S.echoHeadDay === S.day) return; S.echoHeadDay = S.day; echoesOf(S.day - 1).forEach(function (e) { if (e.head && S.heads.indexOf(e.head) < 0) S.heads.push(e.head); }); }
+  function echoFiles(k) { return (S.echoes || []).filter(function (E) { return E.k === k; }).slice(-3).map(function (E) { return echoOf(E).file; }); }
+  function echoFate(k) { const L = (S.echoes || []).filter(function (E) { return E.k === k; }); return L.length ? echoOf(L[L.length - 1]).fate : ""; }
+  function callTally() { const t = { push: 0, hold: 0, abort: 0 }; (S.echoes || []).forEach(function (E) { t[E.c]++; }); return t; }
+  // op-balance v2: early sacking. No.10 trust under 10 at the end of Days 1-5: the Prime Minister's final warning that night.
+  // Still under 10 the next night: you're out (Easy: one more night's grace). Counted in summary(), before the next day's
+  // start is saved, so the count carries into tomorrow.
+  const SACK_LOW = 10, sackNights = function () { return S.diff === "easy" ? 3 : 2; };
+  function sackCount() { if (S.day > 5) return; S.under10 = score(S.meters.capital) < SACK_LOW ? (S.under10 || 0) + 1 : 0; }
+  const DAYNAME = function (d) { return d >= 4 ? window.AH4.DAYWORD[d] : d === 3 ? "Friday" : d === 2 ? "Thursday" : "Wednesday"; };
+  function sacked() {
+    S.sacked = S.day; S.ended = true; chrome(true); meters(); ticker();
+    recordEnding("sacked"); if (window.REPLAY) REPLAY.found("sacked"); save("sacked");
+    const t = score(S.meters.capital);
+    render('<div data-screen="sacked" data-music="tense"></div><div class="frontpage sacked" id="paper"><div class="mast">The London Evening Bugle</div><div class="dateline"><span>LATE FINAL</span><span>' + DAYNAME(S.day) + "</span><span>Price 2p \u00b7 fiction</span></div>" +
+      '<div class="kbwrap"><img class="vignette" src="img/cine/end2-bad-0.jpg" alt="A lone figure leaving a government building at night"></div>' +
+      '<h1 class="lead">SPY CHIEF OUT AFTER DAYS IN POST</h1><p class="subd">No.10 loses patience with the head of a \u2018little-known department\u2019 \u00b7 a replacement is named by morning</p>' +
+      '<div class="molebanner free">Day ' + S.day + " \u00b7 No.10 trust " + t + "/100 \u00b7 " + (S.under10 || 0) + " nights under " + SACK_LOW + "</div>" +
+      '<div class="also"><b>Also inside:</b> ' + S.heads.slice(-3).reverse().map(esc).join(" \u00b7 ") + "</div></div>" +
+      '<div class="sticky-go"><button class="btn primary" id="sackepi">\u25b6 Epilogue \u00b7 ' + esc((window.REPLAY ? REPLAY.NAMES : {}).sacked || "Out after days") + '</button><button class="btn ghost" id="again">New game</button></div>',
+      "The Prime Minister wanted your letter. You were sacked.");
+    setTimeout(function () { if (window.VOICE && $("paper")) VOICE.play("bulletin_sacked"); }, 700);
+    $("sackepi").onclick = function () { if (window.VOICE) VOICE.stop(); if (window.ENDINGS) ENDINGS.play("sacked", true); };
+    $("again").onclick = function () { store.del(SAVE); difficulty(); };
+  }
   // Batch O: in Act 2, with No.10 trust under 20, a card on the desk says what it risks and how to win trust back
   function lowTrustCard() {
-    const t = score(S.meters.capital); if (S.day < 4 || t >= NO10_LOW) return "";
+    const t = score(S.meters.capital); if ((S.day < 4 || t >= NO10_LOW) && !(S.day <= 5 && t < SACK_LOW)) return "";
     return '<div class="card lowtrust" role="note" data-screen-note="lowtrust"><div class="kicker">No.10 trust ' + t + "/100</div><p><b>The Prime Minister is losing patience.</b> " +
-      (S.day === 6 ? "If trust ends Day 6 under 15, you resign. Under 30, a lost Downing Street means resigning too, and the quiet exit needs 30." : "Under 15 at the end of Day 6 means resigning. Under 20 at midnight, No.10 takes a file off your desk.") +
-      " Each case you close wins back +3 trust (+1 for a partial).</p></div>";
+      (S.day === 6 ? "If trust ends Day 6 under 15, you resign. Under 30, a lost Downing Street means resigning too, and the quiet exit needs 30." : "Under 15 at the end of Day 6 means resigning. Under 20 at midnight, No.10 takes a file off your desk. " + sackRule()) +
+      (S.day >= 4 ? " Each case you close wins back +3 trust (+1 for a partial)." : "") + "</p></div>";
+  }
+  function sackRule() {
+    if (S.day > 5) return "";
+    return "Under " + SACK_LOW + " at midnight, the Prime Minister gives you a final warning" + (S.under10 ? " (you\u2019ve had " + (S.under10 === 1 ? "one" : S.under10 === 2 ? "two" : S.under10) + ")" : "") + ", and " + (S.diff === "easy" ? "a third night in a row under " + SACK_LOW + " (Easy)" : "a second night in a row under " + SACK_LOW) + " means you\u2019re sacked.";
   }
   // painted header for each case file
   const HEADS = { defector: "clerk", mole: "mole", leak: "fleet", sabotage: "rig", courier: "courier", safehouse: "flat", mole2: "mole", exit: "harwich", bath: "bath", york: "york", watch: "fleet", manchester: "manchester", leak: "letter", recon: "bridge", press: "fleet", swap: "bridge", find: "london", chase: "london", showdown: "fleet", tail: "fleet", cable: "cabletap", exfil: "signal", proof: "signal", faces: "fleet", lie: "york" };
@@ -538,7 +592,7 @@
     dossier({ act: send ? { label: "Send " + first(k), fn: send } : null, tab: "PERSONNEL", stamp: "STAFF IN CONFIDENCE", kicker: a.role, title: a.name, img: faceSrc(k, condOf(k)), alt: "Portrait of " + a.name + ", " + CONDW[condOf(k)].toLowerCase(),
       body: '<p class="fstr">\u2605 ' + esc(strengthOf(k)) + " " + condChip(k, "inline") + "</p>" + badges(k) + '<p class="tlist">' + traitsOf(k).map(function (t) { return "<b>" + esc(t.n) + ":</b> " + esc(t.tx); }).join("<br>") + "</p>" + '<div class="traits">' + pips(a.skill, "", "Skill") + pips(S.loyal[k], "loyal" + (S.loyal[k] <= 2 ? " high" : ""), "Loyalty") + pips(st, "stress" + (st >= 4 ? " high" : ""), "Stress") + pips(a.cover, "", "Cover") + "</div>" +
         "<p><b>Morale:</b> " + morale(k) + (st >= 4 ? " \u00b7 <b>strained</b>, mistakes likelier" : "") + "</p><p><b>File note:</b> " + esc(a.note) + "</p>" + (a.look ? "<p><b>Usually wears:</b> " + esc(a.look) + "</p>" : "") +
-        (window.FUN ? FUN.xpLine(k) : "") + "<p><b>Record:</b> " + (v ? v + " operation" + (v > 1 ? "s" : "") + " closed. Each one adds 4% to their odds (up to 12%)." : "No operations closed yet.") + "</p>" + (S.lost[k] ? "<p><b>Status:</b> " + esc(S.lost[k]) + "</p>" : "") });
+        (window.FUN ? FUN.xpLine(k) : "") + (echoFiles(k).length ? "<p><b>Your calls:</b> " + echoFiles(k).map(esc).join(" ") + "</p>" : "") + "<p><b>Record:</b> " + (v ? v + " operation" + (v > 1 ? "s" : "") + " closed. Each one adds 4% to their odds (up to 12%)." : "No operations closed yet.") + "</p>" + (S.lost[k] ? "<p><b>Status:</b> " + esc(S.lost[k]) + "</p>" : "") });
   }
   // ---------- Day 1 is the tutorial: one lesson per case ----------
   const LESSONS = {
@@ -675,9 +729,19 @@
   function traitsOf(k) { return window.FUN ? FUN.traits(k) : D.TRAITS[k] || []; }
   function oddsFor(id, k, a, kitId) { return oddsParts(id, k, a, kitId).odds; }
   // the live-op call: what each answer costs and pays. One source for the buttons and for resolve().
-  const OPT = { push: { mod: 12, winX: 1.5, failService: -5, burn: 1 / 3 }, hold: { mod: -6, trust: -2 }, abort: { trust: -6 } };
+  // The numbers live in opmodel.js, shared with the buttons (ops.js) and the balance sim (test/op-balance-sim.mjs).
+  const OPM = window.OPMODEL, OPT = OPM.OPT, TRAP = OPM.TRAP;
+  // op-balance: about one live op in five is a trap, and the officer's radio gives a clear tell before the call.
+  // Never the first live op of a game. Fixed by case, officer and point in the day (like driftOf), so it uses no rnd().
+  function trapFor(id, k) {
+    if (window.__SPY_TRAP__ != null) return !!window.__SPY_TRAP__;
+    if (!S || !S.opsRun) return false;
+    const str = "trap|" + id + "|" + k + "|" + S.day + "|" + (S.log || []).length + "|" + S.opsRun; let h = 11;
+    for (let i = 0; i < str.length; i++) h = (h * 37 + str.charCodeAt(i)) % 100019;
+    return h % 1000 < OPM.rate * 1000;
+  }
   // Batch P: on Hard the situation on the ground shifts the odds at the radio call by a hidden -8..+8, so the words
-  // (good odds, poor odds...) can't be worked out from the dial. Fixed per case, officer and point in the day, so the
+  // (strong odds, long odds...) can't be worked out from the dial. Fixed per case, officer and point in the day, so the
   // words on the call and the roll in resolve() agree. It is named on the result card afterwards.
   function driftOf(id, k) {
     if (!S || S.diff !== "hard") return 0;
@@ -685,9 +749,13 @@
     for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 100003;
     return (h % 17) - 8;
   }
-  function opTerms(id, k, a, kitId) {
-    const base = oddsFor(id, k, a, kitId), dr = driftOf(id, k), cl = function (x) { return Math.max(5, Math.min(95, x)); };
-    return { base: base, drift: dr, push: Object.assign({ odds: cl(base + dr + OPT.push.mod) }, OPT.push), hold: Object.assign({ odds: cl(base + dr + OPT.hold.mod) }, OPT.hold), abort: Object.assign({}, OPT.abort) };
+  function opTerms(id, k, a, kitId, trap) {
+    const base = oddsFor(id, k, a, kitId), dr = driftOf(id, k), lo = S.loyal[k] == null ? 3 : S.loyal[k];
+    trap = !!trap;
+    return { base: base, drift: dr, trap: trap,
+      push: Object.assign({}, OPT.push, { odds: OPM.odds("push", base + dr, trap), burnP: Math.round(OPM.burn(trap, S.stress[k] || 0) * 100), trapMod: trap ? OPM.odds("push", base + dr, true) - OPM.odds("push", base + dr, false) : 0 }),
+      hold: Object.assign({}, OPT.hold, { odds: OPM.odds("hold", base + dr, trap), safe: !(trap && TRAP.holdWound), lossX: OPM.holdLossX(trap), trapMod: trap ? OPM.odds("hold", base + dr, true) - OPM.odds("hold", base + dr, false) : 0 }),
+      abort: Object.assign({}, OPT.abort, { loyalGain: Math.min(5, lo + (OPT.abort.loyal || 0)) - lo }) };
   }
   function statusName(k) { const st = (S.status || {})[k]; return st ? { tired: "Tired", wounded: "Wounded", burned: "Burned" }[st] || "" : ""; }
   function statusMod(k) { const st = (S.status || {})[k]; return st === "tired" ? -8 : st === "wounded" ? -15 : 0; }
@@ -847,8 +915,13 @@
 
   // Batch M: Hold and Abort result cards say what the call itself cost and how the top bar moved, from the values applied
   // Batch O: on Hard the live-op call shows the odds in words, not a percentage (the same way Hard hides Ash's default)
-  function oddsBand(p) { return p >= 75 ? "good odds" : p >= 55 ? "better than even" : p >= 45 ? "about even" : p >= 25 ? "poor odds" : "a long shot"; }
+  // odds in words, one set everywhere (the live-op buttons on every mode, and Hard's plans and results).
+  // 75+ strong odds, 55-74 better than even, 45-54 a coin toss, 25-44 long odds, under 25 a real gamble.
+  const BANDS = [[75, "strong odds"], [55, "better than even"], [45, "a coin toss"], [25, "long odds"], [-1, "a real gamble"]];
+  function oddsBand(p) { for (let i = 0; i < BANDS.length; i++) if (p >= BANDS[i][0]) return BANDS[i][1]; return BANDS[BANDS.length - 1][1]; }
   function oddsTxt(p) { return S && S.diff === "hard" ? oddsBand(p) : p + "%"; }
+  // op-balance: the chance a failed Push blows cover; on Hard in words, like the odds
+  function burnTxt(p) { return S && S.diff === "hard" ? (p < 30 ? "a small chance" : p < 50 ? "a real chance" : p < 70 ? "likely" : "very likely") : p + "% chance"; }
   const sgn = function (n) { return n > 0 ? "+" + n : n < 0 ? "\u2212" + Math.abs(n) : "\u00b10"; };
   function opCallLine(op, nm, res, t0, v0) {
     if (!op.hold && !op.abort && !op.push) return "";
@@ -856,18 +929,22 @@
     let what;
     // Batch O: Hold and Abort say the odds before and after the call
     const before = L.base != null ? oddsTxt(L.base) : null;
-    if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? "The odds were " + before + "; pulling out meant no roll at all. " : "") + "Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home, and the case counts as lost.";
-    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (res === "loss" ? ". " + esc(nm) + " was kept out of harm\u2019s way." : ". The trail cooled, but " + esc(nm) + " stayed safe.");
-    else if (res === "loss") what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds (" + oddsTxt(L.odds) + "), and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown." : ", and " + esc(nm) + " came back wounded.");
-    else what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds (" + oddsTxt(L.odds) + "). " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d71.5." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
-    return '<p class="opcall">' + what + "</p>";
+    const tr = op.trap && !op.abort ? ", " + sgn(L.trapMod || 0) + "% for the trap" : "", ptr = tr ? ", and the trap took " + sgn(L.trapMod || 0).replace("\u2212", "") + "%" : "";
+    if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? "The odds were " + before + "; pulling out meant no roll at all. " : "") + "Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home safe: no wound, no stress, " + (L.loyal ? "and loyalty " + sgn(L.loyal) + " for having their back" : "and loyalty already at the top") + ". The case counts as lost." + (op.trap ? " It was a trap: they were waiting." : "");
+    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + "). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (res !== "loss" ? ". The trail cooled, but " + esc(nm) + " stayed safe." : op.trap && L.wounded ? ". It was a trap: holding didn\u2019t keep " + esc(nm) + " safe, and they came back wounded." : ". " + esc(nm) + " was kept out of harm\u2019s way" + (L.soft ? ", and the plan\u2019s losses were halved." : "."));
+    else if (res === "loss") what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds" + ptr + " (" + oddsTxt(L.odds) + "), and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown (" + burnTxt(L.burnP).replace(/^(\d)/, "a $1") + ")." : ", and " + esc(nm) + " came back wounded (cover blown: " + burnTxt(L.burnP) + ").");
+    else what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds" + ptr + " (" + oddsTxt(L.odds) + "). " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
+    return '<p class="opcall">' + what + "</p>" + (op.abort ? '<p class="opafter">' + esc(op.trap ? "Back at the car, " + nm + " sits for a long minute before turning the key." : nm + " gets home tired, but in one piece.") + "</p>" : "");
   }
   function resolve(id, k, a, kitId, op) {
     if (S.done[id]) return; // a case closes once: a second tap while the result is showing changes nothing
     op = op || {};
     const t0 = score(S.meters.capital), v0 = svc(); // Batch M: the top bar before this case, for the Hold/Abort result line
-    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground (Hard)", driftOf(id, k)]] : []) };
-    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = Math.max(5, Math.min(95, raw + drift + (op.mod || 0))), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
+    const cc = op.push ? "push" : op.hold ? "hold" : op.abort ? "abort" : null, trapOn = !!op.trap && (op.push || op.hold);
+    // on a trap: cut and capped (opmodel.js); trapMod is what the trap actually took off, so the card's sums add up
+    const preT = trapOn ? Math.max(5, Math.min(95, oddsFor(id, k, a, kitId) + driftOf(id, k) + (op.mod || 0))) : 0, trapMod = trapOn ? Math.max(5, Math.min(TRAP[cc + "Cap"] || 95, preT + (TRAP[cc] || 0))) - preT : 0;
+    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat(trapMod ? [["Signs of a trap", trapMod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground (Hard)", driftOf(id, k)]] : []) };
+    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = Math.max(5, Math.min(95, raw + drift + (op.mod || 0) + trapMod)), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
@@ -878,12 +955,16 @@
     const st0 = S.stress[k], lo0 = S.loyal[k], over = recIdx(id, k) !== s.approaches.indexOf(a), worked = st0 >= 4;
     S.styles = S.styles || { low: 0, med: 0, high: 0 }; S.styles[a.risk]++;
     const planStress = kitD.calm || (AG(k).quirk === "steady" && a.risk === "high") ? 0 : a.stress;
-    // Batch M: an abort is a clean exit, as the button says: the officer's stress and loyalty (and so the Service) don't move
-    if (!op.abort) S.stress[k] = clamp5(S.stress[k] + planStress + (res === "loss" && !kitD.soft && !op.hold && !wrongSite ? 1 : res === "win" ? -1 : 0));
+    // what the radio call does to the officer (opmodel.js). No call (a case resolved straight off): the old rules.
+    const O = cc ? OPM.officer(cc, res, !!op.trap) : { stress: 0, lossStress: 1, plan: true, loyal: 0, wound: true, signOff: true, tired: false };
+    // Batch M: an abort is a clean exit, as the button says: no wound and no stress. op-balance: and +1 loyalty for having their back
+    if (!op.abort) S.stress[k] = clamp5(S.stress[k] + (O.plan ? planStress : 0) + O.stress + (res === "loss" && !kitD.soft && !wrongSite ? O.lossStress : res === "win" ? -1 : 0));
     if (!op.abort) S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
+    else S.loyal[k] = clamp5(S.loyal[k] + O.loyal);
     let delta = a[res];
     if (op.push && res === "win") { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * OPT.push.winX : a.win[m]; }); } // pushed and won: the big payoff
     if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
+    else if (res === "loss" && op.hold && !wrongSite && OPM.holdLossX(!!op.trap) !== 1) { const x = OPM.holdLossX(!!op.trap); delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] * x); }); } // held back: half the damage
     // Good tradecraft keeps the Service healthy: the right officer on the plan they recommend steadies it, a mismatch drains it.
     const fitK = AG(k).good.indexOf(id) >= 0, recK = !over;
     const craft = res === "loss" ? (fitK ? 0 : -6) : (fitK ? 1 : -4) + (recK ? 2 : 0);
@@ -895,7 +976,8 @@
     const paid = {};
     Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; paid[m] = d; if (d) ch[m] = (ch[m] || 0) + d; });
     const back = no10Back(res, ch);
-    S.lastOp = op.push || op.hold || op.abort ? { choice: op.push ? "push" : op.hold ? "hold" : "abort", odds: odds, base: Math.max(5, Math.min(95, raw)), drift: drift, res: res, extra: extra, paid: paid, back: back } : null;
+    const burnP = OPM.burn(!!op.trap, st0);
+    S.lastOp = cc ? { choice: cc, odds: odds, base: Math.max(5, Math.min(95, raw)), drift: drift, res: res, extra: extra, paid: paid, back: back, trap: !!op.trap, trapMod: trapMod, burnP: Math.round(burnP * 100), loyal: op.abort ? S.loyal[k] - lo0 : 0, soft: res === "loss" && op.hold && !wrongSite && !kitD.soft && OPM.holdLossX(!!op.trap) !== 1 } : null;
     S.done[id] = res; S.used[k] = true; S.sent = S.sent || {}; S.sent[k] = (S.sent[k] || 0) + 1; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
     if (window.FUN) FUN.xp(k, res);
@@ -910,23 +992,27 @@
     if (S.day >= 4) note = (note + " " + window.AH4.afterCase(id, res)).trim();
     // the mole's slip: a small wrong detail in their debrief
     const slip = k === S.mole && S.accused !== S.mole && D.AGENTS[k] ? D.AGENTS[k].slip : "";
-    S.heads.push(head); S.log.push({ id: id, k: k, res: res, appr: a.t + (kitId && D.KIT[kitId] ? " + " + D.KIT[kitId].name.toLowerCase() : ""), slip: !!slip, head: head, fit: fitK, rec: recK }); S.craft = (S.craft || []).concat([(fitK ? 0.7 : 0) + (recK ? 0.3 : 0)]);
+    if (cc) { S.echoes = (S.echoes || []).concat([{ day: S.day, id: id, k: k, c: cc, res: res, trap: !!op.trap, where: s.where, title: s.title }]).slice(-24); }
+    S.heads.push(head); S.log.push({ opc: cc || undefined, id: id, k: k, res: res, appr: a.t + (kitId && D.KIT[kitId] ? " + " + D.KIT[kitId].name.toLowerCase() : ""), slip: !!slip, head: head, fit: fitK, rec: recK }); S.craft = (S.craft || []).concat([(fitK ? 0.7 : 0) + (recK ? 0.3 : 0)]);
     const nm = first(k);
     let line = { win: nm + " pulled it off. Clean. Nobody will ever know.", mixed: nm + " got it done, but not cleanly. There will be questions.", loss: "It went wrong. " + nm + " is out \u2014 just \u2014 and badly shaken." }[res];
-    if (op.abort) line = "You pulled " + nm + " out before it closed in. The case is lost, but " + nm + " walked home.";
+    if (op.trap && !op.abort) line = (res === "loss" ? "It was a trap. They were waiting. " : "It was a trap, and " + nm + " slipped it anyway. ") + line;
+    if (op.abort) line = op.trap ? "You pulled " + nm + " out. It was a trap: they were waiting. The case is lost, but " + nm + " walked home." : "You pulled " + nm + " out before it closed in. The case is lost, but " + nm + " walked home.";
     if (wrongSite && !op.abort) line = nm + " watched " + S.belief.charAt(0).toUpperCase() + S.belief.slice(1) + " all night. Nothing came. The work was somewhere else.";
     // how the officer comes back: tired after a hard push, wounded after a loss, burned if a pushed loss went badly
     S.status = S.status || {}; const st1 = S.status[k];
     const burnRoll = window.__SPY_BURN__ != null ? window.__SPY_BURN__ : rnd();
-    if (S.lastOp) { S.lastOp.burned = res === "loss" && op.push && burnRoll < OPT.push.burn; }
-    if (res === "loss" && op.push && burnRoll < OPT.push.burn) { S.status[k] = "burned"; loseOfficer(k, "cover burned"); line += " Worse: " + nm + "\u2019s face is known now. Their cover is burned for good."; }
+    if (S.lastOp) { S.lastOp.burned = res === "loss" && op.push && burnRoll < burnP; }
+    if (res === "loss" && op.push && burnRoll < burnP) { S.status[k] = "burned"; loseOfficer(k, "cover burned"); line += " Worse: " + nm + "\u2019s face is known now. Their cover is burned for good."; }
     else if (wrongSite) { /* nobody came to the site we guarded: nothing to be hurt by */ }
+    else if (res === "loss" && op.hold && O.wound) { S.status[k] = "wounded"; if (S.lastOp) S.lastOp.wounded = true; }
     else if (res === "loss" && op.hold) line += " Holding kept " + nm + " out of it. They came home in one piece.";
     else if (res === "loss" && !op.abort) S.status[k] = "wounded";
     else if (op.push) S.status[k] = S.status[k] === "wounded" ? "wounded" : "tired";
     else if (res === "win" && S.status[k] === "tired") delete S.status[k];
     if (S.status[k] && S.status[k] !== st1 && S.status[k] !== "burned") line += " " + nm + " comes back " + statusName(k).toLowerCase() + ".";
     if (res === "loss" && !op.hold && !op.abort && S.stress[k] >= 5 && S.status[k] !== "burned") { loseOfficer(k, "sent home"); line += " The doctor has signed " + nm + " off. They won\u2019t be back this week."; }
+    if (cc) { const E = S.echoes[S.echoes.length - 1]; E.burned = S.status[k] === "burned"; E.gone = !!(S.lost || {})[k]; } // how it ended for the officer
     if (id === "defector" && res !== "loss") S.defector = true;
     if (S.day === 1 && S.order.indexOf("sabotage") < 0) S.order.push("sabotage");
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
@@ -1125,7 +1211,7 @@
     if (!S.ended && cineId && CINE.maybe(cineId, summary)) return;
     if (!S.ended) {
       remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id] || CASES()[id].pen); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk", head: CASES()[id].head.loss }); });
-      S.hour = 24; S.ended = true;
+      S.hour = 24; S.ended = true; sackCount();
       const lastH = S.day >= 4 ? window.AH4.lastHead() : S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019";
       if (lastH && S.heads.indexOf(lastH) < 0) S.heads.push(lastH); // the night's headline, unless a case already printed it
       if (window.SFX) { SFX.chime(12); setTimeout(function () { SFX.tele(); }, 1500); }
@@ -1143,11 +1229,12 @@
     const verdict = S.day === 6 && window.AH4 && AH4.ending ? end6Letter(AH4.ending()) : { A: "The Prime Minister is pleased, which worries Ash.", B: "Solid work, C. A few cracks; nothing that shows.", C: "You held the line, just. No.10 would like a word.", D: "A rough day. Your officers noticed.", E: "A bad day. Fleet Street smells blood." }[grade];
     render('<div data-screen="summary" data-music="' + (/[DE]/.test(grade) ? "tense" : "jazz") + '"></div><div class="card dossier" style="text-align:center"><span class="stamp corner">TOP SECRET</span>' + LH + '<div class="kicker">Day ' + S.day + " \u00b7 From C to the Prime Minister \u00b7 10 Downing Street</div><div class=\"gradelbl\">" + (S.day === 6 ? "Today\u2019s grade \u00b7 your ending is the medal below" : "Day " + S.day + " grade") + "</div><div class=\"grade\">" + grade + '</div><p style="font-size:17px;color:var(--paper-ink)"><strong>' + verdict + "</strong></p>" +
       (S.day === 5 && window.AH4 && AH4.interceptClue ? AH4.interceptClue() : "") + (S.day === 6 && window.AH4 && AH4.knightGap ? '<p class="knightgap">' + AH4.knightGap() + "</p>" : "") +
+      (S.day === 6 && (S.echoes || []).length ? (function () { const t = callTally(); return '<p class="calltally">Your radio calls this week: pushed ' + t.push + " \u00b7 held " + t.hold + " \u00b7 pulled out " + t.abort + "</p>"; })() : "") +
       (function () { const g = gradeParts(); return '<p class="gradeparts">Graded on: No.10 trust and Service (top bar) \u00b7 cases closed <b>' + g.record + "%</b> \u00b7 tradecraft <b>" + g.craft + "%</b>" + (g.bonus ? " \u00b7 Easy +" + g.bonus : "") + (S.diff !== "easy" && g.craft < 75 ? '<br><small>An A needs 75% tradecraft over the week, a B 60%: the right officer, on the plan they rate best.</small>' : "") + "</p>"; })() + (window.FUN ? FUN.medalHTML(S) : "") +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +
-          "<span><b>" + esc(s.title) + '</b><br><span class="how">' + esc(l.appr) + (l.k && s.kind !== "accuse" ? " \u00b7 " + first(l.k) : "") + '</span></span><span class="r ' + l.res + '">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[l.res] + "</span></li>";
+          "<span><b>" + esc(s.title) + '</b><br><span class="how">' + esc(l.appr) + (l.k && s.kind !== "accuse" ? " \u00b7 " + first(l.k) : "") + (l.opc ? " \u00b7 " + CALLW[l.opc] : "") + '</span></span><span class="r ' + l.res + '">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[l.res] + "</span></li>";
       }).join("") + (S.call && S.day === 1 ? '<li><span class="portrait dash">\u260e</span><span><b>The call from No.10</b><br><span class="how">' + (S.call.choice === "deny" ? "Denied " : "Stood by ") + first(S.call.k) + "</span></span><span></span></li>" : "") + "</ul></div>" +
       nightPaper() + (window.ENDINGS && ENDINGS.current() ? '<button class="btn primary epibtn" id="epibtn">\u25b6 Epilogue \u00b7 ' + esc((window.REPLAY ? REPLAY.NAMES : {})[ENDINGS.current()] || "") + "</button>" : "") +
       (S.day === 1 ? day1Flash() : S.day >= 4 ? window.AH4.flash() : S.day === 3 ? window.AH3.flash() : window.AH2.flash()) +
@@ -1174,7 +1261,7 @@
   }
   // Batch P: one place for endings. The Endings button on the title carries the last three games; the Endings screen
   // lists every saved game (up to 10) above the collection of epilogues.
-  const SHORT_END = { knight: "Knighted", quiet: "Quiet exit", scandal: "Front page", resign: "Resigned" }, DIFFW = { easy: "Easy", standard: "Standard", hard: "Hard" };
+  const SHORT_END = { knight: "Knighted", quiet: "Quiet exit", scandal: "Front page", resign: "Resigned", sacked: "Sacked" }, DIFFW = { easy: "Easy", standard: "Standard", hard: "Hard" };
   function pastGames() { const raw = readJ(ENDS); return Array.isArray(raw) ? raw : []; }
   function endingsHTML() {
     const list = pastGames().slice(0, 3); if (!list.length) return "";
@@ -1354,9 +1441,9 @@
   // haptics for every control live in native.js (one feel per action)
 
   // shared with day2.js
-  window.AH = { caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
+  window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
+    phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, burnTxt: burnTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

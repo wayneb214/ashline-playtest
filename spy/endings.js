@@ -1,14 +1,14 @@
-/* endings.js: the ending gallery and a short painted, voiced epilogue for each of the ten endings.
+/* endings.js: the ending gallery and a short painted, voiced epilogue for each of the eleven endings.
    The epilogue: one painting (slow push-in), two narrator lines, then what became of each officer. */
 (function () {
   "use strict";
   // literal paths, so the iOS packager (scripts/package-web.mjs) picks every painting up
   const ART = { win: "img/end-win.jpg", mixed: "img/end-mixed.jpg", loss: "img/end-loss.jpg", traded: "img/end-traded.jpg", wi_good: "img/end-wi_good.jpg", wi_bad: "img/end-wi_bad.jpg",
-    a2_knight: "img/end-a2_knight.jpg", a2_quiet: "img/end-a2_quiet.jpg", a2_scandal: "img/end-a2_scandal.jpg", a2_resign: "img/end-a2_resign.jpg" };
-  const ACT = { win: "Act 1", mixed: "Act 1", loss: "Act 1", traded: "Act 1", wi_good: "Bonus day", wi_bad: "Bonus day", a2_knight: "Act 2", a2_quiet: "Act 2", a2_scandal: "Act 2", a2_resign: "Act 2" };
+    a2_knight: "img/end-a2_knight.jpg", a2_quiet: "img/end-a2_quiet.jpg", a2_scandal: "img/end-a2_scandal.jpg", a2_resign: "img/end-a2_resign.jpg", sacked: "img/cine/end2-bad-0.jpg" };
+  const ACT = { win: "Act 1", mixed: "Act 1", loss: "Act 1", traded: "Act 1", wi_good: "Bonus day", wi_bad: "Bonus day", a2_knight: "Act 2", a2_quiet: "Act 2", a2_scandal: "Act 2", a2_resign: "Act 2", sacked: "Any day" };
   const HINT = { win: "Bring Vass home clean on Day 3.", mixed: "Get Vass out on Day 3, at a price.", loss: "Lose the exfiltration on Day 3.", traded: "Take the deal on Day 3.",
     wi_good: "Play the bonus day with patience.", wi_bad: "Play the bonus day loud and fast.", a2_knight: "Finish Act 2 with the best record.", a2_quiet: "Finish Act 2 steady, nothing spectacular.",
-    a2_scandal: "Let Act 2 reach the papers.", a2_resign: "Finish Act 2 with No.10's trust gone." };
+    a2_scandal: "Let Act 2 reach the papers.", a2_resign: "Finish Act 2 with No.10's trust gone.", sacked: "End two nights running with No.10's trust under 10 (three on Easy)." };
   const NAMES = function () { return (window.REPLAY && REPLAY.NAMES) || {}; };
   const KEY = "albion-endings";
   const foundAll = function () { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } };
@@ -29,7 +29,7 @@
   function fates() {
     const S = A().S(); if (!S || !S.roster) return "";
     return '<ul class="epi-fates">' + S.roster.map(function (k) {
-      return "<li>" + A().face(k) + "<span><b>" + A().esc(A().AG(k).name) + "</b><small>" + fate(k) + "</small></span></li>"; }).join("") + "</ul>";
+      return "<li>" + A().face(k) + "<span><b>" + A().esc(A().AG(k).name) + "</b><small>" + fate(k) + (A().echoFate && A().echoFate(k) ? " " + A().esc(A().echoFate(k)) : "") + "</small></span></li>"; }).join("") + "</ul>";
   }
 
   // play one ending. withFates: this game's officers; done: called on close
@@ -73,6 +73,7 @@
   // the newest ending this game reached (Day 3 or Day 6 summary)
   function current() {
     const S = A().S(); if (!S) return null;
+    if (S.sacked) return "sacked";
     if (S.day === 3 && (S.ended || S.screen === "summary")) return S.deal === "deal" ? "traded" : (S.done && S.done.exfil) || "loss";
     if (S.day === 6 && (S.ended || S.screen === "summary") && window.AH4 && AH4.ending) return "a2_" + AH4.ending();
     return null;
