@@ -191,7 +191,7 @@
   function lampHTML(key) {
     const r = !!C().ink[key];
     return '<div class="lampzone" id="lampzone"><div class="lampglow" id="lampglow"></div><div class="lampshade" aria-hidden="true"></div><p class="lamptip" id="lamptip">' +
-      (r ? "\u2713 " + INK[key].clue : "Something is written in lemon juice. <b>Press and hold the letter</b>, or drag it down to the lamp.") + "</p>" +
+      (r ? "\u2713 " + INK[key].clue : "Something is written in lemon juice. <b>Press and hold the letter</b> to warm it by the lamp.") + "</p>" +
       (r ? "" : '<button class="btn ghost" id="inkreveal">Reveal hidden ink</button>') + "</div>";
   }
   function ink(paper, key, onReveal) {
@@ -321,6 +321,6 @@
       answer: function () { end("She rings off. Her voice was very quiet, and very calm."); },
       miss: function () { end("You let it ring. Ash takes the message at ten past twelve and leaves it on your desk, word for word: <i>one more night like this, and I\u2019ll want your letter.</i>"); } });
   }
-  window.DESK = { keskCall: keskCall, timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, sackWarn: sackWarn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
+  window.DESK = { lindenNote: lindenNote, keskCall: keskCall, timer: timer, askSecs: askSecs, hideDef: hideDef, askWords: askWords, countdown: countdown, call: call, after: after, no10Warn: no10Warn, sackWarn: sackWarn, ink: ink, inkHTML: inkHTML, lampHTML: lampHTML, askOf: askOf, asked: asked, choose: choose,
     oddsMod: oddsMod, photoLine: photoLine, PHOTO_TEXT: PHOTO_TEXT, stageHelps: stageHelps, follows: follows, interrupt: interrupt, cons: C, INK: INK };
 })();

@@ -239,7 +239,8 @@ p strong { color: inherit; }
 .frontpage { margin-bottom: 18px; }
 .molebanner { font-family: var(--type); font-weight: 700; font-size: 0.875rem; letter-spacing: .06em; text-transform: uppercase; text-align: center; color: #efe6d2; padding: 8px 6px; margin: 0 0 10px; }
 .molebanner.free { background: #7a1f1f; } .molebanner.caught { background: #1f3a2a; }
-.view { padding-bottom: 110px; }
+/* panel 6 v8: room under the page for the fixed tip bar, however tall it is (two lines at Larger text, the iPhone home bar) */
+.view { padding-bottom: max(110px, calc(var(--hb, 0px) + 16px)); }
 /* tips */
 .tip { display: flex; gap: 8px; align-items: flex-start; background: #f6edc9; color: #3a3220; border-left: 4px solid var(--brass); padding: 8px 10px; margin: 0 0 12px; font-size: 0.875rem; line-height: 1.35; box-shadow: 0 6px 14px rgba(0,0,0,.4); }
 .tip b { font-family: var(--type); color: var(--oxblood); text-transform: uppercase; font-size: 0.875rem; letter-spacing: .06em; padding-top: 2px; }
@@ -543,7 +544,8 @@ body.in-cine #rain { opacity: .85; }
 /* ---------- hidden ink and the desk lamp ---------- */
 .ink { --h: 0; font-family: "Brush Script MT", "Segoe Script", cursive; font-style: normal !important; font-size: 1.1875rem !important; line-height: 1.35 !important; color: rgba(122, 64, 18, var(--h)) !important; text-shadow: 0 0 calc(var(--h) * 6px) rgba(255, 170, 60, calc(var(--h) * .5)); margin: 4px 0 8px !important; min-height: 2.6em; border-top: 1px dashed rgba(42,36,27, calc(.15 - var(--h) * .15)); user-select: none; -webkit-user-select: none; }
 .kletter.warming, .lnote.warming { box-shadow: 0 0 0 2px rgba(255,190,90,.35), 0 18px 40px rgba(255,160,40,.25); }
-.kletter, .lnote { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; transition: translate .35s ease; }
+/* panel 6 v8 (Wayne: "I cant scroll" on Kesk's letter): a finger on the paper still scrolls the page; press and hold still warms the ink */
+.kletter, .lnote { touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; transition: translate .35s ease; }
 .kletter.warming, .lnote.warming { transition: none; }
 .lampzone { position: relative; text-align: center; margin: 8px 0 12px; padding: 54px 10px 4px; }
 .lampglow { position: absolute; left: 50%; top: -30px; width: 280px; height: 160px; margin-left: -140px; background: radial-gradient(ellipse at 50% 60%, rgba(255,200,110,.75), rgba(255,170,60,.25) 45%, transparent 70%); opacity: .45; pointer-events: none; }
@@ -1028,6 +1030,8 @@ body.bg-held * { animation-play-state: paused !important; }
 .dk-chip.soon { background: #f2d48a; border-color: #b8902e; } .dk-chip.late { background: #b3261e; color: #fff; border-color: #7a1f1f; } .dk-chip.filed { background: #d8ccb0; color: #3b332a; }
 .dk-file { position: fixed; inset: 0; z-index: 70; background: rgba(5,6,5,0); display: flex; flex-direction: column; justify-content: center; padding: calc(var(--safe-t) + 14px) 14px calc(var(--safe-b) + 14px); transition: background .25s; overflow-y: auto; }
 .dk-file.in { background: rgba(5,6,5,.82); }
+/* panel 6 v8: centred by auto margins, not justify-content, so a file taller than the phone scrolls from its top (centring cut the top off) */
+.dk-file { justify-content: flex-start; } .dk-file > .dk-sheet { margin: auto 0; flex-shrink: 0; }
 .dk-sheet { position: relative; background: linear-gradient(180deg, #f3ead6, #e6d9bb); color: #1c1a16; border-radius: 3px; padding: 14px 16px 16px; box-shadow: 0 24px 50px rgba(0,0,0,.75); transition: transform .38s var(--ease); }
 .dk-hmg { font: 700 14px/1.3 var(--type); letter-spacing: .04em; text-align: center; color: #7a1f1f; border-bottom: 2px solid #7a1f1f; padding-bottom: 6px; margin-bottom: 10px; }
 .dk-photo { display: block; width: 100%; height: 150px; object-fit: cover; border: 6px solid #fafaf4; box-shadow: 0 4px 10px rgba(0,0,0,.35); transform: rotate(-1deg); filter: sepia(.15); }

@@ -118,6 +118,8 @@
   }
   function moodHead() { const m = S.meters.mood == null ? 55 : S.meters.mood; return m >= 65 ? "Poll: public warms to the government on security" : m >= 45 ? "Poll: voters shrug at Whitehall spy rows" : m >= 30 ? "Poll: public faith in the secret services slips" : "Poll: voters lose faith in Whitehall\u2019s spies"; }
   function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
+  // panel 6 v8: the page leaves room under it for the fixed tip bar at its real height (.view padding uses --hb)
+  (function () { const h = document.getElementById("hintbar"); if (!h) return; const set = function () { document.documentElement.style.setProperty("--hb", h.offsetHeight + "px"); }; set(); if (window.ResizeObserver) new ResizeObserver(set).observe(h); })();
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
   // Batch N: every result card shows how the top bar moved since you left the desk (the same numbers the bar shows)
   function markBar() { S.bar0 = { t: score(S.meters.capital), v: svc(), m: Math.round(S.meters.service) }; }

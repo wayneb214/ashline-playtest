@@ -429,5 +429,5 @@
     }[ending()];
   }
 
-  window.AH3 = { dealCall: dealCall, surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
+  window.AH3 = { letter: letter, dealCall: dealCall, surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
 })();
