@@ -1462,6 +1462,8 @@ body:has(#dk-file) #hintbar { visibility: hidden; }
 [data-screen="op"] .opmeans dt { font-weight: 700; margin-top: 6px; }
 [data-screen="op"] .opmeans dt:first-child { margin-top: 0; }
 [data-screen="op"] .opmeans dd { margin: 0; }
+/* panel 6 v4: the odds words as a short list, best to worst (glossary and live-op panel) */
+ul.oddslist { margin: 4px 0 6px; padding-left: 1.3em; list-style: disc; } ul.oddslist li { margin: 2px 0; }
 /* panel 6 item 12: nights under 10, on the top bar while it matters */
 .hud.danger10 { flex-wrap: wrap; row-gap: 4px; }
 .hud .n10 { flex: 1 0 100%; font-family: var(--type); font-size: 0.875rem; min-height: 1.3em; color: #ffd2c8; background: rgba(150,30,20,.45); border: 1px solid #c94b3f; border-radius: 4px; padding: 2px 6px; text-align: center; letter-spacing: .02em; }

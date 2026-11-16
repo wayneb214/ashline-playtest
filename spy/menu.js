@@ -110,6 +110,11 @@
     ["Is any of this real?", "No. Every service, state, firm and person is invented."]
   ];
   // panel 6 item 25: a glossary of the words the game uses (opened from Help & FAQ)
+  // panel 6 v4 (Wayne): the odds words as a short list, best to worst, one plain meaning each. One source for the glossary
+  // and the live-op "What do these words mean?" panel (ops.js). The words are spy.js BANDS without " odds".
+  const ODDS = [["good", "works 3 times in 4 or more"], ["decent", "works about 7 times in 10"], ["fair", "works more often than not"], ["even", "about half and half"], ["poor", "fails more often than it works"], ["long", "works about 1 time in 4"], ["slim", "usually fails"]];
+  const ODDS_NOTE = "Hold and Push are never certain: they fail at least 1 time in 7.";
+  function oddsHTML(lead) { return lead + '<ul class="oddslist">' + ODDS.map(function (o) { return "<li><b>" + o[0] + "</b>: " + o[1] + "</li>"; }).join("") + "</ul>" + ODDS_NOTE; }
   const GLOSS = [
     ["C", "You: the chief of Albion House, the invented secret service in this story."],
     ["No.10 trust", "How far the Prime Minister, Eleanor Hale, backs you (top bar, 0 to 100). Under 10 at midnight is a final warning; two nights running under 10 (three on Easy) and you are sacked."],
@@ -119,7 +124,7 @@
     ["Push", "On the radio: the long shot. Worse odds than Hold, but three times the plan\u2019s gains if it works; a failure costs in full, hits the Service, and the officer\u2019s cover can be blown."],
     ["Hold", "On the radio: wait and watch. Better odds than Push and the plan\u2019s normal gains; waiting costs some Service and a little No.10 trust, a failure costs half, and the officer stays safe (not on a trap)."],
     ["Abort", "On the radio: pull the officer out. The case is lost and No.10 trust drops, but the officer comes home and remembers you had their back."],
-    ["Odds words", "From best to worst: good odds, decent odds, fair odds, even odds, poor odds, long odds, slim odds. Each step is about a tenth of the chance; a Hold or Push is never certain: it fails at least 1 time in 7."],
+    ["Odds words", "{oddsList}"],
     ["Partly works", "Done, but not cleanly: a smaller gain, and people ask questions."],
     ["Trap and tell", "Sometimes the other side is waiting. The officer reports a warning sign (the tell, marked \u26a0) before you choose. On a trap, Hold costs in full."],
     ["Cover blown", "The officer\u2019s face is known. They are burned: out of the field for good."],
@@ -133,7 +138,7 @@
     ["Bonus day", "A short side story, \u2018What if\u2026\u2019. It opens once you have finished Day 3, and it doesn\u2019t touch your saved game."]
   ];
   function glossary(back) {
-    sheet('<div class="kicker">Help &amp; FAQ</div><h2>Glossary</h2><dl class="gloss">' + GLOSS.map(function (g) { return "<dt>" + g[0] + "</dt><dd>" + g[1] + "</dd>"; }).join("") + '</dl><button class="btn primary" id="gl-back">Back</button>', "settings");
+    sheet('<div class="kicker">Help &amp; FAQ</div><h2>Glossary</h2><dl class="gloss">' + GLOSS.map(function (g) { return "<dt>" + g[0] + "</dt><dd>" + g[1].replace("{oddsList}", oddsHTML("From best to worst:")) + "</dd>"; }).join("") + '</dl><button class="btn primary" id="gl-back">Back</button>', "settings");
     $("gl-back").onclick = function () { close(); help(back); };
   }
   // Batch P: help(back, key) opens with that question already open (the Service note on result cards links here)
@@ -171,7 +176,7 @@
     setTimeout(go, 9000);
   }
 
-  window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, glossary: glossary, GLOSS: GLOSS, confirm: confirm, sheet: sheet };
+  window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, glossary: glossary, GLOSS: GLOSS, ODDS: ODDS, ODDS_NOTE: ODDS_NOTE, oddsHTML: oddsHTML, confirm: confirm, sheet: sheet };
   document.addEventListener("DOMContentLoaded", function () { const b = $("menu"); if (b) b.onclick = function (e) { e.stopPropagation(); open(); }; });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && $("sheet")) close(); });
 })();
