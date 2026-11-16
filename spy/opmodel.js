@@ -28,25 +28,32 @@
     }
     // a failed Hold: the officer was kept back, so the plan's own losses land softer (not on a trap: they were waiting)
     function holdLossX(trap) { return trap ? 1 : OPT.hold.lossX == null ? 1 : OPT.hold.lossX; }
-    return { holdLossX: holdLossX, OPT: OPT, TRAP: TRAP, odds: odds, burn: burn, officer: officer, rate: TRAP.rate, P: P };
+    // of the times a call works, how often it works cleanly (the plan's full win) rather than only partly. Every plan: 0.7.
+    // Panel 6 v6: a Hold works cleanly less often (OPT.hold.clean): the trail cools while you wait.
+    function clean(choice) { const c = choice && OPT[choice] && OPT[choice].clean; return c == null ? 0.7 : c; }
+    return { holdLossX: holdLossX, clean: clean, OPT: OPT, TRAP: TRAP, odds: odds, burn: burn, officer: officer, rate: TRAP.rate, P: P };
   }
   // Balanced against test/op-balance-sim.mjs (op-balance, 15 Nov). The old numbers are kept as BEFORE for the report.
   const BEFORE = { OPT: { push: { mod: 12, winX: 1.5, failService: -5, burn: 1 / 3, stress: 0 }, hold: { mod: -6, trust: -2, stress: 0 }, abort: { trust: -6, loyal: 0 } }, TRAP: { rate: 0, push: 0, hold: 0, burn: 1 / 3 } };
   // The version before panel 6 v2 (Push +14% and x1.5 on a win, Hold -4%, No.10 -1), kept for the report.
   const V7 = { OPT: { push: { mod: 14, winX: 1.5, failService: -5, burn: 0.25, burnStress: 0.1, stress: 0 }, hold: { mod: -4, trust: -1, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
     TRAP: { rate: 0.2, push: -30, hold: -25, pushCap: 22, holdCap: 28, burn: 2 / 3, holdWound: true } };
-  // NOW (panel 6 v2, Wayne: "make Push a long shot"), balanced with test/op-balance-sim.mjs and test/op-hard-sim.mjs so each call
-  // is the best one in about a third of normal situations and the sack rates stay where they were.
-  // Hold is the likely, steady result: +16% on the odds, the plan's normal gains, a failed Hold lands half the losses; waiting
-  // costs No.10 trust 1 and Service 6 (the team tied up watching). Push is the long shot: always 14 below Hold (net +2%), but
-  // x3 the plan's gains on a win; a failed Push lands the full losses, Service -3, and blows cover 10% of the time (+5% per
-  // point of the officer's stress). Abort is the sure thing: the case is lost and No.10 -6, but the officer comes home (+1 loyalty).
-  // panel 6 v3 (Wayne: "enjoyment for the uncertainty"): Hold is at most 85% (so Push at most 71%): a call always has real risk.
-  // A trap (1 live op in 5, never the first): Push -30% and at most 22%, cover blown 2 times in 3; Hold -25% and at most 28%, no longer safe.
-  const NOW = { OPT: { push: { mod: 2, gap: 14, winX: 3, failService: -3, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, cap: 85, trust: -1, service: -6, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
+  // Panel 6 v5 as published (d204dbd): Push x3, Hold +16% (cap 85), Hold costs No.10 trust -1 and Service -6. Kept for the report.
+  const V5 = { OPT: { push: { mod: 2, gap: 14, winX: 3, failService: -3, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, cap: 85, trust: -1, service: -6, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
     TRAP: { rate: 0.2, push: -30, hold: -25, pushCap: 22, holdCap: 28, burn: 2 / 3, holdWound: true } };
-  // panel 6 v2 as published (30f0bd0): the same without the 85% cap, kept for the report
-  const V2 = { OPT: Object.assign({}, NOW.OPT, { hold: Object.assign({}, NOW.OPT.hold, { cap: 95 }) }), TRAP: NOW.TRAP };
-  const M = make(NOW); M.make = make; M.BEFORE = BEFORE; M.V7 = V7; M.V2 = V2; M.NOW = NOW;
+  // NOW (panel 6 v6, Wayne: "Push's best case is far bigger than Hold's"), balanced with test/op-balance-sim.mjs and
+  // test/op-hard-sim.mjs so each call is the best one in a fair share of normal situations on every difficulty.
+  // Hold is the steady call: +16% on the odds (at most 85%), the plan's normal gains, a failed Hold lands half the losses, and
+  // waiting costs Service 3 (the team tied up watching). But the trail cools while you wait: when a Hold works, it works
+  // cleanly (the plan's full win) 1 time in 5; otherwise only partly. Push is the long shot: always 14 below Hold (so at most
+  // 71%), x2 the plan's gains on a win (and cleanly 7 times in 10, like any plan); a failed Push lands the full losses,
+  // Service -2, and blows cover 10% of the time (+5% per point of the officer's stress). Abort is the sure thing: the case is
+  // lost and No.10 -6, but the officer comes home (+1 loyalty).
+  // A trap (1 live op in 5, never the first): Push -30% and at most 22%, cover blown 2 times in 3; Hold -25% and at most 28%, no longer safe.
+  const NOW = { OPT: { push: { mod: 2, gap: 14, winX: 2, failService: -2, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, cap: 85, trust: 0, service: -3, clean: 0.2, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
+    TRAP: { rate: 0.2, push: -30, hold: -25, pushCap: 22, holdCap: 28, burn: 2 / 3, holdWound: true } };
+  // panel 6 v2 as published (30f0bd0): v5 without the 85% cap, kept for the report
+  const V2 = { OPT: Object.assign({}, V5.OPT, { hold: Object.assign({}, V5.OPT.hold, { cap: 95 }) }), TRAP: V5.TRAP };
+  const M = make(NOW); M.make = make; M.BEFORE = BEFORE; M.V7 = V7; M.V2 = V2; M.V5 = V5; M.NOW = NOW;
   root.OPMODEL = M;
 })(typeof window !== "undefined" ? window : globalThis);
