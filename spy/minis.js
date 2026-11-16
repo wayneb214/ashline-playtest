@@ -23,7 +23,8 @@
     S.order.splice(Math.min(a[1], S.order.length), 0, a[0]);
   }
   function done(id, res, appr, body) {
-    const A = window.AH, S = A.S(); S.minis = S.minis || {}; S.minis[id] = res;
+    const A = window.AH, S = A.S(); if (S.done[id] || (S.minis || {})[id]) return; // panel 6 B1: one result
+    S.minis = S.minis || {}; S.minis[id] = res;
     if (id === "lie") return yorkNext(res, body);
     const ch = A.apply(REW[res]); A.advance(1);
     if (id === "faces" && res !== "loss") { S.clues4 = S.clues4 || {}; S.clues4.faces = true; }

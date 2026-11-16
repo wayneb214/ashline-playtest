@@ -285,3 +285,11 @@ All made with Chatterbox performing our own invented Kokoro reference voices; ev
 | `int_mole2_hartley_bluff` | Tom Hartley (Harrier) | Your file is empty. I can see it from here. |
 | `crunch_good` | Ash | Right call. People before paper. |
 | `crunch_bad` | Ash | The papers will keep. I hope the other one does. |
+
+## Panel 6 (16 Nov, gen6 British)
+| id | who | line |
+|---|---|---|
+| op_ada_pos_code | Kestrel (Ada Finch) | Kestrel. In position. Everything’s where the file said. |
+| op_hollis_pos_code | Heron (Major Hollis) | Heron. In position. Lovely evening for it. |
+| op_sam_pos_code | Swift (Sam Bhatt) | Swift here. Parked up, engine running. |
+| pm_sacked_last | Eleanor Hale (phone) | C, it’s Eleanor Hale. I warned you. I can’t defend you any longer. I need your letter on my desk tonight. |

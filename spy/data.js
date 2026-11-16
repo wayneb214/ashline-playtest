@@ -67,9 +67,9 @@ window.AH_DATA = (function () {
 
   // ---------- officers you can recruit when one is lost ----------
   const RECRUITS = {
-    ada: { name: "Ada Finch", role: "Analyst turned field officer", img: "ada", tense: null, happy: "ada", skill: 3, loyalty: 3, stress: 1, cover: 3, good: ["courier", "leak", "safehouse"], quirk: "careful", quirkTxt: "Meticulous: +10% on careful plans", note: "Two years on the Varenian desk", recruit: true },
-    hollis: { name: "Major Tom Hollis", role: "Old soldier \u00b7 steady hands", img: "hollis", tense: null, happy: "hollis", skill: 4, loyalty: 3, stress: 0, cover: 2, good: ["sabotage", "exit", "safehouse"], quirk: "steady", quirkTxt: "Unflappable: bold plans add no stress", note: "Retired, bored, reliable", recruit: true },
-    sam: { name: "Sam Bhatt", role: "Driver \u00b7 knows every road", img: "sam", tense: null, happy: "sam", skill: 3, loyalty: 3, stress: 1, cover: 4, good: ["defector", "exit"], quirk: "quick", quirkTxt: "Back roads: every plan takes 1 hour less", note: "Ex-police, ex-everything", recruit: true }
+    ada: { name: "Ada Finch", code: "Kestrel", role: "Analyst turned field officer \u00b7 \u2018Kestrel\u2019", img: "ada", tense: null, happy: "ada", skill: 3, loyalty: 3, stress: 1, cover: 3, good: ["courier", "leak", "safehouse"], quirk: "careful", quirkTxt: "Meticulous: +10% on careful plans", note: "Two years on the Varenian desk", recruit: true },
+    hollis: { name: "Major Tom Hollis", code: "Heron", role: "Old soldier \u00b7 \u2018Heron\u2019 \u00b7 steady hands", img: "hollis", tense: null, happy: "hollis", skill: 4, loyalty: 3, stress: 0, cover: 2, good: ["sabotage", "exit", "safehouse"], quirk: "steady", quirkTxt: "Unflappable: bold plans add no stress", note: "Retired, bored, reliable", recruit: true },
+    sam: { name: "Sam Bhatt", code: "Swift", role: "Driver \u00b7 \u2018Swift\u2019 \u00b7 knows every road", img: "sam", tense: null, happy: "sam", skill: 3, loyalty: 3, stress: 1, cover: 4, good: ["defector", "exit"], quirk: "quick", quirkTxt: "Back roads: every plan takes 1 hour less", note: "Ex-police, ex-everything", recruit: true }
   };
 
   // ---------- the kit locker: one of each per day ----------
@@ -83,7 +83,7 @@ window.AH_DATA = (function () {
   const DIFFICULTY = {
     easy: { name: "Easy", txt: "Kinder odds (+10%), deadlines an hour later, setbacks cost less, two bugs in the locker. Starts at No.10 trust 55, Service 58.", odds: 10, due: 1, start: { capital: 55, service: 58 }, kit: { bug: 2, passport: 1, car: 1, key: 1 } },
     standard: { name: "Standard", txt: "The day as written. Starts at No.10 trust 50, Service 50.", odds: 0, due: 0, start: { capital: 50, service: 50 }, kit: { bug: 1, passport: 1, car: 1, key: 1 } },
-    hard: { name: "Hard", txt: "Harsher odds (\u221210%), deadlines an hour earlier, less time to decide in the field, no safe-house key. Starts at No.10 trust 40, Service 45.", odds: -10, due: -1, start: { capital: 40, service: 45 }, kit: { bug: 1, passport: 1, car: 1, key: 0 } }
+    hard: { name: "Hard", txt: "Harsher odds (\u221210%), deadlines an hour earlier, less time to decide in the field, no safe-house key. Starts at No.10 trust 40, Service 45. Every Abort costs No.10 trust 6: six on their own take you from 40 to under 10, and two nights in a row under 10 mean the sack.", odds: -10, due: -1, start: { capital: 40, service: 45 }, kit: { bug: 1, passport: 1, car: 1, key: 0 } }
   };
 
   // first-run tips (shown once each, can be switched off)

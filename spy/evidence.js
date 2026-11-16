@@ -51,7 +51,7 @@
       '<span class="ev-stamp ' + res + '">' + WORD[res] + "</span>" +
       "</div>" + (news ? '<div class="ev-ticker"><b>THAMESMOUTH WIRELESS \u00b7 NEWSFLASH</b><span><em>' + head + "</em></span></div>" : "") +
       '<p class="ev-tap">Tap to carry on</p>';
-    document.body.appendChild(el); document.body.classList.add("in-evid");
+    document.body.appendChild(el); document.body.classList.add("in-evid"); if (window.A11Y && A11Y.modal) A11Y.modal(); // the page behind goes inert at once (panel 6 B1)
     requestAnimationFrame(function () { el.classList.add("on"); });
     if (window.SFX && SFX.click) SFX.click();
     setTimeout(function () { if (window.FEEL) FEEL.buzz("stamp"); if (window.SFX && SFX.stamp) SFX.stamp(); }, 700);

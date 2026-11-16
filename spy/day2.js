@@ -155,6 +155,7 @@
   }
   function endInterro(id) {
     const s = S(), st = s.interro[id], sub = SUBJECTS[id];
+    if (s.done[id]) return; // panel 6 B1: one result
     A.advance(2);
     const res = st.got >= 2 ? "win" : st.got === 1 ? "mixed" : "loss";
     const found = st.got >= 1 ? reveal([sub.clue]) : [];

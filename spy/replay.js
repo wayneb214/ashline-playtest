@@ -5,8 +5,16 @@
   const KEY = "albion-endings", NAMES = { win: "Home safe", mixed: "Expelled, alive", loss: "On state TV", traded: "The trade", wi_good: "What if: the quiet night", wi_bad: "What if: the long night", a2_knight: "Knighted in silence", a2_quiet: "A quiet Tuesday", a2_scandal: "On the front page", a2_resign: "Resignation by Friday", sacked: "Out after days" };
   const ALL = Object.keys(NAMES);
   const get = function () { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-  function found(e) { const f = get(); if (f[e]) return; f[e] = 1; try { localStorage.setItem(KEY, JSON.stringify(f)); } catch (x) {} if (window.FUN) FUN.toast && FUN.toast("Epilogue found: " + NAMES[e]); }
   const unlocked = function () { return ALL.slice(0, 4).some(function (e) { return get()[e]; }); };
+  // panel 6 item 18: the first Act 1 ending unlocks Hard and the bonus day, and the game says so (and where to find them)
+  const UNLOCK_TXT = "Unlocked: <b>Hard</b> mode (pick it when you start a new game) and the <b>bonus day</b> (on the title screen)";
+  function found(e) {
+    const f = get(); if (f[e]) return; const was = unlocked(); f[e] = 1; try { localStorage.setItem(KEY, JSON.stringify(f)); } catch (x) {}
+    if (window.FUN && FUN.toast) { FUN.toast("Epilogue found: " + NAMES[e]); if (!was && unlocked()) FUN.toast(UNLOCK_TXT, "unlock"); }
+  }
+  // panel 6 item 17: the bonus day is also offered where a run ends (Day 3 and Day 6 summaries, the sacked paper)
+  function endButtonHTML() { return unlocked() ? '<button class="btn ghost" id="whatif2">\u2726 Bonus day: What if\u2026 <small>(a short side story)</small></button>' : ""; }
+  function bindEnd() { const b = document.getElementById("whatif2"); if (b) b.onclick = function () { if (window.VOICE) VOICE.stop(); scene(0, 0); }; }
   function titleHTML() {
     const n = ALL.filter(function (e) { return get()[e]; }).length;
     return (window.ENDINGS ? '<button class="btn ghost endings" id="gallery"><span>\u2756 Your record</span><small class="epicount">Epilogues found: ' + n + " of " + ALL.length + "</small>" + (window.AH && AH.endingsHTML ? AH.endingsHTML() : "") + "</button>" : '<div class="endings">Epilogues found: ' + n + " of " + ALL.length + "</div>") + (unlocked() ? '<button class="btn ghost" id="whatif">\u2726 Bonus day: What if\u2026</button>' : "");
@@ -40,5 +48,5 @@
     A.$("go").onclick = A.title;
     A.$("wiepi").onclick = function () { if (window.ENDINGS) ENDINGS.play(e, false); };
   }
-  window.REPLAY = { found: found, unlocked: unlocked, titleHTML: titleHTML, bindTitle: bindTitle, NAMES: NAMES };
+  window.REPLAY = { found: found, unlocked: unlocked, titleHTML: titleHTML, bindTitle: bindTitle, endButtonHTML: endButtonHTML, bindEnd: bindEnd, UNLOCK_TXT: UNLOCK_TXT, NAMES: NAMES };
 })();

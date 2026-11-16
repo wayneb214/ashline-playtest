@@ -73,14 +73,15 @@
   const END_MEDAL = { knight: { m: "gold", t: "Gold", why: "Knighted in silence. The best way the week can end." }, quiet: { m: "silver", t: "Silver", why: "A quiet Tuesday. Kesk went home and nobody noticed. Gold: the knighthood." }, scandal: { m: "bronze", t: "Bronze", why: "On the front page. You kept the chair, just. Silver: a quiet Tuesday." } };
   function medal(S) {
     if (S.day === 6 && window.AH4 && AH4.ending) { const e = AH4.ending(); return END_MEDAL[e] || { m: "none", t: "", why: "" }; }
-    const sc = Math.round((A().score(S.meters.capital) + A().svc()) / 2), log = S.log.filter(function (l) { return A().CASES()[l.id]; });
-    const failed = log.filter(function (l) { return l.res === "loss"; }).length, won = log.filter(function (l) { return l.res === "win"; }).length;
-    const avg = "Average score " + sc + "/100, " + won + " closed clean.";
-    if (sc >= 62 && failed === 0) return { m: "gold", t: "Gold", why: "No case lost and strong gauges. " + avg };
-    if (sc >= 48 && failed <= 1) return { m: "silver", t: "Silver", why: (failed ? "One case got away. " : "Nothing lost, but the gauges sag. ") + avg + " Gold: no failures and 62+." };
-    return { m: "bronze", t: "Bronze", why: (failed > 1 ? failed + " cases failed. " : "The gauges are low. ") + avg + " Silver: one failure at most and 48+." };
+    // panel 6 B3: on Days 1-5 the medal follows the day's grade, so the two can never disagree (A Gold, B Silver, C Bronze,
+    // D and E no medal). Day 6 is different on purpose: the medal is the week's ending, and both are labelled as such.
+    const g = A().gradeOf();
+    if (g === "A") return { m: "gold", t: "Gold", why: "Grade A today, so Gold." };
+    if (g === "B") return { m: "silver", t: "Silver", why: "Grade B today, so Silver. Gold needs an A." };
+    if (g === "C") return { m: "bronze", t: "Bronze", why: "Grade C today, so Bronze. Silver needs a B." };
+    return { m: "none", t: "", why: "" };
   }
-  function medalHTML(S) { const m = medal(S); if (m.m === "none") return ""; return '<div class="medal ' + m.m + '"><span class="disc">' + m.t + '</span><p>' + m.why + "</p></div>"; }
+  function medalHTML(S) { const m = medal(S); if (m.m === "none") return ""; return '<div class="medal ' + m.m + '"><span class="disc">' + m.t + '</span><p><b class="medallbl">' + (S.day === 6 ? "Your ending (the whole week)" : "Day " + S.day + " medal") + "</b><br>" + m.why + "</p></div>"; }
   function event(type, d) {
     const S = A().S(); if (!S) return; const f = rec(S); track(S);
     if (type === "case" && d.res === "win") unlock("first_win");

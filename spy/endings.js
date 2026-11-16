@@ -4,11 +4,14 @@
   "use strict";
   // literal paths, so the iOS packager (scripts/package-web.mjs) picks every painting up
   const ART = { win: "img/end-win.jpg", mixed: "img/end-mixed.jpg", loss: "img/end-loss.jpg", traded: "img/end-traded.jpg", wi_good: "img/end-wi_good.jpg", wi_bad: "img/end-wi_bad.jpg",
-    a2_knight: "img/end-a2_knight.jpg", a2_quiet: "img/end-a2_quiet.jpg", a2_scandal: "img/end-a2_scandal.jpg", a2_resign: "img/end-a2_resign.jpg", sacked: "img/cine/end2-bad-0.jpg" };
+    a2_knight: "img/end-a2_knight.jpg", a2_quiet: "img/end-a2_quiet.jpg", a2_scandal: "img/end-a2_scandal.jpg", a2_resign: "img/end-a2_resign.jpg", sacked: "img/end-sacked.jpg" };
   const ACT = { win: "Act 1", mixed: "Act 1", loss: "Act 1", traded: "Act 1", wi_good: "Bonus day", wi_bad: "Bonus day", a2_knight: "Act 2", a2_quiet: "Act 2", a2_scandal: "Act 2", a2_resign: "Act 2", sacked: "Any day" };
-  const HINT = { win: "Bring Vass home clean on Day 3.", mixed: "Get Vass out on Day 3, at a price.", loss: "Lose the exfiltration on Day 3.", traded: "Take the deal on Day 3.",
-    wi_good: "Play the bonus day with patience.", wi_bad: "Play the bonus day loud and fast.", a2_knight: "Finish Act 2 with the best record.", a2_quiet: "Finish Act 2 steady, nothing spectacular.",
-    a2_scandal: "Let Act 2 reach the papers.", a2_resign: "Finish Act 2 with No.10's trust gone.", sacked: "End two nights running with No.10's trust under 10 (three on Easy)." };
+  // panel 6 item 16: each hint says exactly what reaches the ending (the rules in act2.js ending(), spy.js sacking, replay.js)
+  const HINT = { win: "Day 3: get Vass across the border clean (the run fully works).", mixed: "Day 3: get Vass out, but only partly cleanly.", loss: "Day 3: lose the border run (or leave it on the desk).", traded: "Day 3: take Kesk\u2019s offer when the Prime Minister rings.",
+    wi_good: "Bonus day (title screen, after Day 3): make at least two of the three careful calls.", wi_bad: "Bonus day: make two or more rash calls.",
+    a2_knight: "Day 6: 6+ story points, No.10 trust 45+ and Downing Street not lost.", a2_quiet: "Day 6: 4+ story points, No.10 trust 30+ and Downing Street not lost.",
+    a2_scandal: "Day 6: fall short of a quiet exit while keeping No.10 trust 15+ (30+ if Downing Street is lost).", a2_resign: "Day 6: No.10 trust under 15, or Downing Street lost with trust under 30.",
+    sacked: "Days 1 to 5: end two nights running with No.10 trust under 10 (three on Easy)." };
   const NAMES = function () { return (window.REPLAY && REPLAY.NAMES) || {}; };
   const KEY = "albion-endings";
   const foundAll = function () { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } };
@@ -65,7 +68,7 @@
     A().render('<div data-screen="gallery"><div class="card dossier">' + A().LH + '<div class="kicker" style="margin-top:8px">Kept on this device</div><h2>Your record</h2>' + (A().pastGamesHTML ? A().pastGamesHTML() : "") + '<h3 class="pasth">Epilogues found \u00b7 ' + n + " of " + keys.length + '</h3><div class="egrid">' +
       keys.map(function (e) {
         return f[e] ? '<button class="etile got" data-e="' + e + '"><img src="' + ART[e] + '" alt=""><b>' + A().esc(N[e]) + "</b><small>" + ACT[e] + " \u00b7 \u25b6 epilogue</small></button>"
-          : '<div class="etile"><span class="eshade" aria-hidden="true">?</span><b>Not found yet</b><small>' + ACT[e] + " \u00b7 " + HINT[e] + "</small></div>"; }).join("") +
+          : '<div class="etile"><span class="eshade" aria-hidden="true"><img class="esil" src="' + ART[e] + '" alt=""></span><b>Not found yet</b><small>' + ACT[e] + " \u00b7 " + HINT[e] + "</small></div>"; }).join("") +
       '</div></div><button class="btn primary" id="gback">Back</button></div>', "Your games and the epilogues you find are kept on this device.");
     document.querySelectorAll("[data-e]").forEach(function (b) { b.onclick = function () { play(b.getAttribute("data-e"), false, function () { gallery(back); }); }; });
     A().$("gback").onclick = back || A().title;
@@ -78,5 +81,5 @@
     if (S.day === 6 && (S.ended || S.screen === "summary") && window.AH4 && AH4.ending) return "a2_" + AH4.ending();
     return null;
   }
-  window.ENDINGS = { play: play, gallery: gallery, current: current, ART: ART, fate: fate };
+  window.ENDINGS = { play: play, gallery: gallery, current: current, ART: ART, HINT: HINT, fate: fate };
 })();

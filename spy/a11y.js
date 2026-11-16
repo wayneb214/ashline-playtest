@@ -20,8 +20,19 @@
       if (n) e.setAttribute("aria-label", n);
     });
   }
-  let t = 0; const run = function () { if (t) return; t = setTimeout(function () { t = 0; label(document.body); }, 60); };
+  // panel 6 B1/27: while a modal is up (a result still, a file, a sheet, an epilogue), everything behind it is inert, so a keyboard
+  // or switch user can't reach (and press again) the button that is still on the page underneath. Runs straight from the
+  // MutationObserver (a microtask), so there is no gap between the modal appearing and the page going inert.
+  function modal() {
+    const ms = Array.prototype.filter.call(document.querySelectorAll('[aria-modal="true"]'), function (m) { return m.isConnected && !m.inert; });
+    const want = [], top = ms[ms.length - 1];
+    for (let n = top; n && n !== document.body && n.parentElement; n = n.parentElement)
+      Array.prototype.forEach.call(n.parentElement.children, function (x) { if (x !== n && !x.contains(top) && !/^(SCRIPT|STYLE|LINK)$/.test(x.tagName)) want.push(x); });
+    document.querySelectorAll("[data-inerted]").forEach(function (e) { if (want.indexOf(e) < 0) { e.inert = false; e.removeAttribute("data-inerted"); } });
+    want.forEach(function (e) { if (!e.inert) { e.inert = true; e.setAttribute("data-inerted", "1"); } });
+  }
+  let t = 0; const run = function () { modal(); if (t) return; t = setTimeout(function () { t = 0; label(document.body); }, 60); };
   new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener("keydown", function (e) { const el = e.target; if ((e.key === "Enter" || e.key === " ") && el && el.getAttribute && el.getAttribute("role") === "button" && el.tagName !== "BUTTON") { e.preventDefault(); el.click(); } });
-  window.A11Y = { label: label };
+  window.A11Y = { label: label, modal: modal };
 })();

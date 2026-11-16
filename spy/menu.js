@@ -109,13 +109,41 @@
     ["Can I quit?", "Open \u2630 and choose Title screen. Your place is kept."],
     ["Is any of this real?", "No. Every service, state, firm and person is invented."]
   ];
+  // panel 6 item 25: a glossary of the words the game uses (opened from Help & FAQ)
+  const GLOSS = [
+    ["C", "You: the chief of Albion House, the invented secret service in this story."],
+    ["No.10 trust", "How far the Prime Minister, Eleanor Hale, backs you (top bar, 0 to 100). Under 10 at midnight is a final warning; two nights running under 10 (three on Easy) and you are sacked."],
+    ["Service", "The department\u2019s health, plus how your officers feel (top bar). It lifts the odds of every plan."],
+    ["Officer", "One of your field agents. New recruits go by code names (Kestrel, Heron, Swift) on the radio."],
+    ["Stress and loyalty", "Each officer\u2019s strain and faith in you. High stress makes a blown cover more likely on a Push, and at full stress a failure can get them signed off; very low loyalty can end in a resignation."],
+    ["Push", "On the radio: carry on hard. The biggest gains, but a failure costs in full and the officer\u2019s cover can be blown."],
+    ["Hold", "On the radio: wait and watch. Smaller gains; a failure costs half, and the officer stays safe (not on a trap)."],
+    ["Abort", "On the radio: pull the officer out. The case is lost and No.10 trust drops, but the officer comes home and remembers you had their back."],
+    ["Odds words", "Strong, Better than even, A coin toss, Long odds, A real gamble. Nothing is ever certain."],
+    ["Partly works", "Done, but not cleanly: a smaller gain, and people ask questions."],
+    ["Trap and tell", "Sometimes the other side is waiting. The officer reports a warning sign (the tell, marked \u26a0) before you choose. On a trap, Hold costs in full."],
+    ["Cover blown", "The officer\u2019s face is known. They are burned: out of the field for good."],
+    ["Halved and full losses", "What a failure costs. Hold halves the losses, unless it was a trap."],
+    ["Tired, wounded, burned", "How an officer comes back. Tired after a hard push, wounded after a loss, burned when their cover is blown."],
+    ["Kit", "Bugs, passports, cars and the safe-house key in your locker. Each one helps one plan, once."],
+    ["Tradecraft", "Sending the right officer on the plan they rate best. It counts towards your grade."],
+    ["Grade and medal", "Each day ends with a grade, A to E. On Days 1 to 5 the medal follows the grade; on Day 6 the medal is your ending for the whole week."],
+    ["Story points", "Earned in the big cases of the week: Day 3, the bridge, the chase, Downing Street and closing the leak. With No.10 trust they decide your ending."],
+    ["Epilogue", "A short painted scene for each ending you find. Your record on the title screen keeps them."],
+    ["Bonus day", "A short side story, \u2018What if\u2026\u2019. It opens once you have finished Day 3, and it doesn\u2019t touch your saved game."]
+  ];
+  function glossary(back) {
+    sheet('<div class="kicker">Help &amp; FAQ</div><h2>Glossary</h2><dl class="gloss">' + GLOSS.map(function (g) { return "<dt>" + g[0] + "</dt><dd>" + g[1] + "</dd>"; }).join("") + '</dl><button class="btn primary" id="gl-back">Back</button>', "settings");
+    $("gl-back").onclick = function () { close(); help(back); };
+  }
   // Batch P: help(back, key) opens with that question already open (the Service note on result cards links here)
   function help(back, key) {
-    sheet('<div class="kicker">Help &amp; FAQ</div><h2>How to play</h2>' + (window.HOWTO ? '<button type="button" class="btn ghost" id="hp-howto">How to play \u00b7 the briefing</button>' : "") + FAQ.map(function (q) { return "<details" + (q[2] ? ' data-faq="' + q[2] + '"' : "") + (key && q[2] === key ? " open" : "") + "><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; }).join("") + '<button class="btn primary" id="hp-back">Back</button>', "settings");
+    sheet('<div class="kicker">Help &amp; FAQ</div><h2>How to play</h2>' + (window.HOWTO ? '<button type="button" class="btn ghost" id="hp-howto">How to play \u00b7 the briefing</button>' : "") + '<button type="button" class="btn ghost" id="hp-gloss">Glossary \u00b7 words the game uses</button>' + FAQ.map(function (q) { return "<details" + (q[2] ? ' data-faq="' + q[2] + '"' : "") + (key && q[2] === key ? " open" : "") + "><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; }).join("") + '<button class="btn primary" id="hp-back">Back</button>', "settings");
     if (key) { const d = document.querySelector('[data-faq="' + key + '"]'); if (d && d.scrollIntoView) d.scrollIntoView({ block: "center" }); }
     if (back === open) { window.AH_PAUSED = true; document.body.classList.add("paused"); }
     $("hp-back").onclick = function () { close(); if (back) back(); };
     if ($("hp-howto")) $("hp-howto").onclick = function () { close(); HOWTO.show(function () { help(back); }, false); };
+    $("hp-gloss").onclick = function () { glossary(back); };
   }
 
   // ---------- one-time coach marks: a short tip the first time a mechanic appears ----------
@@ -143,7 +171,7 @@
     setTimeout(go, 9000);
   }
 
-  window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, confirm: confirm, sheet: sheet };
+  window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, glossary: glossary, GLOSS: GLOSS, confirm: confirm, sheet: sheet };
   document.addEventListener("DOMContentLoaded", function () { const b = $("menu"); if (b) b.onclick = function (e) { e.stopPropagation(); open(); }; });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && $("sheet")) close(); });
 })();

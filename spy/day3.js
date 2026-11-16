@@ -270,6 +270,7 @@
   }
   function tailEnd(heat, skipped) {
     window.__TAIL__ = null;
+    if (S().done.tail) return; // panel 6 B1: one result
     const res = heat <= 1 ? "win" : heat <= 3 ? "mixed" : "loss";
     const ch = A.apply({ win: { secrecy: 8, safety: 4 }, mixed: { secrecy: -4 }, loss: { secrecy: -12, safety: -6 } }[res]);
     const body = skipped ? "You take the long way: two buses, a cathedral and a department store\u2019s back stairs. SPARE KEY reaches Pimlico clean. <b>Clean streets help tonight: +10% at the border.</b>"
@@ -296,6 +297,7 @@
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: up to +10% at the border.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
       $("go").onclick = function () {
+        if (s.done.cable || sel == null) return; // panel 6 B1: one result
         const a = POD[sel], p = podOdds(a), res = roll(p);
         s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[a.risk]++;
         A.advance(a.hrs); const ch = A.apply(a[res]);
@@ -382,12 +384,14 @@
           dog: ok ? "The dog sniffs the boot, loses interest, and wanders off. The guard waves you on." : "The dog sits down by the boot and won\u2019t move. A second guard comes over. <b>An alarm.</b> You talk your way through, just.",
           barrier: ok ? "The barrier lifts. Pine forest, a lay-by, and the border behind you." : "A phone rings in the guard hut as you reach the barrier. <b>An alarm.</b>"
         }[st.key];
-        const nextStage = function () { X.stage++; if (X.stage >= STAGES.length) return finish(); draw(null, null); };
+        const nextStage = function () { if (X.finished || X.stage >= STAGES.length) return; X.stage++; if (X.stage >= STAGES.length) return finish(); draw(null, null); };
         A.meters(); A.render('<div class="card outcome ' + (ok ? "win" : "loss") + '"><span class="stamp thud">' + (ok ? "CLEAR" : "ALARM") + '</span><div class="kbwrap"><img class="vignette" src="' + pic(st.img) + '" alt=""></div><h2>' + st.title + "</h2><p>" + txt + '</p><p class="oddsline">' + p + "% odds \u00b7 " + X.alarms + " alarm" + (X.alarms === 1 ? "" : "s") + " \u00b7 " + A.hh(s.hour) + '</p></div><button class="btn primary" id="go">' + (X.stage + 1 >= STAGES.length ? "See what happened" : "Next") + "</button>", "Every stage counts.");
         $("go").onclick = nextStage;
       };
     };
     const finish = function () {
+      // panel 6 B1: the border run ends once. A second "Carry on" (keyboard behind the still) used to apply the result again
+      if (s.done.exfil || X.finished) return; X.finished = true;
       const res = X.alarms === 0 ? "win" : X.alarms === 1 ? "mixed" : "loss";
       let delta = { win: { trust: 10, capital: 12, secrecy: 10, safety: 6 }, mixed: { capital: 4, safety: -6 }, loss: { trust: -12, capital: -12, safety: -10 } }[res];
       let extra = "";

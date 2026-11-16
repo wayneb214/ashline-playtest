@@ -34,18 +34,34 @@
   //   {trust} No.10 trust change, {loyal} WORDS.loyal, {band} the odds band (WORDS.band), {why} WORDS.why.
   const WORDS = {
     labels: { best: "Best case", worst: "Worst case", outcome: "Outcome", cost: "Cost", odds: "Odds" },
-    push: [["best", "big payoff"], ["worst", "{loss}, cover blown ({burn})"], ["odds", "{band} \u00b7 {why}"]],
-    hold: [["best", "case won, {nm} safe"], ["worst", "half losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
-    holdTrap: [["best", "case won, {nm} safe"], ["worst", "{nm} hurt, full losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
-    abort: [["outcome", "{nm} home safe, case lost"], ["cost", "No.10 trust {trust}, {loyal}"], ["odds", "certain"]],
+    // panel 6 items 2 and 7: the Best case is the real meters on a win ({gain}, A.opGain), and a failed Hold says its losses are
+    // halved, with the officer kept safe
+    push: [["best", "{gain}"], ["worst", "{loss}, cover blown ({burn})"], ["odds", "{band} \u00b7 {why}"]],
+    hold: [["best", "{gain}"], ["worst", "{loss} (halved), {nm} safe"], ["odds", "{band} \u00b7 {why}"]],
+    holdTrap: [["best", "{gain}"], ["worst", "{nm} hurt, full losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
+    abort: [["outcome", "{nm} home safe, case lost"], ["cost", "{trust}, {loyal}"], ["odds", "certain"]],
     loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
     // the meters by their on-screen names (D.METERS), in the order the top bar shows them; nothing lost: WORDS.lossNone
     meters: [["capital", "No.10 trust"], ["service", "Service"]], lossNone: "no meter change",
+    // panel 6 item 3: when No.10 trust is low (lowAt or under), a cost shows where the top bar would land: "No.10 trust \u22126 \u2192 8"
+    lowAt: 25, lands: "{d} \u2192 {to}",
+    // panel 6 items 1, 6, 7 and 9: one "What the words mean" panel under the buttons, the same on every call (it never hints
+    // at a trap). Plain words, no percentages.
+    meansBtn: "What do these words mean?",
+    means: [["Odds", "never certain. <b>Strong</b>: usually works, but still fails up to 1 time in 4. <b>Better than even</b>: works more often than not. <b>A coin toss</b>: as likely to fail as to work. <b>Long odds</b>: fails more often than it works. <b>A real gamble</b>: usually fails."],
+      ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing."],
+      ["Best case", "what the top bar gains if it works. Pushing makes the gains half as big again."],
+      ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse high-risk plans until rested."],
+      ["Cover blown", "the officer\u2019s face is known. They\u2019re out of the field for good."],
+      ["Halved", "on a Hold, a fail lands only half of what the plan risks, because the officer was kept back."],
+      ["Full losses", "on a trap they were waiting, so holding back doesn\u2019t help: the whole loss lands and the officer is hurt. Hold also costs No.10 trust \u22121 whatever happens; a failed Push costs Service \u22125 instead. That is why a Hold can cost more than a Push."]],
     // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
     why: { push: "{sv} still ahead of {p} tail", pushTired: "{nm} is exhausted", pushTrap: "they know {p} route", hold: "waiting lets them get closer", holdTrap: "they\u2019re watching the exits" },
-    // officer pronouns for the reasons (anyone not listed gets they/their)
-    pron: { macrae: { sv: "she\u2019s", p: "her" }, pryce: { sv: "he\u2019s", p: "his" }, hartley: { sv: "he\u2019s", p: "his" }, other: { sv: "they\u2019re", p: "their" } },
-    burn: [[30, "small chance"], [50, "real chance"], [70, "likely"], [101, "very likely"]],
+    // officer pronouns for the reasons. Panel 6 B2: Ada she/her, Hollis he/his; anyone else (Sam) by name, with "the" for the
+    // possessive, so "they" in a reason only ever means the other side ("they know the route", never "they know their route")
+    pron: { macrae: { sv: "she\u2019s", p: "her" }, pryce: { sv: "he\u2019s", p: "his" }, hartley: { sv: "he\u2019s", p: "his" }, ada: { sv: "she\u2019s", p: "her" }, hollis: { sv: "he\u2019s", p: "his" }, other: { sv: "{nm}\u2019s", p: "the" } },
+    // panel 6: short words, so a low-trust Push still fits in 5 rows at Larger text ("very likely" is the longest)
+    burn: [[30, "unlikely"], [50, "possible"], [70, "likely"], [101, "very likely"]],
     band: function (t) { return t.replace(/ odds$/, ""); } // "strong odds" -> "strong"
   };
   const wfill = function (t, v) { return t.replace(/\{(\w+)\}/g, function (x, k) { return v[k] != null ? v[k] : x; }); };
@@ -53,13 +69,17 @@
   function terms(A, id, k, a, kit, trap) {
     const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
     const S = A.S(), tired = (S.stress || {})[k] >= 3, W = WORDS;
-    const lossTxt = function (o) { const t = W.meters.filter(function (x) { return o[x[0]]; }).map(function (x) { return (x[1] + " " + m(o[x[0]])).replace(/ /g, "\u00a0"); }); return t.length ? t.join(", ") : W.lossNone; };
+    // panel 6 item 3: a cost on No.10 trust, when trust is low, also says where the top bar lands (clamped like apply())
+    const cap0 = A.score(S.meters.capital), lowCap = cap0 <= W.lowAt;
+    const one = function (key, v) { const d = m(v); return key === "capital" && v < 0 && lowCap ? wfill(W.lands, { d: d, to: Math.max(0, Math.min(100, cap0 + v)) }) : d; };
+    const lossTxt = function (o) { const t = W.meters.filter(function (x) { return o[x[0]]; }).map(function (x) { return (x[1] + " " + one(x[0], o[x[0]])).replace(/ /g, "\u00a0"); }); return t.length ? t.join(", ") : W.lossNone; };
     const loss = { push: A.opLoss(id, k, a, kit, "push", trap), hold: A.opLoss(id, k, a, kit, "hold", trap) };
-    const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: pr.sv, p: pr.p, burn: BURNW(T.push.burnP) };
+    const gain = { push: A.opGain(id, k, a, kit, "push", trap), hold: A.opGain(id, k, a, kit, "hold", trap) };
+    const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: wfill(pr.sv, { nm: nm }), p: pr.p, burn: BURNW(T.push.burnP) };
     const V = {
-      push: Object.assign({}, base, { loss: lossTxt(loss.push), band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
-      hold: Object.assign({}, base, { loss: lossTxt(loss.hold), trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
-      abort: Object.assign({}, base, { trust: m(T.abort.trust), loyal: T.abort.loyalGain ? wfill(W.loyal.gain, { n: m(T.abort.loyalGain) }) : W.loyal.top }) };
+      push: Object.assign({}, base, { gain: lossTxt(gain.push), loss: lossTxt(loss.push), band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
+      hold: Object.assign({}, base, { gain: lossTxt(gain.hold), loss: lossTxt(loss.hold), trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
+      abort: Object.assign({}, base, { trust: lossTxt({ capital: T.abort.trust }), loyal: T.abort.loyalGain ? wfill(W.loyal.gain, { n: m(T.abort.loyalGain) }) : W.loyal.top }) };
     const tpl = { push: W.push, hold: T.hold.safe ? W.hold : W.holdTrap, abort: W.abort }, L = {};
     Object.keys(tpl).forEach(function (c) {
       const o = { rows: tpl[c].map(function (r) { return [r[0], W.labels[r[0]], wfill(r[1], V[c])]; }) };
@@ -68,8 +88,11 @@
     });
     const CLS = { best: "og", outcome: "og", worst: "or", cost: "or", odds: "oc" };
     const html = function (o) { return o.rows.map(function (r) { return '<span class="' + CLS[r[0]] + '"><b class="ol">' + r[1] + ":</b> " + r[2] + "</span>"; }).join(""); };
-    return { T: T, L: L, V: V, loss: loss, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
+    return { T: T, L: L, V: V, loss: loss, gain: gain, burnWord: BURNW(T.push.burnP), d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
   }
+  // the "What do these words mean?" panel: a 44px toggle under the buttons; opening it never chooses anything
+  function meansHTML() { return '<button type="button" class="btn ghost opmeansbtn" id="opmeansbtn" aria-expanded="false" aria-controls="opmeans">' + WORDS.meansBtn + '</button><dl class="opmeans" id="opmeans" hidden>' + WORDS.means.map(function (x) { return "<dt>" + x[0] + "</dt><dd>" + x[1] + "</dd>"; }).join("") + "</dl>"; }
+  function bindMeans() { const b = document.getElementById("opmeansbtn"), d = document.getElementById("opmeans"); if (!b || !d) return; b.onclick = function () { const open = d.hidden; d.hidden = !open; b.setAttribute("aria-expanded", String(open)); if (open && d.scrollIntoView) d.scrollIntoView({ block: "nearest" }); }; }
   let timer = null;
   // core officers have recorded radio lines (voice.js op_<k>_<beat>); the radio log shows exactly what is said
   // who the officer is watching, so "her", "him" or "them" matches the case (keyed by day, as case ids repeat)
@@ -83,6 +106,7 @@
     if (!window.VOICE || !beat) return null; const V = VOICE.lines, b = "op_" + k + "_" + beat;
     if (beat === "eyes" && eyesId && V[eyesId]) return eyesId;
     if (pron && (beat === "eyes" || beat === "lost") && V[b + "_" + pron]) return b + "_" + pron;
+    if (beat === "pos" && V[b + "_code"]) return b + "_code"; // panel 6 item 10: a recruit says their code name
     return V[b] ? b : null;
   }
   // an officer with alternative "eyes on" lines (op_<k>_eyes_alt1..) gets a different one each time today
@@ -195,7 +219,10 @@
       const La = voiced(k, "ask"); say(La ? said(La) : fill(pick(LINES.ask, A), A, k, id), "ask", "ask"); if (La) speak(k, "ask");
       // Push / Hold / Abort only appear once the officer has finished the question
       const scr = document.querySelector('[data-screen="op"]'); if (scr) scr.classList.add("asking");
-      const show = function () { if (!$("opask") || chosen) return; ready = true; buttons(); heart(); const q = $("opask"); if (q && q.scrollIntoView) q.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); };
+      // panel 6 B4: and once the words have finished typing out on the radio (voice or not), so the buttons never land mid-sentence
+      const typed = function (fn) { const done = function () { return !document.querySelector("#radio p.typing"); }; if (done()) return fn(); const iv = setInterval(function () { if (done() || !$("opask")) { clearInterval(iv); fn(); } }, 60); };
+      const show = function () { typed(show2); };
+      const show2 = function () { if (!$("opask") || chosen) return; ready = true; buttons(); heart(); const rd = $("radio"); if (rd) rd.scrollTop = rd.scrollHeight; const q = $("opask"); if (q && q.scrollIntoView) q.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); };
       if (La && window.VOICE && VOICE.after) setTimeout(function () { VOICE.after(vid(k, "ask"), show); }, 80); else setTimeout(show, fast ? 0 : 1800);
     };
     // Skip to decision: straight to the officer's question. Same op, same odds, same outcome rules.
@@ -216,8 +243,9 @@
     };
     const buttons = function () {
       const TD = terms(A, id, k, a, kit, trap).d;
-      $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p></div>';
+      $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p>' + meansHTML() + "</div>";
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
+      bindMeans();
       MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> for a bigger win, but a fail can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> keeps them safe (unless it\u2019s a trap), and if it fails you lose half of what the plan risks, but the trail cools. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
     };
     if (timer) clearInterval(timer);

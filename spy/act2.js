@@ -156,6 +156,7 @@
       $("back").onclick = A.briefing;
     };
     const decide = function (who) {
+      if (s.done.leak) return; // panel 6 B1: one answer per case, however often the button is pressed
       A.advance(1);
       let res, ch, body;
       if (who === s.leakWho) {
@@ -329,6 +330,7 @@
       corner();
     };
     const finish = function () {
+      if (s.done.chase || X.finished) return; X.finished = true; // panel 6 B1: one result
       const res = X.score >= 7 ? "win" : X.score >= 4 ? "mixed" : "loss";
       const c = A.apply({ win: { secrecy: 10, service: 6 }, mixed: { secrecy: -2 }, loss: { secrecy: -12, capital: -6 } }[res]);
       s.chase = { score: X.score, call: X.callPick };
@@ -363,7 +365,7 @@
     { k: "public", t: "Arrest him on the steps of No.10", d: "Cameras, handcuffs, a show for the House. Hale gets her headline.", risk: "med", mod: 0, pm: 35 }]; // Batch P: was 40
   function sdOdds(o) { const s = S(); return clampP(SD_BASE + o.mod + surprise(o.risk) + A.diff().odds + ({ win: 14, mixed: 4, loss: -12 }[s.done.chase] || 0) + (s.done.find === "win" ? 6 : 0) + (A.score(s.meters.capital) - 50) / 3 + keskMod(o.risk)); }
   function showdown() {
-    const s = S(); let sel = null;
+    const s = S(); let sel = null, fired = false;
     if (s.hour < 18) { A.advance(18 - s.hour); A.save("briefing"); A.meters(); }
     const OPTS = SD_OPTS, odds = sdOdds;
     const draw = function () {
@@ -374,6 +376,8 @@
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + '>' + (sel == null ? "Decide" : "Open the door") + "</button></div>", "Everything from the last six days counts here.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); draw(); }; });
       $("go").onclick = function () {
+        // panel 6 B1: the door opens once. A second press (keyboard behind the still) used to roll and apply again
+        if (s.done.showdown || fired || sel == null) return; fired = true; this.disabled = true;
         const o = OPTS[sel], p = odds(o), res = roll(p); s.showHow = o.k; A.advance(1);
         s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[o.risk]++;
         const c = A.apply({ win: { capital: 12, secrecy: 8 }, mixed: { capital: -2 }, loss: { capital: -14, secrecy: -10 } }[res]);
@@ -486,6 +490,19 @@
     if (p >= 4 && t >= 30 && sd !== "loss") return "quiet"; // Batch O: the quiet exit needs No.10 trust 30+
     return "scandal";
   }
+  // panel 6 item 21: the same sums as ending(), itemised for the Day 6 report, with the rule that decided it
+  function endingParts() {
+    const s = S(), d = days(), sw = (d[5] || {}).swap || "loss", e3 = (d[3] || {}).end || "loss", W = { win: "won", mixed: "partly", loss: "lost", traded: "traded" };
+    const rows = [["Day 3 \u00b7 the woman in green (" + W[e3] + ")", { win: 2, mixed: 1, loss: 0, traded: 0 }[e3]], ["Day 5 \u00b7 the bridge (" + W[sw] + ")", { win: 2, mixed: 1, loss: 0 }[sw]],
+      ["Day 6 \u00b7 the chase (" + (W[s.done.chase] || "not run") + ")", { win: 2, mixed: 1, loss: 0 }[s.done.chase] || 0], ["Day 6 \u00b7 Downing Street (" + (W[s.done.showdown] || "not run") + ")", { win: 3, mixed: 1, loss: 0 }[s.done.showdown] || 0],
+      ["The leak closed", s.leakCaught || (d[4] || {}).leak === "win" ? 1 : 0]];
+    const e = endingInputs(), en = ending(), sd = e.showdown;
+    const rule = { resign: e.t < 15 ? "Resignation: No.10 trust under 15." : "Resignation: Downing Street lost with trust under 30.",
+      knight: "Knighthood: 6+ points, trust 45+, Downing Street not lost.",
+      quiet: "Quiet exit: 4+ points and trust 30+, Downing Street not lost (a knighthood needs 6 points and trust 45).",
+      scandal: "Front page: " + (sd === "loss" ? "Downing Street was lost." : e.p < 4 ? "under 4 points (a quiet exit needs 4 and trust 30)." : "trust under 30 (a quiet exit needs 30).") }[en];
+    return { rows: rows, p: e.p, t: e.t, ending: en, rule: rule };
+  }
   // Batch O: the Day 6 letter says how close you came to a knighthood (6 points, No.10 trust 45, Downing Street not lost)
   const KNIGHT = { p: 6, t: 45 };
   function knightGap() {
@@ -521,6 +538,6 @@
   function bulletinId() { const s = S(); if (s.day === 4) return "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
-  window.AH4 = { SD_OPTS: SD_OPTS, sdOdds: sdOdds, BRIEF: BRIEF, haleCall: haleCall, SD_BASE: SD_BASE, SURPRISE: SURPRISE, surprise: surprise, knightGap: knightGap, KNIGHT: KNIGHT, endingInputs: endingInputs, showdownClue: showdownClue, interceptClue: interceptClue, ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
+  window.AH4 = { SD_OPTS: SD_OPTS, sdOdds: sdOdds, BRIEF: BRIEF, haleCall: haleCall, SD_BASE: SD_BASE, SURPRISE: SURPRISE, surprise: surprise, knightGap: knightGap, KNIGHT: KNIGHT, endingInputs: endingInputs, endingParts: endingParts, showdownClue: showdownClue, interceptClue: interceptClue, ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,
     locked: locked, lockWhy: lockWhy, lastHead: lastHead, flash: flash, paperLead: paperLead, bulletinId: bulletinId, banner: banner, ending: ending, END: END, mostSent: mostSent, chips: chips };
 })();
