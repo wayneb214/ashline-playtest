@@ -35,9 +35,9 @@
   const WORDS = {
     labels: { best: "Best case", worst: "Worst case", outcome: "Outcome", cost: "Cost", odds: "Odds" },
     // panel 6 items 2 and 7: the Best case is the real meters on a win ({gain}, A.opGain), and a failed Hold shows its real
-    // (half) losses, with the officer kept safe. Panel 6 v3: no "(halved)" label, players work it out
+    // (half) losses. Panel 6 v3: no "(halved)" label, players work it out; v5: no "{nm} safe" either (a trap Hold still says "{nm} hurt")
     push: [["best", "{gain}"], ["worst", "{loss}, cover may be blown"], ["odds", "{band} \u00b7 {why}"]],
-    hold: [["best", "{gain}"], ["worst", "{loss}, {nm} safe"], ["odds", "{band} \u00b7 {why}"]],
+    hold: [["best", "{gain}"], ["worst", "{loss}"], ["odds", "{band} \u00b7 {why}"]],
     holdTrap: [["best", "{gain}"], ["worst", "{nm} hurt, full losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
     abort: [["outcome", "{nm} home safe, case lost"], ["cost", "{trust}, {loyal}"], ["odds", "certain"]],
     loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
