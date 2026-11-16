@@ -26,27 +26,28 @@
   const CHOICE = { push: { t: "Push" }, hold: { t: "Hold" }, abort: { t: "Abort" } };
   // the trade-off under each answer, from the same numbers resolve() applies (opmodel.js via A.opTerms).
   // op-balance v5/v7 (Wayne): three labelled lines on every button, in one aligned layout. Hold and Push: Best case / Worst case /
-  // Odds. Abort has only one result, so: Outcome / Cost / Odds. Short, neutral, true to the effects; plain words, no percentages.
-  // The odds are a band in words (A.oddsBand) with a short reason true to the state. The working is on the result card afterwards.
+  // Risk. Abort has only one result, so: Outcome / Cost / Risk. Short, neutral, true to the effects; plain words, no percentages.
+  // panel 6 v7: the risk is 5 dots (A.riskLevel, filled = chance of failure) with a short reason true to the state; Hold and Push
+  // never show the same count. The exact working is on the result card afterwards.
   // ALL the button wording lives in WORDS: change it here and nowhere else. {placeholders} are filled from the real state:
   //   {nm} officer's code name, {loss} the on-screen meters if the call fails (A.opLoss: the plan's own losses as the game applies
   //   them, halved on a non-trap Hold, plus the call's price),
-  //   {trust} No.10 trust change, {loyal} WORDS.loyal, {band} the odds band (WORDS.band), {why} WORDS.why.
+  //   {trust} No.10 trust change, {loyal} WORDS.loyal, {risk} the risk dots (A.riskDots), {why} WORDS.why.
   const WORDS = {
-    labels: { best: "Best case", worst: "Worst case", outcome: "Outcome", cost: "Cost", odds: "Odds" },
+    labels: { best: "Best case", worst: "Worst case", outcome: "Outcome", cost: "Cost", risk: "Risk" },
     // panel 6 items 2 and 7: the Best case is the real meters on a win ({gain}, A.opGain), and a failed Hold shows its real
     // (half) losses. Panel 6 v3: no "(halved)" label, players work it out; v5: no "{nm} safe" either (a trap Hold still says "{nm} hurt")
-    push: [["best", "{gain}"], ["worst", "{loss}, cover may be blown"], ["odds", "{band} \u00b7 {why}"]],
-    hold: [["best", "{gain}"], ["worst", "{loss}"], ["odds", "{band} \u00b7 {why}"]],
-    holdTrap: [["best", "{gain}"], ["worst", "{nm} hurt, full losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
-    abort: [["outcome", "{nm} home safe, case lost"], ["cost", "{trust}, {loyal}"], ["odds", "certain"]],
+    push: [["best", "{gain}"], ["worst", "{loss}, cover may be blown"], ["risk", "{risk} \u00b7 {why}"]],
+    hold: [["best", "{gain}"], ["worst", "{loss}"], ["risk", "{risk} \u00b7 {why}"]],
+    holdTrap: [["best", "{gain}"], ["worst", "{nm} hurt, full losses: {loss}"], ["risk", "{risk} \u00b7 {why}"]],
+    abort: [["outcome", "{nm} home safe, case lost"], ["cost", "{trust}, {loyal}"], ["risk", "none"]],
     loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
     // the meters by their on-screen names (D.METERS), in the order the top bar shows them; nothing lost: WORDS.lossNone
     meters: [["capital", "No.10 trust"], ["service", "Service"]], lossNone: "no meter change",
     // panel 6 items 1, 6, 7 and 9: one "What the words mean" panel under the buttons, the same on every call (it never hints
     // at a trap). Plain words, no percentages.
     meansBtn: "What do these words mean?",
-    means: [["Odds", "{oddsList}"],
+    means: [["Risk", "{riskList}"],
       ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing."],
       ["Best case", "what the top bar gains if it works. A Push has worse odds than a Hold, but makes the plan\u2019s gains two and a half times as big."],
       ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse high-risk plans until rested."],
@@ -58,7 +59,6 @@
     // possessive, so "they" in a reason only ever means the other side ("they know the route", never "they know their route")
     pron: { macrae: { sv: "she\u2019s", p: "her" }, pryce: { sv: "he\u2019s", p: "his" }, hartley: { sv: "he\u2019s", p: "his" }, ada: { sv: "she\u2019s", p: "her" }, hollis: { sv: "he\u2019s", p: "his" }, other: { sv: "{nm}\u2019s", p: "the" } },
     // panel 6 v4 (Wayne): no chance word on "cover may be blown" (it hinted at a choice); the real chance is on the result card
-    band: function (t) { return t.replace(/ odds$/, ""); } // "long odds" -> "long"
   };
   const wfill = function (t, v) { return t.replace(/\{(\w+)\}/g, function (x, k) { return v[k] != null ? v[k] : x; }); };
   function terms(A, id, k, a, kit, trap) {
@@ -67,10 +67,14 @@
     const lossTxt = function (o) { const t = W.meters.filter(function (x) { return o[x[0]]; }).map(function (x) { return (x[1] + " " + m(o[x[0]])).replace(/ /g, "\u00a0"); }); return t.length ? t.join(", ") : W.lossNone; };
     const loss = { push: A.opLoss(id, k, a, kit, "push", trap), hold: A.opLoss(id, k, a, kit, "hold", trap) };
     const gain = { push: A.opGain(id, k, a, kit, "push", trap), hold: A.opGain(id, k, a, kit, "hold", trap) };
+    // panel 6 v7: Push is always the riskier call, so when both land on the same dot count Push shows one more (Hold one
+    // fewer if Push is already at 5). Truthful: Push's chance is always the lower of the two.
+    let rh = A.riskLevel(T.hold.odds), rp = A.riskLevel(T.push.odds);
+    if (rp <= rh) { if (rh < 5) rp = rh + 1; else { rp = 5; rh = 4; } }
     const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: wfill(pr.sv, { nm: nm }), p: pr.p };
     const V = {
-      push: Object.assign({}, base, { gain: lossTxt(gain.push), loss: lossTxt(loss.push), band: W.band(A.oddsBand(T.push.odds)), why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
-      hold: Object.assign({}, base, { gain: lossTxt(gain.hold), loss: lossTxt(loss.hold), trust: m(T.hold.trust), band: W.band(A.oddsBand(T.hold.odds)), why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
+      push: Object.assign({}, base, { gain: lossTxt(gain.push), loss: lossTxt(loss.push), risk: A.riskDots(rp), rl: rp, why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
+      hold: Object.assign({}, base, { gain: lossTxt(gain.hold), loss: lossTxt(loss.hold), trust: m(T.hold.trust), risk: A.riskDots(rh), rl: rh, why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
       abort: Object.assign({}, base, { trust: lossTxt({ capital: T.abort.trust }), loyal: T.abort.loyalGain ? wfill(W.loyal.gain, { n: m(T.abort.loyalGain) }) : W.loyal.top }) };
     const tpl = { push: W.push, hold: T.hold.safe ? W.hold : W.holdTrap, abort: W.abort }, L = {};
     Object.keys(tpl).forEach(function (c) {
@@ -78,12 +82,12 @@
       o.rows.forEach(function (r) { o[r[0]] = r[2]; });
       o.lines = o.rows.map(function (r) { return r[1] + ": " + r[2]; }); L[c] = o;
     });
-    const CLS = { best: "og", outcome: "og", worst: "or", cost: "or", odds: "oc" };
-    const html = function (o) { return o.rows.map(function (r) { return '<span class="' + CLS[r[0]] + '"><b class="ol">' + r[1] + ":</b> " + r[2] + "</span>"; }).join(""); };
+    const CLS = { best: "og", outcome: "og", worst: "or", cost: "or", risk: "oc" };
+    const html = function (o) { return o.rows.map(function (r) { return '<span class="' + CLS[r[0]] + '"><b class="ol">' + r[1] + ":</b> " + r[2].replace(/[\u25cf\u25cb]{5}/, function (d) { const n = d.split("\u25cf").length - 1; return '<span class="riskdots" role="img" aria-label="risk ' + n + ' of 5">' + d + "</span>"; }) + "</span>"; }).join(""); };
     return { T: T, L: L, V: V, loss: loss, gain: gain, d: { push: html(L.push), hold: html(L.hold), abort: html(L.abort) } };
   }
   // the "What do these words mean?" panel: a 44px toggle under the buttons; opening it never chooses anything
-  function meansHTML() { return '<button type="button" class="btn ghost opmeansbtn" id="opmeansbtn" aria-expanded="false" aria-controls="opmeans">' + WORDS.meansBtn + '</button><dl class="opmeans" id="opmeans" hidden>' + WORDS.means.map(function (x) { return "<dt>" + x[0] + "</dt><dd>" + x[1].replace("{oddsList}", MENU.oddsHTML("The chance it works at least partly, best to worst:")) + "</dd>"; }).join("") + "</dl>"; }
+  function meansHTML() { return '<button type="button" class="btn ghost opmeansbtn" id="opmeansbtn" aria-expanded="false" aria-controls="opmeans">' + WORDS.meansBtn + '</button><dl class="opmeans" id="opmeans" hidden>' + WORDS.means.map(function (x) { return "<dt>" + x[0] + "</dt><dd>" + x[1].replace("{riskList}", MENU.riskHTML("Filled dots show the chance it fails, lowest risk first:")) + "</dd>"; }).join("") + "</dl>"; }
   function bindMeans() { const b = document.getElementById("opmeansbtn"), d = document.getElementById("opmeans"); if (!b || !d) return; b.onclick = function () { const open = d.hidden; d.hidden = !open; b.setAttribute("aria-expanded", String(open)); if (open && d.scrollIntoView) d.scrollIntoView({ block: "nearest" }); }; }
   let timer = null;
   // core officers have recorded radio lines (voice.js op_<k>_<beat>); the radio log shows exactly what is said
@@ -238,7 +242,7 @@
       $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p>' + meansHTML() + "</div>";
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
       bindMeans();
-      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> is the long shot: worse odds than Hold, but two and a half times the gains if it works; a fail costs in full and can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> has the better odds and keeps them safe (unless it\u2019s a trap); waiting costs some Service, and if it fails you lose half of what the plan risks. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
+      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> is the long shot: worse odds than Hold, but two and a half times the gains if it works; a fail costs in full and can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> has the better odds and keeps them safe (unless it\u2019s a trap); waiting costs some Service, and if it fails you lose half of what the plan risks. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. The dots on each button show the risk: more filled dots, more likely to fail. They wait for your answer.");
     };
     if (timer) clearInterval(timer);
     moveMark(0, st);
