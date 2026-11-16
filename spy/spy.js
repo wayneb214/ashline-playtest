@@ -1001,8 +1001,8 @@
     // panel 6 v2: Push is the long shot; like Hold, its line says the odds before and after the call
     const pshot = "The long shot: " + (before ? "the odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + ")" : sgn(op.mod || 0) + "% on the odds" + ptr + " (" + oddsTxt(L.odds) + ")");
     if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? "The odds were " + before + "; pulling out meant no roll at all. " : "") + "Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home safe: no wound, no stress, " + (L.loyal ? "and loyalty " + sgn(L.loyal) + " for having their back" : "and loyalty already at the top") + ". The case counts as lost." + (op.trap ? " It was a trap: they were waiting." : "");
-    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + "). " : "") + "Holding cost " + [paid.capital ? "No.10 trust " + sgn(paid.capital) : "", paid.service ? "Service " + sgn(paid.service) : ""].filter(Boolean).join(" and ") + (res !== "loss" ? ". The trail cooled, but " + esc(nm) + " stayed safe." : op.trap && L.wounded ? ". It was a trap: holding didn\u2019t keep " + esc(nm) + " safe, and they came back wounded." : ". " + esc(nm) + " was kept out of harm\u2019s way" + (L.soft ? ", and the plan\u2019s losses were halved." : "."));
-    else if (res === "loss") what = "<b>Your call: Push.</b> " + pshot + ", and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown (" + burnTxt(L.burnP).replace(/^(\d)/, "a $1") + ")." : ", and " + esc(nm) + " came back wounded (cover blown: " + burnTxt(L.burnP) + ").");
+    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + "). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (paid.service ? " and Service " + sgn(paid.service) : "") + (res !== "loss" ? ". The trail cooled, but " + esc(nm) + " stayed safe." : op.trap && L.wounded ? ". It was a trap: holding didn\u2019t keep " + esc(nm) + " safe, and they came back wounded." : ". " + esc(nm) + " was kept out of harm\u2019s way" + (L.soft ? ", and the plan\u2019s losses were halved." : "."));
+    else if (res === "loss") what = "<b>Your call: Push.</b> " + pshot + ", and it failed. " + (paid.service ? "Pushing cost an extra Service " + sgn(paid.service) + ", and " : "") + (L.burned ? esc(nm) + "\u2019s cover is blown (" + burnTxt(L.burnP).replace(/^(\d)/, "a $1") + ")." : esc(nm) + " came back wounded (cover blown: " + burnTxt(L.burnP) + ").");
     else what = "<b>Your call: Push.</b> " + pshot + ". " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
     return '<p class="opcall">' + what + "</p>" + (op.abort ? '<p class="opafter">' + esc(op.trap ? "Back at the car, " + nm + " sits for a long minute before turning the key." : nm + " gets home tired, but in one piece.") + "</p>" : "");
   }
@@ -1015,7 +1015,7 @@
     const kitD = kitId ? D.KIT[kitId] || {} : {}, wrongSite = wrongSiteOf(id);
     let delta = a[res];
     const wx = res === "win" ? (op.push ? OPT.push.winX : op.hold ? OPT.hold.winX || 1 : 1) : 1;
-    if (wx !== 1) { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * wx : a.win[m]; }); } // a win: Push x2 (the long shot pays big, panel 6 v6)
+    if (wx !== 1) { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * wx : a.win[m]; }); } // a win: Push x2.5 (the long shot pays big, panel 6 v7)
     if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
     else if (res === "loss" && op.hold && !wrongSite && OPM.holdLossX(!!op.trap) !== 1) { const x = OPM.holdLossX(!!op.trap); delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] * x); }); } // held back: the plan's losses x0.5 (rounded)
     // Good tradecraft keeps the Service healthy: the right officer on the plan they recommend steadies it, a mismatch drains it.
@@ -1025,14 +1025,14 @@
     return delta;
   }
   // the radio call's own price, paid straight onto the meters
-  function callPrice(op, res) { const nz = function (o) { Object.keys(o).forEach(function (m) { if (!o[m]) delete o[m]; }); return o; }; return op.abort ? { capital: OPT.abort.trust } : op.hold ? nz({ capital: OPT.hold.trust || 0, service: OPT.hold.service || 0 }) : op.push && res === "loss" ? { service: OPT.push.failService } : {}; }
+  function callPrice(op, res) { return op.abort ? { capital: OPT.abort.trust } : op.hold ? (OPT.hold.service ? { capital: OPT.hold.trust, service: OPT.hold.service } : { capital: OPT.hold.trust }) : op.push && res === "loss" && OPT.push.failService ? { service: OPT.push.failService } : {}; }
   // the on-screen meters (No.10 trust, Service) if this call fails: the case's losses as apply() shapes them, plus the call's price
   function opLoss(id, k, a, kitId, choice, trap) {
     const op = { push: choice === "push", hold: choice === "hold", abort: choice === "abort", trap: !!trap }, d = shape(caseDelta(id, k, a, kitId, op, "loss")), x = callPrice(op, "loss");
     return { capital: (d.capital || 0) + (x.capital || 0), service: (d.service || 0) + (x.service || 0) };
   }
   // panel 6 item 2: the on-screen meters if this call wins (or only partly works), the same way: the case's result as
-  // apply() shapes it (a pushed win x2), plus the call's own price. Used by the buttons' Best case and the meanings panel.
+  // apply() shapes it (a pushed win x2.5), plus the call's own price. Used by the buttons' Best case and the meanings panel.
   function opGain(id, k, a, kitId, choice, trap, res) {
     const op = { push: choice === "push", hold: choice === "hold", abort: choice === "abort", trap: !!trap }, d = shape(caseDelta(id, k, a, kitId, op, res || "win")), x = callPrice(op, res || "win");
     return { capital: (d.capital || 0) + (x.capital || 0), service: (d.service || 0) + (x.service || 0) };
@@ -1051,7 +1051,7 @@
     S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat(trapMod ? [["Signs of a trap", trapMod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground (Hard)", driftOf(id, k)]] : []) };
     const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = trapOdds != null ? trapOdds : cl95(raw + drift + (op.mod || 0)), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
-    let res = r < odds * (callOdds != null ? OPM.clean(cc) : 0.7) ? "win" : r < odds ? "mixed" : "loss"; // panel 6 v6: a Hold works cleanly less often
+    let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
     const wrongSite = wrongSiteOf(id);
     if (wrongSite) res = "loss"; // the wrong site: the real target goes dark whatever happens where we were

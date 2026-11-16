@@ -47,11 +47,11 @@
     // at a trap). Plain words, no percentages.
     meansBtn: "What do these words mean?",
     means: [["Odds", "{oddsList}"],
-      ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing. A Hold usually works only partly: the trail cools while you wait."],
-      ["Best case", "what the top bar gains if it works. A Push has worse odds than a Hold, but makes the plan\u2019s gains twice as big."],
+      ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing."],
+      ["Best case", "what the top bar gains if it works. A Push has worse odds than a Hold, but makes the plan\u2019s gains two and a half times as big."],
       ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse high-risk plans until rested."],
       ["Cover may be blown", "if a Push fails, the other side may get a look at the officer. If they do, the officer is out of the field for good."],
-      ["Full losses", "on a trap they were waiting, so holding back doesn\u2019t help: the whole loss lands and the officer is hurt. Hold also costs Service \u22123 whatever happens (the team is tied up waiting); a failed Push costs Service \u22122 on top of its losses."]],
+      ["Full losses", "on a trap they were waiting, so holding back doesn\u2019t help: the whole loss lands and the officer is hurt. Hold also costs No.10 trust \u22121 and Service \u22126 whatever happens (the team is tied up waiting), so a Hold can cost more than a Push."]],
     // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
     why: { push: "ahead of {p} tail", pushTired: "{sv} exhausted", pushTrap: "they know {p} route", hold: "waiting for a safe gap", holdTrap: "they\u2019re watching the exits" },
     // officer pronouns for the reasons. Panel 6 B2: Ada she/her, Hollis he/his; anyone else (Sam) by name, with "the" for the
@@ -238,7 +238,7 @@
       $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p>' + meansHTML() + "</div>";
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
       bindMeans();
-      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> is the long shot: worse odds than Hold, but twice the gains if it works; a fail costs in full and can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> has the better odds and keeps them safe (unless it\u2019s a trap), but it usually works only partly while the trail cools; waiting costs some Service, and if it fails you lose half of what the plan risks. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
+      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> is the long shot: worse odds than Hold, but two and a half times the gains if it works; a fail costs in full and can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> has the better odds and keeps them safe (unless it\u2019s a trap); waiting costs some Service, and if it fails you lose half of what the plan risks. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. They wait for your answer.");
     };
     if (timer) clearInterval(timer);
     moveMark(0, st);
