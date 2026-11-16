@@ -34,10 +34,10 @@
   //   {trust} No.10 trust change, {loyal} WORDS.loyal, {band} the odds band (WORDS.band), {why} WORDS.why.
   const WORDS = {
     labels: { best: "Best case", worst: "Worst case", outcome: "Outcome", cost: "Cost", odds: "Odds" },
-    // panel 6 items 2 and 7: the Best case is the real meters on a win ({gain}, A.opGain), and a failed Hold says its losses are
-    // halved, with the officer kept safe
+    // panel 6 items 2 and 7: the Best case is the real meters on a win ({gain}, A.opGain), and a failed Hold shows its real
+    // (half) losses, with the officer kept safe. Panel 6 v3: no "(halved)" label, players work it out
     push: [["best", "{gain}"], ["worst", "{loss}, cover blown ({burn})"], ["odds", "{band} \u00b7 {why}"]],
-    hold: [["best", "{gain}"], ["worst", "{loss} (halved), {nm} safe"], ["odds", "{band} \u00b7 {why}"]],
+    hold: [["best", "{gain}"], ["worst", "{loss}, {nm} safe"], ["odds", "{band} \u00b7 {why}"]],
     holdTrap: [["best", "{gain}"], ["worst", "{nm} hurt, full losses: {loss}"], ["odds", "{band} \u00b7 {why}"]],
     abort: [["outcome", "{nm} home safe, case lost"], ["cost", "{trust}, {loyal}"], ["odds", "certain"]],
     loyal: { gain: "loyalty {n}", top: "loyalty already at the top" },
@@ -46,12 +46,11 @@
     // panel 6 items 1, 6, 7 and 9: one "What the words mean" panel under the buttons, the same on every call (it never hints
     // at a trap). Plain words, no percentages.
     meansBtn: "What do these words mean?",
-    means: [["Odds", "the chance it works at least partly, from best to worst: <b>near certain</b> (fails less than 1 time in 10), <b>very likely</b> (fails 1 time in 5 at most), <b>likely</b> (works about 3 times in 4), <b>fair</b> (works more often than not), <b>even</b> (about half and half), <b>poor</b> (fails more often than it works), <b>long</b> (works 1 time in 4 or so), <b>slim</b> (usually fails). Never certain."],
+    means: [["Odds", "the chance it works at least partly, from best to worst: <b>good</b> (works 3 times in 4 or more, but can still fail), <b>decent</b> (works about 7 times in 10), <b>fair</b> (works more often than not), <b>even</b> (about half and half), <b>poor</b> (fails more often than it works), <b>long</b> (works about 1 time in 4), <b>slim</b> (usually fails). A Hold or Push is never certain: it fails at least 1 time in 7."],
       ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing."],
       ["Best case", "what the top bar gains if it works. A Push has worse odds than a Hold, but makes the plan\u2019s gains three times as big."],
       ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse high-risk plans until rested."],
       ["Cover blown", "the officer\u2019s face is known. They\u2019re out of the field for good."],
-      ["Halved", "on a Hold, a fail lands only half of what the plan risks, because the officer was kept back."],
       ["Full losses", "on a trap they were waiting, so holding back doesn\u2019t help: the whole loss lands and the officer is hurt. Hold also costs No.10 trust \u22121 and Service \u22126 whatever happens (the team is tied up waiting); a failed Push costs Service \u22123 on top of its losses. That is why a Hold can cost more than a Push."]],
     // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
     why: { push: "ahead of {p} tail", pushTired: "{sv} exhausted", pushTrap: "they know {p} route", hold: "waiting for a safe gap", holdTrap: "they\u2019re watching the exits" },

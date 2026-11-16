@@ -11,9 +11,9 @@
     // can't make a trap look worth pushing: whatever the base, the screen says Abort.
     function odds(choice, base, trap) {
       if (choice === "abort") return 0;
-      // panel 6 v2 (Wayne): Push is the long shot. Hold's chance is the base plus Hold's edge, kept to (5 + gap)..95, and Push is
-      // always exactly OPT.push.gap below it (5..81), so the two never share an odds word (no band is gap wide).
-      const g = OPT.push.gap, hold = g == null ? 0 : Math.max(5 + g, cl(cl(base) + OPT.hold.mod));
+      // panel 6 v2 (Wayne): Push is the long shot. Hold's chance is the base plus Hold's edge, kept to (5 + gap)..OPT.hold.cap (85), and
+      // Push is always exactly OPT.push.gap below it (5..71), so the two never share an odds word (no band is gap wide).
+      const g = OPT.push.gap, hold = g == null ? 0 : Math.max(5 + g, Math.min(OPT.hold.cap || 95, cl(cl(base) + OPT.hold.mod)));
       const pre = g == null ? cl(base + OPT[choice].mod) : choice === "hold" ? hold : hold - g; // no gap: the older models, for the report
       return trap ? Math.max(5, Math.min(TRAP[choice + "Cap"] || 95, Math.round(pre + (TRAP[choice] || 0)))) : pre;
     }
@@ -41,9 +41,12 @@
   // costs No.10 trust 1 and Service 6 (the team tied up watching). Push is the long shot: always 14 below Hold (net +2%), but
   // x3 the plan's gains on a win; a failed Push lands the full losses, Service -3, and blows cover 10% of the time (+5% per
   // point of the officer's stress). Abort is the sure thing: the case is lost and No.10 -6, but the officer comes home (+1 loyalty).
+  // panel 6 v3 (Wayne: "enjoyment for the uncertainty"): Hold is at most 85% (so Push at most 71%): a call always has real risk.
   // A trap (1 live op in 5, never the first): Push -30% and at most 22%, cover blown 2 times in 3; Hold -25% and at most 28%, no longer safe.
-  const NOW = { OPT: { push: { mod: 2, gap: 14, winX: 3, failService: -3, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, trust: -1, service: -6, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
+  const NOW = { OPT: { push: { mod: 2, gap: 14, winX: 3, failService: -3, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, cap: 85, trust: -1, service: -6, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
     TRAP: { rate: 0.2, push: -30, hold: -25, pushCap: 22, holdCap: 28, burn: 2 / 3, holdWound: true } };
-  const M = make(NOW); M.make = make; M.BEFORE = BEFORE; M.V7 = V7; M.NOW = NOW;
+  // panel 6 v2 as published (30f0bd0): the same without the 85% cap, kept for the report
+  const V2 = { OPT: Object.assign({}, NOW.OPT, { hold: Object.assign({}, NOW.OPT.hold, { cap: 95 }) }), TRAP: NOW.TRAP };
+  const M = make(NOW); M.make = make; M.BEFORE = BEFORE; M.V7 = V7; M.V2 = V2; M.NOW = NOW;
   root.OPMODEL = M;
 })(typeof window !== "undefined" ? window : globalThis);

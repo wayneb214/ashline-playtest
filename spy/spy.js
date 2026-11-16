@@ -984,7 +984,8 @@
   // (earlier: 75+ strong odds, 55-74 better than even, 45-54 a coin toss, 25-44 long odds, under 25 a real gamble.)
   // panel 6 v2 (Wayne): finer bands, about 10 points each. Push is always 14 below Hold on a normal call (opmodel.js gap), and no
   // band spans 14 points, so the two never share a word. Short words, so a Push button's odds line stays on one row.
-  const BANDS = [[92, "near certain"], [80, "very likely"], [70, "likely"], [57, "fair odds"], [44, "even odds"], [32, "poor odds"], [19, "long odds"], [-1, "slim odds"]];
+  // panel 6 v3 (Wayne): nothing sounds guaranteed: the top word is "good odds" (a Hold or Push is never above 85%).
+  const BANDS = [[76, "good odds"], [66, "decent odds"], [56, "fair odds"], [43, "even odds"], [31, "poor odds"], [19, "long odds"], [-1, "slim odds"]];
   function oddsBand(p) { for (let i = 0; i < BANDS.length; i++) if (p >= BANDS[i][0]) return BANDS[i][1]; return BANDS[BANDS.length - 1][1]; }
   function oddsTxt(p) { return S && S.diff === "hard" ? oddsBand(p) : p + "%"; }
   // op-balance: the chance a failed Push blows cover; on Hard in words, like the odds
