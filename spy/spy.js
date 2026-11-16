@@ -801,7 +801,7 @@
     return h % 1000 < OPM.rate * 1000;
   }
   // Batch P: on Hard the situation on the ground shifts the odds at the radio call by a hidden -8..+8, so the words
-  // (strong odds, long odds...) can't be worked out from the dial. Fixed per case, officer and point in the day, so the
+  // (likely, long odds...) can't be worked out from the dial. Fixed per case, officer and point in the day, so the
   // words on the call and the roll in resolve() agree. It is named on the result card afterwards.
   function driftOf(id, k) {
     if (!S || S.diff !== "hard") return 0;
@@ -981,8 +981,10 @@
   // Batch M: Hold and Abort result cards say what the call itself cost and how the top bar moved, from the values applied
   // Batch O: on Hard the live-op call shows the odds in words, not a percentage (the same way Hard hides Ash's default)
   // odds in words, one set everywhere (the live-op buttons on every mode, and Hard's plans and results).
-  // 75+ strong odds, 55-74 better than even, 45-54 a coin toss, 25-44 long odds, under 25 a real gamble.
-  const BANDS = [[75, "strong odds"], [55, "better than even"], [45, "a coin toss"], [25, "long odds"], [-1, "a real gamble"]];
+  // (earlier: 75+ strong odds, 55-74 better than even, 45-54 a coin toss, 25-44 long odds, under 25 a real gamble.)
+  // panel 6 v2 (Wayne): finer bands, about 10 points each. Push is always 14 below Hold on a normal call (opmodel.js gap), and no
+  // band spans 14 points, so the two never share a word. Short words, so a Push button's odds line stays on one row.
+  const BANDS = [[92, "near certain"], [80, "very likely"], [70, "likely"], [57, "fair odds"], [44, "even odds"], [32, "poor odds"], [19, "long odds"], [-1, "slim odds"]];
   function oddsBand(p) { for (let i = 0; i < BANDS.length; i++) if (p >= BANDS[i][0]) return BANDS[i][1]; return BANDS[BANDS.length - 1][1]; }
   function oddsTxt(p) { return S && S.diff === "hard" ? oddsBand(p) : p + "%"; }
   // op-balance: the chance a failed Push blows cover; on Hard in words, like the odds
@@ -995,10 +997,12 @@
     // Batch O: Hold and Abort say the odds before and after the call
     const before = L.base != null ? oddsTxt(L.base) : null;
     const tr = op.trap && !op.abort ? ", " + sgn(L.trapMod || 0) + "% for the trap" : "", ptr = tr ? ", and the trap took " + sgn(L.trapMod || 0).replace("\u2212", "") + "%" : "";
+    // panel 6 v2: Push is the long shot; like Hold, its line says the odds before and after the call
+    const pshot = "The long shot: " + (before ? "the odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + ")" : sgn(op.mod || 0) + "% on the odds" + ptr + " (" + oddsTxt(L.odds) + ")");
     if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? "The odds were " + before + "; pulling out meant no roll at all. " : "") + "Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home safe: no wound, no stress, " + (L.loyal ? "and loyalty " + sgn(L.loyal) + " for having their back" : "and loyalty already at the top") + ". The case counts as lost." + (op.trap ? " It was a trap: they were waiting." : "");
-    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + "). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (res !== "loss" ? ". The trail cooled, but " + esc(nm) + " stayed safe." : op.trap && L.wounded ? ". It was a trap: holding didn\u2019t keep " + esc(nm) + " safe, and they came back wounded." : ". " + esc(nm) + " was kept out of harm\u2019s way" + (L.soft ? ", and the plan\u2019s losses were halved." : "."));
-    else if (res === "loss") what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds" + ptr + " (" + oddsTxt(L.odds) + "), and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown (" + burnTxt(L.burnP).replace(/^(\d)/, "a $1") + ")." : ", and " + esc(nm) + " came back wounded (cover blown: " + burnTxt(L.burnP) + ").");
-    else what = "<b>Your call: Push.</b> It added " + sgn(op.mod || 0) + "% to the odds" + ptr + " (" + oddsTxt(L.odds) + "). " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
+    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? "The odds went from " + before + " to " + oddsTxt(L.odds) + " (" + sgn(op.mod || 0) + "%" + tr + "). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (paid.service ? " and Service " + sgn(paid.service) : "") + (res !== "loss" ? ". The trail cooled, but " + esc(nm) + " stayed safe." : op.trap && L.wounded ? ". It was a trap: holding didn\u2019t keep " + esc(nm) + " safe, and they came back wounded." : ". " + esc(nm) + " was kept out of harm\u2019s way" + (L.soft ? ", and the plan\u2019s losses were halved." : "."));
+    else if (res === "loss") what = "<b>Your call: Push.</b> " + pshot + ", and it failed. Pushing cost an extra Service " + sgn(paid.service || 0) + (L.burned ? ", and " + esc(nm) + "\u2019s cover is blown (" + burnTxt(L.burnP).replace(/^(\d)/, "a $1") + ")." : ", and " + esc(nm) + " came back wounded (cover blown: " + burnTxt(L.burnP) + ").");
+    else what = "<b>Your call: Push.</b> " + pshot + ". " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
     return '<p class="opcall">' + what + "</p>" + (op.abort ? '<p class="opafter">' + esc(op.trap ? "Back at the car, " + nm + " sits for a long minute before turning the key." : nm + " gets home tired, but in one piece.") + "</p>" : "");
   }
   const wrongSiteOf = function (id) { return id === "sabotage" && S.belief && S.belief !== D.TRUTH && S.belief !== "split"; };
@@ -1009,7 +1013,8 @@
     if (op.abort) return {}; // a clean exit: the Service holds steady, the case is simply lost
     const kitD = kitId ? D.KIT[kitId] || {} : {}, wrongSite = wrongSiteOf(id);
     let delta = a[res];
-    if (op.push && res === "win") { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * OPT.push.winX : a.win[m]; }); } // pushed and won: the big payoff
+    const wx = res === "win" ? (op.push ? OPT.push.winX : op.hold ? OPT.hold.winX || 1 : 1) : 1;
+    if (wx !== 1) { delta = {}; Object.keys(a.win).forEach(function (m) { delta[m] = a.win[m] > 0 ? a.win[m] * wx : a.win[m]; }); } // a win: Push x3 (the long shot pays big, panel 6 v2)
     if (res === "loss" && kitD.soft) { delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] / 2); }); }
     else if (res === "loss" && op.hold && !wrongSite && OPM.holdLossX(!!op.trap) !== 1) { const x = OPM.holdLossX(!!op.trap); delta = {}; Object.keys(a.loss).forEach(function (m) { delta[m] = Math.round(a.loss[m] * x); }); } // held back: the plan's losses x0.5 (rounded)
     // Good tradecraft keeps the Service healthy: the right officer on the plan they recommend steadies it, a mismatch drains it.
@@ -1019,14 +1024,14 @@
     return delta;
   }
   // the radio call's own price, paid straight onto the meters
-  function callPrice(op, res) { return op.abort ? { capital: OPT.abort.trust } : op.hold ? { capital: OPT.hold.trust } : op.push && res === "loss" ? { service: OPT.push.failService } : {}; }
+  function callPrice(op, res) { return op.abort ? { capital: OPT.abort.trust } : op.hold ? (OPT.hold.service ? { capital: OPT.hold.trust, service: OPT.hold.service } : { capital: OPT.hold.trust }) : op.push && res === "loss" ? { service: OPT.push.failService } : {}; }
   // the on-screen meters (No.10 trust, Service) if this call fails: the case's losses as apply() shapes them, plus the call's price
   function opLoss(id, k, a, kitId, choice, trap) {
     const op = { push: choice === "push", hold: choice === "hold", abort: choice === "abort", trap: !!trap }, d = shape(caseDelta(id, k, a, kitId, op, "loss")), x = callPrice(op, "loss");
     return { capital: (d.capital || 0) + (x.capital || 0), service: (d.service || 0) + (x.service || 0) };
   }
   // panel 6 item 2: the on-screen meters if this call wins (or only partly works), the same way: the case's result as
-  // apply() shapes it (a pushed win x1.5), plus the call's own price. Used by the buttons' Best case and the meanings panel.
+  // apply() shapes it (a pushed win x3), plus the call's own price. Used by the buttons' Best case and the meanings panel.
   function opGain(id, k, a, kitId, choice, trap, res) {
     const op = { push: choice === "push", hold: choice === "hold", abort: choice === "abort", trap: !!trap }, d = shape(caseDelta(id, k, a, kitId, op, res || "win")), x = callPrice(op, res || "win");
     return { capital: (d.capital || 0) + (x.capital || 0), service: (d.service || 0) + (x.service || 0) };
@@ -1037,9 +1042,13 @@
     const t0 = score(S.meters.capital), v0 = svc(); // Batch M: the top bar before this case, for the Hold/Abort result line
     const cc = op.push ? "push" : op.hold ? "hold" : op.abort ? "abort" : null, trapOn = !!op.trap && (op.push || op.hold);
     // on a trap: cut and capped (opmodel.js); trapMod is what the trap actually took off, so the card's sums add up
-    const preT = trapOn ? Math.max(5, Math.min(95, oddsFor(id, k, a, kitId) + driftOf(id, k) + (op.mod || 0))) : 0, trapMod = trapOn ? Math.max(5, Math.min(TRAP[cc + "Cap"] || 95, preT + (TRAP[cc] || 0))) - preT : 0;
+    // panel 6 v2: the chance comes from opmodel.js, exactly as the buttons said; op.mod becomes what the call itself changed
+    const base0 = oddsFor(id, k, a, kitId) + (op.push || op.hold ? driftOf(id, k) : 0), cl95 = function (x) { return Math.max(5, Math.min(95, Math.round(x))); };
+    const callOdds = op.push || op.hold ? OPM.odds(cc, base0, false) : null, trapOdds = callOdds == null ? null : OPM.odds(cc, base0, trapOn);
+    if (callOdds != null) op.mod = callOdds - cl95(base0);
+    const trapMod = trapOn ? trapOdds - callOdds : 0;
     S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat(trapMod ? [["Signs of a trap", trapMod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground (Hard)", driftOf(id, k)]] : []) };
-    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = Math.max(5, Math.min(95, raw + drift + (op.mod || 0) + trapMod)), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
+    const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = trapOdds != null ? trapOdds : cl95(raw + drift + (op.mod || 0)), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
@@ -1533,7 +1542,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    opLoss: opLoss, opGain: opGain, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, burnTxt: burnTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
+    opLoss: opLoss, opGain: opGain, BANDS: BANDS, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, oddsTxt: oddsTxt, burnTxt: burnTxt, oddsBand: oddsBand, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
