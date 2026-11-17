@@ -183,7 +183,7 @@
     const AT = [0, ARR, 0.3, askAt, 0.62, 0.82], KIND = ["travel", "pos", "eyes", "ask", lost ? "lost" : "mid", "end"]; // when each beat is due (fraction of the op)
     const line = function (i) { const L = voiced(k, vb[i]); if (L) { speak(k, vb[i]); if (vb[i] === "lost") st.lostAt = t / total; return said(L); } if (vb[i] === "lost") st.lostAt = t / total; return fill(beats[i], A, k, id); };
     A.render('<div data-screen="op" data-music="tense">' + mapHTML(A, id, k, a) + '<div class="card opcard"><div class="kicker">Live \u00b7 ' + esc(A.CASES()[id].where) + '</div><h2>' + esc(A.CASES()[id].title) + '</h2>' +
-      '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 ' + A.oddsBand(A.oddsFor(id, k, a, kit)) + '</span></div></div>' +
+      '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 Risk: ' + A.riskTag(A.riskLevel(A.oddsFor(id, k, a, kit))) + '</span></div></div>' +
       '<div class="radio" id="radio"></div><div class="sr-only" id="radiosr" aria-live="polite"></div><div class="opbarw"><div id="opbar" style="width:0%"></div></div><div id="opask"></div>' +
       '<button type="button" class="btn ghost opskip" id="opskip">Skip to decision \u23ed</button></div></div>', "Live operation. Listen to the radio, or skip to the decision.");
     // radio captions come through like a teletype: a crackle, then the words tap out
@@ -197,7 +197,7 @@
       let i = 0; p.classList.add("typing");
       const iv = setInterval(function () { i += 2; p.textContent = txt.slice(0, i); r.scrollTop = r.scrollHeight; if (i >= txt.length || !p.isConnected) { clearInterval(iv); p.textContent = txt; p.classList.remove("typing"); } }, 24);
     };
-    const finish = function () { clearInterval(timer); timer = null; const T = A.opTerms(id, k, a, kit, trap); A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: T.push.mod, trap: trap } : chosen === "abort" ? { abort: true, trap: trap } : { hold: true, mod: T.hold.mod, trap: trap }); cur.id = null; };
+    const finish = function () { clearInterval(timer); timer = null; const T = A.opTerms(id, k, a, kit, trap); const RV = terms(A, id, k, a, kit, trap).V; A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: T.push.mod, trap: trap, risk: RV.push.rl } : chosen === "abort" ? { abort: true, trap: trap } : { hold: true, mod: T.hold.mod, trap: trap, risk: RV.hold.rl }); cur.id = null; };
     const choose = function (c) {
       if (chosen) return; chosen = c; FEEL.buzz(c === "abort" ? "heavy" : "tap");
       $("opask").innerHTML = '<p class="opchose">' + esc(CHOICE[c].t) + '</p>'; const Lc = voiced(k, c); say(Lc ? said(Lc) : fill(LINES[c], A, k, id), "me", c); if (Lc) speak(k, c);
@@ -242,7 +242,7 @@
       $("opask").innerHTML = (tellTxt ? '<p class="optell" role="note">\u26a0 <b>On the radio just now:</b> \u201c' + esc(tellTxt.replace(/^[^:]+:\s*/, "")) + "\u201d</p>" : "") + '<div class="opchoice">' + ["abort", "hold", "push"].map(function (c) { return '<button class="btn opbtn op-' + c + '" data-op="' + c + '"><b>' + CHOICE[c].t + '</b><small class="optrade">' + TD[c] + "</small></button>"; }).join("") + '<p class="opwait">The line stays open until you choose.</p>' + meansHTML() + "</div>";
       document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { choose(b.getAttribute("data-op")); }; });
       bindMeans();
-      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> is the long shot: worse odds than Hold, but two and a half times the gains if it works; a fail costs in full and can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> has the better odds and keeps them safe (unless it\u2019s a trap); waiting costs some Service, and if it fails you lose half of what the plan risks. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. The dots on each button show the risk: more filled dots, more likely to fail. They wait for your answer.");
+      MENU.coach("op", "Halfway through, your officer asks for a call. <b>Push</b> is the long shot: worse odds than Hold, but two and a half times the gains if it works; a fail costs in full and can blow their cover (likelier when they\u2019re stressed). <b>Hold</b> has the better odds and keeps them safe (unless it\u2019s a trap); waiting costs some Service, and if it fails you lose half of what the plan risks. <b>Abort</b> brings them home safe and more loyal, but the case is lost and No.10 notices. Listen for signs of a trap. Risk dots, under their name and on each button, show how likely it is to fail: more filled dots, more risk. They wait for your answer.");
     };
     if (timer) clearInterval(timer);
     moveMark(0, st);

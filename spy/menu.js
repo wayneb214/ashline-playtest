@@ -110,17 +110,12 @@
     ["Is any of this real?", "No. Every service, state, firm and person is invented."]
   ];
   // panel 6 item 25: a glossary of the words the game uses (opened from Help & FAQ)
-  // panel 6 v4 (Wayne): the odds words as a short list, best to worst, one plain meaning each. One source for the glossary
-  // and the live-op "What do these words mean?" panel (ops.js). The words are spy.js BANDS without " odds".
-  const ODDS = [["good", "works 3 times in 4 or more"], ["decent", "works about 7 times in 10"], ["fair", "works more often than not"], ["even", "about half and half"], ["poor", "fails more often than it works"], ["long", "works about 1 time in 4"], ["slim", "usually fails"]];
-  const ODDS_NOTE = "Hold and Push are never certain: they fail at least 1 time in 7.";
   // panel 6 v7 (Wayne 15:31): the Hold/Push/trap buttons show risk as 5 dots (spy.js riskLevel; filled = chance of failure).
-  // One list for the glossary and the live-op panel, lowest risk first, no percentages. The odds words above stay for the
-  // plan cards (and Hard's results), which still show the odds in words.
+  // One list for the glossary and the live-op panel, lowest risk first, no percentages. Panel 6 v9 (Wayne): the odds words are
+  // gone everywhere, so these dots are the game's only risk scale (live op, Hold/Push buttons, Hard's plan cards and results).
   const RISK = [["\u25cf\u25cb\u25cb\u25cb\u25cb", "low", "usually works"], ["\u25cf\u25cf\u25cb\u25cb\u25cb", "some", "works more often than not"], ["\u25cf\u25cf\u25cf\u25cb\u25cb", "real", "could go either way"], ["\u25cf\u25cf\u25cf\u25cf\u25cb", "high", "fails more often than it works"], ["\u25cf\u25cf\u25cf\u25cf\u25cf", "very high", "usually fails"]];
   const RISK_NOTE = "A Hold or Push always has some risk, and a Push always shows more dots than a Hold.";
   function riskHTML(lead) { return lead + '<ul class="risklist">' + RISK.map(function (r) { return '<li><span class="riskdots" role="img" aria-label="risk ' + (RISK.indexOf(r) + 1) + ' of 5">' + r[0] + "</span> <b>" + r[1] + "</b>: " + r[2] + "</li>"; }).join("") + "</ul>" + RISK_NOTE; }
-  function oddsHTML(lead, bare) { return lead + '<ul class="oddslist">' + ODDS.map(function (o) { return "<li><b>" + o[0] + "</b>: " + o[1] + "</li>"; }).join("") + "</ul>" + (bare ? "" : ODDS_NOTE); }
   const GLOSS = [
     ["C", "You: the chief of Albion House, the invented secret service in this story."],
     ["No.10 trust", "How far the Prime Minister, Eleanor Hale, backs you (top bar, 0 to 100). Under 10 at midnight is a final warning; two nights running under 10 (three on Easy) and you are sacked."],
@@ -131,7 +126,6 @@
     ["Hold", "On the radio: wait and watch. Better odds than Push and the plan\u2019s normal gains; waiting costs some Service and a little No.10 trust, a failure costs half, and the officer stays safe (not on a trap)."],
     ["Abort", "On the radio: pull the officer out. The case is lost and No.10 trust drops, but the officer comes home and remembers you had their back."],
     ["Risk dots", "{riskList}"],
-    ["Odds words", "{oddsList}"],
     ["Partly works", "Done, but not cleanly: a smaller gain, and people ask questions."],
     ["Trap and tell", "Sometimes the other side is waiting. The officer reports a warning sign (the tell, marked \u26a0) before you choose. On a trap, Hold costs in full."],
     ["Cover blown", "The officer\u2019s face is known. They are burned: out of the field for good."],
@@ -145,7 +139,7 @@
     ["Bonus day", "A short side story, \u2018What if\u2026\u2019. It opens once you have finished Day 3, and it doesn\u2019t touch your saved game."]
   ];
   function glossary(back) {
-    sheet('<div class="kicker">Help &amp; FAQ</div><h2>Glossary</h2><dl class="gloss">' + GLOSS.map(function (g) { return "<dt>" + g[0] + "</dt><dd>" + g[1].replace("{oddsList}", oddsHTML("How a plan card shows the odds, best to worst:", true)).replace("{riskList}", riskHTML("On the Hold and Push buttons, filled dots show the chance it fails, lowest risk first:")) + "</dd>"; }).join("") + '</dl><button class="btn primary" id="gl-back">Back</button>', "settings");
+    sheet('<div class="kicker">Help &amp; FAQ</div><h2>Glossary</h2><dl class="gloss">' + GLOSS.map(function (g) { return "<dt>" + g[0] + "</dt><dd>" + g[1].replace("{riskList}", riskHTML("Wherever the game shows a risk instead of a percentage (the live op, the Hold and Push buttons, and some cards on Hard), filled dots show the chance it fails, lowest risk first:")) + "</dd>"; }).join("") + '</dl><button class="btn primary" id="gl-back">Back</button>', "settings");
     $("gl-back").onclick = function () { close(); help(back); };
   }
   // Batch P: help(back, key) opens with that question already open (the Service note on result cards links here)
@@ -183,7 +177,7 @@
     setTimeout(go, 9000);
   }
 
-  window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, glossary: glossary, GLOSS: GLOSS, ODDS: ODDS, ODDS_NOTE: ODDS_NOTE, oddsHTML: oddsHTML, RISK: RISK, RISK_NOTE: RISK_NOTE, riskHTML: riskHTML, confirm: confirm, sheet: sheet };
+  window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, glossary: glossary, GLOSS: GLOSS, RISK: RISK, RISK_NOTE: RISK_NOTE, riskHTML: riskHTML, confirm: confirm, sheet: sheet };
   document.addEventListener("DOMContentLoaded", function () { const b = $("menu"); if (b) b.onclick = function (e) { e.stopPropagation(); open(); }; });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && $("sheet")) close(); });
 })();
