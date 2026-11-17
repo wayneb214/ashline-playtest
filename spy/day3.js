@@ -26,7 +26,7 @@
     exfil: { kind: "exfil", title: "The Green Coat", where: "Kessgrad, Varenian Republic", place: "Varenia", label: "To Varenia \u203a", due: 22, flash: true, left: true,
       head: { win: "Quiet night at the Varenian border", mixed: "British driver held at Varenian border", loss: "Varenia: \u2018state traitor\u2019 caught at border" } }
   };
-  const KESK = "Colonel Anselm Kesk", STYLE = { low: "quiet", med: "official", high: "bold" };
+  const KESK = "Colonel Anselm Kesk", STYLE = { low: "careful", med: "measured", high: "bold" }; // panel 6 v10: the plan-style names (Kesk's voiced lines keep his own words)
 
   // ---------- flags that carry forward ----------
   function flags() {
@@ -292,7 +292,7 @@
           const locked = a.pm && s.meters.capital < a.pm;
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + '</p><div class="chips">' +
             (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust ' + a.pm + " (now " + s.meters.capital + "/100)</span>" :
-              '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence +10%</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(a.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
+              '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence +10%</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(a.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
         }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: up to +10% at the border.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
@@ -359,7 +359,7 @@
           if (o.swap && f.exit !== "win") return "";
           const locked = o.swap && !swapOK();
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(o.t) + '</div><p style="margin:0">' + esc(o.d) + '</p><div class="chips">' +
-            (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 50 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip odds">' + odds(o, st) + '% chance</span><span class="chip risk-' + o.risk + '">' + { low: "Low risk", med: "Some risk", high: "High risk" }[o.risk] + "</span>" + (o.hrs ? '<span class="chip time">\u23f1 +1h</span>' : "") + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
+            (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 50 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip odds">' + odds(o, st) + '% chance</span><span class="chip risk-' + o.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[o.risk] + "</span>" + (o.hrs ? '<span class="chip time">\u23f1 +1h</span>' : "") + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
         }).join("");
       }
       const ready = st.car ? sel && sel2 : sel != null;

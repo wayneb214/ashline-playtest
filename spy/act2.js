@@ -10,7 +10,8 @@
   const VO = function (id, ms) { if (window.VOICE) setTimeout(function () { VOICE.play(id); }, ms || 0); };
   const clampP = function (o) { return Math.max(8, Math.min(94, Math.round(o))); };
   const roll = function (p) { const f = FORCE(); if (f) return f; const r = A.rnd() * 100; return r < p * 0.7 ? "win" : r < p ? "mixed" : "loss"; };
-  const RISK = { low: "Low risk", med: "Some risk", high: "High risk" };
+  // panel 6 v10 (Wayne): plan styles are Careful / Measured / Bold, so they never clash with the risk dots
+  const RISK = { low: "Careful", med: "Measured", high: "Bold" };
   D.UKPLACES.Manchester = [0.285, 0.47];
   ["manchester", "press"].forEach(function (id) { D.AGENTS.macrae.good.push(id); });
   ["watch", "recon"].forEach(function (id) { D.AGENTS.pryce.good.push(id); });

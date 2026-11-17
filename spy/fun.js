@@ -173,7 +173,7 @@
 
   // ---------- officers who grow: XP from successes, a new trait at each threshold ----------
   const XPAT = [2, 5, 8];
-  const GT = { nerves: { n: "Steady nerves", risk: "high", v: 6, tx: "Bold plans +6%" }, fleet: { n: "Old friends in Fleet Street", risk: "med", v: 6, tx: "Some-risk plans +6%" },
+  const GT = { nerves: { n: "Steady nerves", risk: "high", v: 6, tx: "Bold plans +6%" }, fleet: { n: "Old friends in Fleet Street", risk: "med", v: 6, tx: "Measured plans +6%" },
     eye: { n: "Sharp eye", risk: "low", v: 6, tx: "Careful plans +6%" }, ground: { n: "Knows the ground", all: true, v: 4, tx: "Every job +4%" } };
   const PATH = { macrae: ["fleet", "nerves", "ground"], pryce: ["eye", "ground", "nerves"], hartley: ["nerves", "fleet", "ground"], ada: ["eye", "fleet", "ground"], sam: ["ground", "nerves", "eye"], hollis: ["nerves", "ground", "eye"] };
   function traits(k) { const S = A().S(), base = A().D.TRAITS[k] || []; return base.concat(((S && S.grown && S.grown[k]) || []).map(function (g) { return Object.assign({ grown: true }, GT[g]); })); }

@@ -86,7 +86,7 @@
   }
   // Service = the stored field record plus how the officers feel (loyalty and strain fold in here)
   function svc() { const r = S.roster || []; const mor = r.reduce(function (a, k) { return a + ((S.loyal[k] == null ? 3 : S.loyal[k]) - 3) * 2 - Math.max(0, (S.stress[k] || 0) - 3) * 2; }, 0); return Math.max(0, Math.min(100, Math.round(S.meters.service + mor))); }
-  // batch G: what the meters do at the ends. Service under 30: officers refuse high-risk plans until rested.
+  // batch G: what the meters do at the ends. Service under 30: officers refuse bold plans until rested.
   // Service 80+: the first plan you send each day gets +5% ("the team's flying"). No.10 trust under 20 at the end
   // of Days 1-5: Hale rings at midnight, and next morning No.10 takes one side file off the desk (a lost case).
   const SVC_LOW = 30, SVC_HIGH = 80, NO10_LOW = 20;
@@ -592,7 +592,7 @@
   // painted header for each case file
   const HEADS = { defector: "clerk", mole: "mole", leak: "fleet", sabotage: "rig", courier: "courier", safehouse: "flat", mole2: "mole", exit: "harwich", bath: "bath", york: "york", watch: "fleet", manchester: "manchester", leak: "letter", recon: "bridge", press: "fleet", swap: "bridge", find: "london", chase: "london", showdown: "fleet", tail: "fleet", cable: "cabletap", exfil: "signal", proof: "signal", faces: "fleet", lie: "york" };
   // ---------- the desk: case files spread out under the lamp ----------
-  const DESK_RANK = { low: 1, med: 2, high: 3 }, RISKW = ["No field risk", "Low risk", "Some risk", "High risk"];
+  const DESK_RANK = { low: 1, med: 2, high: 3 }, RISKW = ["No fieldwork", "Careful plans", "Measured plans", "Bold plans"]; // panel 6 v10: the plans' usual style, not a risk (risk is the dots)
   let FILES = {}; // today's files by id, for the lifted view
   function dueWords(c) { return c.done && c.id === no10Took() ? "No.10 is handling it" : c.done ? { win: "Closed", mixed: "Partial", loss: "Failed" }[c.done] : c.late ? "Overdue \u00b7 was " + hh(c.due) : "Due " + hh(c.due) + (c.left <= 5 ? " \u00b7 " + c.left + "h left" : ""); }
   function deskHtml(cards) {
