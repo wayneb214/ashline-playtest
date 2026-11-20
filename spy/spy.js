@@ -971,6 +971,7 @@
     const d2 = fold(delta);
     if (d2.service < 0) d2.service = Math.round(d2.service * 0.65); // setbacks bruise the Service; a run of them breaks it
     if (S.diff === "easy") ["capital", "service"].forEach(function (m) { if (d2[m] < 0) d2[m] = Math.round(d2[m] * 0.7); }); // Easy: setbacks cost less, so a slow, careful week still keeps the chair
+    if (delta && delta.win) ["capital", "service"].forEach(function (m) { if (d2[m] < 0) delete d2[m]; }); // panel 6 v15: a clean win (caseDelta) costs nothing
     return d2;
   }
   function apply(delta) {
@@ -1007,7 +1008,7 @@
     const afterN = op.risk || riskLevel(L.odds), beforeN = L.base != null ? riskLevel(L.base) : null;
     const odds = function () {
       if (hard) return beforeN == null ? "Risk " + riskTag(afterN) + "." : beforeN === afterN ? "Risk stayed " + riskTag(afterN) + "." : "Risk " + riskTag(beforeN) + " \u2192 " + riskTag(afterN) + ".";
-      return L.base == null ? "Odds " + L.odds + "%." : "Odds " + L.base + "% \u2192 " + L.odds + "%.";
+      return L.base == null ? "Odds " + L.odds + "%." : L.base === L.odds ? "Odds stayed " + L.odds + "%." : "Odds " + L.base + "% \u2192 " + L.odds + "%.";
     };
     let what;
     if (op.abort) what = "Pulled out. " + (L.base == null ? "" : hard ? "Risk was " + riskTag(beforeN) + ". " : "Odds were " + L.base + "%. ") + nm + " safe, no stress.";
@@ -1053,6 +1054,10 @@
     const fitK = AG(k).good.indexOf(id) >= 0, recK = recIdx(id, k) === CASES()[id].approaches.indexOf(a);
     const craft = res === "loss" ? (fitK ? 0 : -6) : (fitK ? 1 : -4) + (recK ? 2 : 0);
     delta = Object.assign({}, delta); delta.service = (delta.service || 0) + craft;
+    // panel 6 v15 (Wayne): a clean win never shows a loss. Some plans trade No.10 trust or secrecy for public goodwill (the
+    // Embassy route: trust +8, No.10 \u22126, secrecy \u221210), and a mismatched officer drains Service; on a win shape() keeps
+    // No.10 trust and Service at zero or better (the goodwill still lands). Partials and losses keep the real costs.
+    if (res === "win") Object.defineProperty(delta, "win", { value: true });
     return delta;
   }
   // the radio call's own price, paid straight onto the meters

@@ -11,9 +11,10 @@
     // can't make a trap look worth pushing: whatever the base, the screen says Abort.
     function odds(choice, base, trap) {
       if (choice === "abort") return 0;
-      // panel 6 v2 (Wayne): Push is the long shot. Hold's chance is the base plus Hold's edge, kept to (5 + gap)..OPT.hold.cap (85), and
+      // panel 6 v2 (Wayne): Push is the long shot. Hold's chance is the base plus Hold's edge, kept to (5 + gap)..OPT.hold.cap (85) unless the base is already higher, and
       // Push is always exactly OPT.push.gap below it (5..71), so the two never share an odds word (no band is gap wide).
-      const g = OPT.push.gap, hold = g == null ? 0 : Math.max(5 + g, Math.min(OPT.hold.cap || 95, cl(cl(base) + OPT.hold.mod)));
+      // panel 6 v15 (Wayne): the cap only stops Hold from adding past 85%; it never takes odds away (92% stays 92%, not 85%)
+      const b = cl(base), g = OPT.push.gap, hold = g == null ? 0 : Math.max(5 + g, b, Math.min(OPT.hold.cap || 95, cl(b + OPT.hold.mod)));
       const pre = g == null ? cl(base + OPT[choice].mod) : choice === "hold" ? hold : hold - g; // no gap: the older models, for the report
       return trap ? Math.max(5, Math.min(TRAP[choice + "Cap"] || 95, Math.round(pre + (TRAP[choice] || 0)))) : pre;
     }
@@ -41,9 +42,9 @@
   // NOW (panel 6 v7, Wayne approved option G1: Push's best case smaller than x3, no hidden rules), balanced with
   // test/op-balance-sim.mjs and test/op-hard-sim.mjs so each call is the best one in about a fifth or more of normal
   // situations on every difficulty and the sack rates stay where they were.
-  // Hold is the steady call: +16% on the odds (at most 85%), the plan's normal gains, a failed Hold lands half the losses;
+  // Hold is the steady call: +16% on the odds (adding no further than 85%, and never lowering them), the plan's normal gains, a failed Hold lands half the losses;
   // waiting costs No.10 trust 1 and Service 6 (the team tied up watching). Push is the long shot: always 14 below Hold (so at
-  // most 71%), but x2.5 the plan's gains on a win; a failed Push lands the full losses, the officer comes back wounded, and
+  // most 71%, or 14 below an already higher base), but x2.5 the plan's gains on a win; a failed Push lands the full losses, the officer comes back wounded, and
   // their cover is blown 10% of the time (+5% per point of stress). Abort is the sure thing: the case is lost and No.10 -6,
   // but the officer comes home (+1 loyalty).
   // A trap (1 live op in 5, never the first): Push -30% and at most 22%, cover blown 2 times in 3; Hold -25% and at most 28%, no longer safe.

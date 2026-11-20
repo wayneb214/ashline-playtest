@@ -1,6 +1,6 @@
 /* build.js: written by publish-playtest.sh for the web playtest only. Shows which build this is in Settings. */
 (function () {
-  window.AH_BUILD = { stamp: "Playtest 59ca273 · 20 Nov", commit: "59ca2733b7364324867e625643179387a1f0e8bf" };
+  window.AH_BUILD = { stamp: "Playtest 9d7f452 · 20 Nov", commit: "9d7f452dcc40bc817f45468ef8084d2852d34ba7" };
   function add() {
     var back = document.getElementById("st-back");
     if (!back || document.getElementById("ah-build")) return;
