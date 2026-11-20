@@ -355,9 +355,10 @@
     if (!f) return "Kesk has tried to read you all week, Chief, and can\u2019t. Good. Your trust with No.10 and how the chase went count most now.";
     return "Kesk has studied how you work, Chief. His file says you play it <b>" + STYLEW[f] + "</b>, and he is ready for that. Whatever he expects, don\u2019t give it to him: anything else catches him off balance (+" + SURPRISE + "%). Your trust with No.10 and the chase count too.";
   }
+  // panel 6 v12 (Wayne): was "the choice he expects will be the hardest", untrue when Kesk expects Careful (Careful and Bold tie)
   function interceptClue() {
     const f = fav(); if (!f) return "";
-    return '<div class="card intercept"><div class="kicker">Intercept \u00b7 Grey House, Kessgrad</div><p>A cable to Kesk, decoded tonight: <b>\u201cC plays it ' + STYLEW[f] + '. Be ready for it.\u201d</b></p><p class="fine">Tomorrow, at Downing Street, the choice he expects will be the hardest. \u2014 Ash</p></div>';
+    return '<div class="card intercept"><div class="kicker">Intercept \u00b7 Grey House, Kessgrad</div><p>A cable to Kesk, decoded tonight: <b>\u201cC plays it ' + STYLEW[f] + '. Be ready for it.\u201d</b></p><p class="fine">Tomorrow, at Downing Street, he will be ready for the plan he expects. \u2014 Ash</p></div>';
   }
   // Batch P: the Downing Street choices and odds at module level, so the balance test can sweep them
   const SD_OPTS = [
