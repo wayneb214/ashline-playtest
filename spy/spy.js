@@ -145,7 +145,7 @@
     const pEl = document.createElement("p"); pEl.className = "barline"; pEl.textContent = tx;
     // Batch P: the Service note links to the Help entry that explains it
     if (tx.indexOf(SVC_NOTE.trim()) >= 0) { const hb = document.createElement("button"); hb.type = "button"; hb.className = "linkbtn svchelp"; hb.textContent = "How Service works"; hb.onclick = function (e) { e.stopPropagation(); MENU.help(null, "service"); }; pEl.appendChild(document.createTextNode(" ")); pEl.appendChild(hb); }
-    const after = oc.querySelector(".opcall") || oc.querySelector(".no10back") || oc.querySelector(".deltas");
+    const after = oc.querySelector(".no10back") || oc.querySelector(".sums") || oc.querySelector(".deltas:not(.officer)") || oc.querySelector(".opcall");
     if (after) after.insertAdjacentElement("afterend", pEl); else { const hd = oc.querySelector(".headline"); if (hd) oc.insertBefore(pEl, hd); else oc.appendChild(pEl); }
     // Batch P: the moment No.10 trust drops under 20 in Act 2, the result card says so (once a day), as an alert
     let alertTx = ""; const t1 = score(S.meters.capital);
@@ -991,26 +991,44 @@
   function riskLevel(p) { let i = 0; while (i < RISK.length && p < RISK[i]) i++; return i + 1; }
   function riskDots(n) { return "\u25cf".repeat(n) + "\u25cb".repeat(5 - n); }
   function riskTag(n) { return '<span class="riskdots" role="img" aria-label="risk ' + n + ' of 5">' + riskDots(n) + "</span>"; }
-  // op-balance: the chance a failed Push blows cover (on the result card); on Hard in words, as Hard hides percentages
-  function burnTxt(p) { return S && S.diff === "hard" ? (p < 30 ? "a small chance" : p < 50 ? "a real chance" : p < 70 ? "likely" : "very likely") : p + "% chance"; }
   const sgn = function (n) { return n > 0 ? "+" + n : n < 0 ? "\u2212" + Math.abs(n) : "\u00b10"; };
-  function opCallLine(op, nm, res, t0, v0) {
+  // panel 6 v11 (AAR item 7): the officer's own pronouns on the result card, never "they" for one person
+  // (same people as ops.js W.pron: Ada she/her, Hollis he/his; anyone else, e.g. Sam, by name)
+  const PRO = { macrae: ["she", "her", "her"], pryce: ["he", "him", "his"], hartley: ["he", "him", "his"], ada: ["she", "her", "her"], hollis: ["he", "him", "his"] };
+  function pro(k, i) { const n = first(k); return (PRO[k] || [n, n, n + "\u2019s"])[i]; }
+  // Your call: what you chose and how the chance moved. Panel 6 v11 (Wayne's AAR review): the chance lives here only (the old
+  // bottom line is gone); on Hard it is dots alone, with no leftover %, and "stayed" when the dots did not move. Prices are in
+  // the sums below, so they are not repeated here.
+  function opCallLine(op, k, res) {
     if (!op.hold && !op.abort && !op.push) return "";
-    const L = S.lastOp || {}, paid = L.paid || {};
+    const L = S.lastOp || {}, nm = first(k), her = pro(k, 2), hard = S.diff === "hard";
+    const afterN = op.risk || riskLevel(L.odds), beforeN = L.base != null ? riskLevel(L.base) : null;
+    const after = hard ? riskTag(afterN) : L.odds + "%", before = beforeN == null ? null : hard ? riskTag(beforeN) : L.base + "%";
+    const tr = op.trap && !op.abort ? ", " + sgn(L.trapMod || 0) + "% for the trap" : "";
+    const moved = function () {
+      if (!before) return (hard ? "the risk was " : "the odds were ") + after;
+      if (hard) return beforeN === afterN ? "the risk stayed " + after : "the risk went from " + before + " to " + after;
+      return "the odds went from " + before + " to " + after + " (" + sgn(op.mod || 0) + "%" + tr + ")";
+    };
+    const cap = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
     let what;
-    // Batch O: Hold and Abort say the odds before and after the call (panel 6 v9: on Hard, the risk dots; the "after" is the
-    // count the button showed, op.risk)
-    const hard = S.diff === "hard", after = hard ? riskTag(op.risk || riskLevel(L.odds)) : L.odds + "%";
-    const before = L.base != null ? (hard ? riskTag(riskLevel(L.base)) : L.base + "%") : null;
-    const went = function (c) { return c + (hard ? "he risk went from " : "he odds went from ") + before + " to " + after; };
-    const tr = op.trap && !op.abort ? ", " + sgn(L.trapMod || 0) + "% for the trap" : "", ptr = tr ? ", and the trap took " + sgn(L.trapMod || 0).replace("\u2212", "") + "%" : "";
-    // panel 6 v2: Push is the long shot; like Hold, its line says the odds before and after the call
-    const pshot = "The long shot: " + (before ? went("t") + " (" + sgn(op.mod || 0) + "%" + tr + ")" : sgn(op.mod || 0) + "% on the odds" + ptr + " (" + (hard ? "risk " : "") + after + ")");
-    if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? (hard ? "The risk was " : "The odds were ") + before + "; pulling out meant no roll at all. " : "") + "Pulling out cost No.10 trust " + sgn(paid.capital || 0) + ". " + esc(nm) + " walked home safe: no wound, no stress, " + (L.loyal ? "and loyalty " + sgn(L.loyal) + " for having their back" : "and loyalty already at the top") + ". The case counts as lost." + (op.trap ? " It was a trap: they were waiting." : "");
-    else if (op.hold) what = "<b>Your call: Hold.</b> " + (before ? went("T") + " (" + sgn(op.mod || 0) + "%" + tr + "). " : "") + "Holding cost No.10 trust " + sgn(paid.capital || 0) + (paid.service ? " and Service " + sgn(paid.service) : "") + (res !== "loss" ? ". The trail cooled, but " + esc(nm) + " stayed safe." : op.trap && L.wounded ? ". It was a trap: holding didn\u2019t keep " + esc(nm) + " safe, and they came back wounded." : ". " + esc(nm) + " was kept out of harm\u2019s way" + (L.soft ? ", and the plan\u2019s losses were halved." : "."));
-    else if (res === "loss") what = "<b>Your call: Push.</b> " + pshot + ", and it failed. " + (paid.service ? "Pushing cost an extra Service " + sgn(paid.service) + ", and " : "") + (L.burned ? esc(nm) + "\u2019s cover is blown (" + burnTxt(L.burnP).replace(/^(\d)/, "a $1") + ")." : esc(nm) + " came back wounded (cover blown: " + burnTxt(L.burnP) + ").");
-    else what = "<b>Your call: Push.</b> " + pshot + ". " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Only partly: no extra payoff.") + (L.tired ? " " + esc(nm) + " comes back tired." : "");
-    return '<p class="opcall">' + what + "</p>" + (op.abort ? '<p class="opafter">' + esc(op.trap ? "Back at the car, " + nm + " sits for a long minute before turning the key." : nm + " gets home tired, but in one piece.") + "</p>" : "");
+    if (op.abort) what = "<b>Your call: Abort.</b> " + (before ? (hard ? "The risk was " : "The odds were ") + before + "; pulling out meant nothing was left to chance. " : "Pulling out meant nothing was left to chance. ") + "No wound, no stress, " + (L.loyal ? "and loyalty " + sgn(L.loyal) + " for having " + her + " back" : "and loyalty already at the top") + ".";
+    else if (op.hold) what = "<b>Your call: Hold.</b> " + cap(moved()) + "." + (res !== "loss" ? " " + esc(nm) + " stayed safe." : op.trap && L.wounded ? " Holding didn\u2019t keep " + pro(k, 1) + " safe from the trap." : L.soft ? " Because you held, the plan\u2019s losses were halved." : "");
+    else if (res === "loss") what = "<b>Your call: Push.</b> The long shot: " + moved() + ", and it failed. " + (L.burned ? esc(nm) + "\u2019s cover is blown" : esc(nm) + "\u2019s cover held") + (hard ? "" : " (the chance it would be blown was " + L.burnP + "%)") + ".";
+    else what = "<b>Your call: Push.</b> The long shot: " + moved() + ". " + (res === "win" ? "It paid off: the plan\u2019s gains \u00d7" + OPT.push.winX + "." : "Partly done, so Push earned nothing extra.");
+    return '<p class="opcall">' + what + "</p>";
+  }
+  // panel 6 v11 (AAR item 2): what changed, one line per gauge, adding up: "Service: plan +8, holding −6 = +2"
+  function sumsLine(ch, paid, back, cc) {
+    const lab = { hold: "holding", push: "pushing", abort: "pulling out" }[cc] || "your call";
+    const keys = Object.keys(ch).concat(Object.keys(paid).filter(function (m) { return !(m in ch); }));
+    const rows = keys.map(function (m) {
+      const tot = ch[m] || 0, pd = paid[m] || 0, bk = m === "capital" ? back || 0 : 0, plan = tot - pd - bk;
+      const parts = [[plan, "plan"], [pd, lab], [bk, "No.10 heard about it"]].filter(function (x) { return x[0]; });
+      if (!parts.length) return "";
+      return '<p class="' + (tot >= 0 ? "up" : "down") + '"><b>' + mname(m) + ":</b> " + (parts.length > 1 ? parts.map(function (x) { return "<span>" + x[1] + " " + sgn(x[0]) + "</span>"; }).join(", ") + " <span>= " + sgn(tot) + "</span>" : sgn(tot)) + "</p>";
+    }).join("");
+    return rows ? '<div class="sums" aria-label="What changed">' + rows + "</div>" : "";
   }
   const wrongSiteOf = function (id) { return id === "sabotage" && S.belief && S.belief !== D.TRUTH && S.belief !== "split"; };
   // the delta a case's result puts through apply() (before the radio call's own price): one place, used by resolve() and the
@@ -1054,7 +1072,7 @@
     const callOdds = op.push || op.hold ? OPM.odds(cc, base0, false) : null, trapOdds = callOdds == null ? null : OPM.odds(cc, base0, trapOn);
     if (callOdds != null) op.mod = callOdds - cl95(base0);
     const trapMod = trapOn ? trapOdds - callOdds : 0;
-    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat(trapMod ? [["Signs of a trap", trapMod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground (Hard)", driftOf(id, k)]] : []) };
+    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat(trapMod ? [["Signs of a trap", trapMod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground", driftOf(id, k)]] : []) };
     const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = trapOdds != null ? trapOdds : cl95(raw + drift + (op.mod || 0)), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
     if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
@@ -1107,28 +1125,31 @@
     S.status = S.status || {}; const st1 = S.status[k];
     const burnRoll = window.__SPY_BURN__ != null ? window.__SPY_BURN__ : rnd();
     if (S.lastOp) { S.lastOp.burned = res === "loss" && op.push && burnRoll < burnP; }
-    if (res === "loss" && op.push && burnRoll < burnP) { S.status[k] = "burned"; loseOfficer(k, "cover burned"); line += " Worse: " + nm + "\u2019s face is known now. Their cover is burned for good."; }
+    if (res === "loss" && op.push && burnRoll < burnP) { S.status[k] = "burned"; loseOfficer(k, "cover burned"); line += " Worse: " + nm + "\u2019s face is known now. " + pro(k, 2).charAt(0).toUpperCase() + pro(k, 2).slice(1) + " cover is burned for good."; }
     else if (wrongSite) { /* nobody came to the site we guarded: nothing to be hurt by */ }
     else if (res === "loss" && op.hold && O.wound) { S.status[k] = "wounded"; if (S.lastOp) S.lastOp.wounded = true; }
-    else if (res === "loss" && op.hold) line += " Holding kept " + nm + " out of it. They came home in one piece.";
+    else if (res === "loss" && op.hold) line = (op.trap ? "It was a trap. They were waiting. " : "") + "It went wrong, but holding kept " + nm + " out of it: " + pro(k, 0) + " came home in one piece."; // panel 6 v11: not "badly shaken" as well
     else if (res === "loss" && !op.abort) S.status[k] = "wounded";
     else if (op.push) S.status[k] = S.status[k] === "wounded" ? "wounded" : "tired";
     else if (res === "win" && S.status[k] === "tired") delete S.status[k];
     if (S.status[k] && S.status[k] !== st1 && S.status[k] !== "burned") line += " " + nm + " comes back " + statusName(k).toLowerCase() + ".";
-    if (res === "loss" && !op.hold && !op.abort && S.stress[k] >= 5 && S.status[k] !== "burned") { loseOfficer(k, "sent home"); line += " The doctor has signed " + nm + " off. They won\u2019t be back this week."; }
+    if (res === "loss" && !op.hold && !op.abort && S.stress[k] >= 5 && S.status[k] !== "burned") { loseOfficer(k, "sent home"); line += " The doctor has signed " + nm + " off. " + pro(k, 0).charAt(0).toUpperCase() + pro(k, 0).slice(1) + " won\u2019t be back this week."; }
     if (cc) { const E = S.echoes[S.echoes.length - 1]; E.burned = S.status[k] === "burned"; E.gone = !!(S.lost || {})[k]; } // how it ended for the officer
     if (id === "defector" && res !== "loss") S.defector = true;
     if (S.day === 1 && S.order.indexOf("sabotage") < 0) S.order.push("sabotage");
     meters(ch); ticker(); save("briefing"); FEEL.buzz(res === "loss" ? "loss" : "win");
     if (S.lastOp && op.push && res !== "loss") S.lastOp.tired = S.status[k] === "tired" && st1 !== "tired";
-    const callLine = opCallLine(op, nm, res, t0, v0);
+    const callLine = opCallLine(op, k, res);
     const od = function (lab, a0, a1) { return a1 === a0 ? "" : '<span class="' + ((lab === "Stress") === (a1 > a0) ? "down" : "up") + '">' + lab + " " + a0 + "\u2192" + a1 + "</span>"; };
     // the evidence still first, then the write-up, read aloud by Ash after the officer's own line
     evidThen(id, res, head, function () {
-      render('<div class="card outcome ' + res + '"><span class="stamp thud">' + { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res] + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + "</h2></div><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
-        (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + because(id, k, a.t, ch, res) + deltas(ch) + backLine(back) + callLine +
-        '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (over ? '<span class="down">Overruled</span>' : "") + (op.push ? '<span class="down">Pushed</span>' : "") + (op.abort ? '<span class="up">Pulled out</span>' : "") + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + headline(head) + "</div>" +
-        '<p class="oddsline">' + (S.diff === "hard" && (op.push || op.hold) ? "Risk: " + riskTag(op.risk || riskLevel(odds)) : odds + "% odds") + " \u00b7 took " + hrs + "h \u00b7 now " + hh(S.hour) + '</p><button class="btn primary" id="go">Back to the desk</button>',
+      // panel 6 v11 (Wayne's AAR review): one order: what happened, your call, why, what changed, the officer, the paper
+      const timeTx = (cc ? "" : (S.diff === "hard" ? "Risk: " + riskTag(riskLevel(odds)) : odds + "% odds") + " \u00b7 ") + "took " + hrs + "h \u00b7 now " + hh(S.hour);
+      render('<div class="card outcome ' + res + (op.abort ? " pulled" : "") + '"><span class="stamp thud">' + (op.abort ? "PULLED OUT" : { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res]) + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + '</h2></div><p class="otime">' + timeTx.charAt(0).toUpperCase() + timeTx.slice(1) + "</p><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
+        callLine + (op.abort ? "" : because(id, k, a.t, ch, res)) + (cc ? sumsLine(ch, paid, back, cc) + (back ? '<p class="no10back">\u260e No.10 heard about it. Closed cases win the Prime Minister back.</p>' : "") : deltas(ch) + backLine(back)) +
+        (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") +
+        '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (worked ? '<span class="down">Overworked</span>' : "") + "</div>" + (op.abort && op.trap ? '<p class="opafter">' + esc("Back at the car, " + nm + " sits for a long minute before turning the key.") + "</p>" : "") + headline(head) + "</div>" +
+        '<button class="btn primary" id="go">Back to the desk</button>',
         "The gauges moved. The papers noticed. " + nm + " will remember this.");
       if (window.SFX && SFX.sting) SFX.sting(res);
       if (window.VOICE && !op.abort) VOICE.play("op_" + k + "_" + (res === "win" ? "done" : res === "mixed" ? "part" : "hurt"));
@@ -1160,7 +1181,8 @@
     if (lab === "Split teams") return "you split the teams between both sites" + amt;
     if (lab === "Wrong site") return "you believed the wrong report" + amt;
     if (lab === "Pushed on" || lab === "Your call on the radio") return "of your call on the radio" + amt;
-    if (lab === "Held: the trail cooled") return "you held, and the trail cooled" + amt;
+    if (lab === "Held: the trail cooled") return (v < 0 ? "you held, and the wait cost you" : "you held, and the wait helped") + amt; // panel 6 v11: one phrase per sign
+    if (lab === "What was happening on the ground") return "of what was happening on the ground" + amt;
     if (Object.keys(D.KIT).some(function (x) { return D.KIT[x].name === lab; })) return "you packed the " + lab.toLowerCase() + amt;
     if (k && traitsOf(k).some(function (t) { return t.n === lab; })) return n + "\u2019s trait \u2018" + lab + "\u2019 counted" + amt;
     return "of " + lab.toLowerCase() + amt;
@@ -1549,7 +1571,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, burnTxt: burnTxt, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
+    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

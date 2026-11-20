@@ -1493,3 +1493,11 @@ body:has(#dk-file) #hintbar { visibility: hidden; }
 /* panel 6 v7: the risk dots on the call buttons and in the lists that explain them */
 .riskdots { font-family: system-ui, -apple-system, "Segoe UI Symbol", "DejaVu Sans", sans-serif; font-size: 14px; letter-spacing: -0.5px; white-space: nowrap; }
 ul.risklist { margin: 4px 0 6px; padding-left: 1.3em; list-style: none; } ul.risklist li { margin: 2px 0; }
+/* panel 6 v11 (Wayne's AAR review): the result card reads top to bottom: what happened, your call, why, what changed */
+.outcome .otime { font-family: var(--type); font-size: 0.9375rem; margin: -4px 0 8px; }
+.outcome .because { text-align: left; }
+.outcome .sums { text-align: left; margin: 10px 0 6px; padding: 6px 10px; border: 1px solid rgba(0,0,0,.18); border-radius: 4px; }
+.outcome .sums p { margin: 3px 0; font-family: var(--type); font-size: 0.9375rem; line-height: 1.4; }
+.outcome .sums p.up { color: #1f4a2a; } .outcome .sums p.down { color: #7e1712; }
+.outcome .sums b { margin-right: 4px; } .outcome .sums span { white-space: nowrap; }
+.outcome.pulled .stamp { color: var(--brass-lo); border-color: var(--brass-lo); }
