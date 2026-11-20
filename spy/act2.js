@@ -345,7 +345,7 @@
   // ---------- the showdown (Day 6) ----------
   // Batch L: the readable tell. Kesk has studied how you played all week (your most-used risk level) and is ready
   // for it: that choice loses 12% (18% if your name leaked). The same clue is intercepted at the end of Day 5.
-  const STYLEW = { low: "careful", med: "steady", high: "bold" };
+  const STYLEW = { low: "careful", med: "measured", high: "bold" }; // panel 6 v13: the plan-style names (was "steady")
   // Batch O tuning (12 clue-reading bot runs): reading the clue used to cost odds, since Kesk mostly expects the careful
   // option and the others start lower. Now a choice he doesn't expect gets +8%, and the base is 52 (was 46).
   const SD_BASE = 52, SURPRISE = 8;
