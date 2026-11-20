@@ -1501,3 +1501,20 @@ ul.risklist { margin: 4px 0 6px; padding-left: 1.3em; list-style: none; } ul.ris
 .outcome .sums p.up { color: #1f4a2a; } .outcome .sums p.down { color: #7e1712; }
 .outcome .sums b { margin-right: 4px; } .outcome .sums span { white-space: nowrap; }
 .outcome.pulled .stamp { color: var(--brass-lo); border-color: var(--brass-lo); }
+/* panel 6 v14 (Wayne): the live-op result card says each thing once: headline line, reasons, one top-bar result line, maths on tap */
+.outcome .opcall { border: 0; padding: 0; margin: 8px 0; font-size: 1.0625rem; font-weight: 600; text-align: left; }
+.outcome .oresult { margin: 10px 0 4px; font-family: var(--type); font-size: 1rem; font-weight: 700; text-align: center; }
+.outcome .oresult .up { color: #1f4a2a; } .outcome .oresult .down { color: #7e1712; }
+.outcome details.maths { margin: 8px 0; text-align: left; border: 1px solid rgba(0,0,0,.18); border-radius: 4px; }
+.outcome details.maths > summary { min-height: 44px; display: flex; align-items: center; padding: 0 12px; cursor: pointer; font-family: var(--type); font-size: 0.9375rem; text-decoration: underline; list-style: none; }
+.outcome details.maths > summary::-webkit-details-marker { display: none; }
+.outcome details.maths > summary::before { content: "\25b8"; margin-right: 8px; text-decoration: none; }
+.outcome details.maths[open] > summary::before { content: "\25be"; }
+.outcome details.maths .sums { border: 0; margin: 0; padding: 0 12px 4px; }
+.outcome details.maths .mnote { margin: 4px 12px 10px; font-size: 0.9375rem; line-height: 1.4; }
+.outcome details.maths .svchelp { display: inline-flex; align-items: center; width: auto; min-height: 44px; margin: 0; padding: 0 4px; font-size: 0.9375rem; color: #5a1a14; font-weight: 600; }
+/* panel 6 v14 (Wayne): bigger text in the Abort / Hold / Push buttons; the name on its own line so the three lines get the full width */
+.opchoice .opbtn { flex-direction: column; align-items: stretch; gap: 2px; padding: 8px 12px; }
+.opchoice .opbtn > b { flex: none; width: auto; font-size: 1.125rem; }
+.opchoice .opbtn small.optrade { flex: none; font-size: 1.0625rem; line-height: 1.3; }
+.opchoice .opbtn .riskdots { font-size: 16px; }
