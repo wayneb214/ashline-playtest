@@ -44,11 +44,11 @@
   // situations on every difficulty and the sack rates stay where they were.
   // Hold is the steady call: +16% on the odds (adding no further than 85%, and never lowering them), the plan's normal gains, a failed Hold lands half the losses;
   // waiting costs No.10 trust 1 and Service 6 (the team tied up watching). Push is the long shot: always 14 below Hold (so at
-  // most 71%, or 14 below an already higher base), but x2.5 the plan's gains on a win; a failed Push lands the full losses, the officer comes back wounded, and
+  // most 71%, or 14 below an already higher base), but x2.5 the plan's gains on a win (QA round 4: and never less than No.10 trust +5, Service +3 on the top bar, so a pushed win is always a visible win); a failed Push lands the full losses, the officer comes back wounded, and
   // their cover is blown 10% of the time (+5% per point of stress). Abort is the sure thing: the case is lost and No.10 -6,
   // but the officer comes home (+1 loyalty).
   // A trap (1 live op in 5, never the first): Push -30% and at most 22%, cover blown 2 times in 3; Hold -25% and at most 28%, no longer safe.
-  const NOW = { OPT: { push: { mod: 2, gap: 14, winX: 2.5, failService: 0, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, cap: 85, trust: -1, service: -6, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
+  const NOW = { OPT: { push: { mod: 2, gap: 14, winX: 2.5, winMin: { capital: 5, service: 3 }, failService: 0, burn: 0.1, burnStress: 0.05, stress: 0 }, hold: { mod: 16, cap: 85, trust: -1, service: -6, stress: 0, lossX: 0.5 }, abort: { trust: -6, loyal: 1 } },
     TRAP: { rate: 0.2, push: -30, hold: -25, pushCap: 22, holdCap: 28, burn: 2 / 3, holdWound: true } };
   // panel 6 v2 as published (30f0bd0): the same without the 85% cap, kept for the report
   const V2 = { OPT: Object.assign({}, V5.OPT, { hold: Object.assign({}, V5.OPT.hold, { cap: 95 }) }), TRAP: V5.TRAP };

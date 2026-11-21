@@ -1562,3 +1562,9 @@ ul.risklist { margin: 4px 0 6px; padding-left: 1.3em; list-style: none; } ul.ris
    for the whole live op, as short phones already do; on any screen it steps aside while the call buttons are up. */
 @media (min-width: 600px) { body:has([data-screen="op"]) #subtitle { display: none; } }
 body:has([data-screen="op"].asking) #subtitle { display: none; }
+
+/* QA round 4: the caption bar (#hintbar, fixed at the bottom) never covers the result card. Anything scrolled into view
+   (opening "Show the maths") stops above it. */
+#view { scroll-padding-bottom: calc(var(--safe-b, 0px) + 120px); }
+/* QA round 4: the dial's starting point, "other things" and the limit lines: plain, so the chips stay the reasons */
+.dial .reasons .dnote { color: #d8c89c; font-weight: 400; background: rgba(255,255,255,.06); }

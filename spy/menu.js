@@ -123,7 +123,7 @@
     ["Service", "The department\u2019s health, plus how your officers feel (top bar). It lifts the odds of every plan."],
     ["Officer", "One of your field agents. New recruits go by code names (Kestrel, Heron, Swift) on the radio."],
     ["Stress and loyalty", "Each officer\u2019s strain and faith in you. High stress makes a blown cover more likely on a Push, and at full stress a failure can get them signed off; very low loyalty can end in a resignation."],
-    ["Push", "On the radio: the long shot. Worse odds than Hold, but two and a half times the plan\u2019s gains if it works; a failure costs in full, the officer comes back wounded, and their cover can be blown."],
+    ["Push", "On the radio: the long shot. Worse odds than Hold, but two and a half times the plan\u2019s gains if it works (and never less than No.10 trust +5, Service +3); a failure costs in full, the officer comes back wounded, and their cover can be blown."],
     ["Hold", "On the radio: wait and watch. Better odds than Push and the plan\u2019s normal gains; waiting costs some Service and a little No.10 trust, a failure costs half, and the officer stays safe (not on a trap)."],
     ["Abort", "On the radio: pull the officer out. The case is lost and No.10 trust drops, but the officer comes home safe and their loyalty goes up by one (unless it is already at the top)."],
     ["Risk dots", "{riskList}"],

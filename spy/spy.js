@@ -85,7 +85,8 @@
     hud.classList.add("danger10"); el.textContent = "\u26a0 Nights under " + SACK_LOW + ": " + n + " of " + sackNights() + " (" + sackNights() + " = sacked)";
   }
   // Service = the stored field record plus how the officers feel (loyalty and strain fold in here)
-  function svc() { const r = S.roster || []; const mor = r.reduce(function (a, k) { return a + ((S.loyal[k] == null ? 3 : S.loyal[k]) - 3) * 2 - Math.max(0, (S.stress[k] || 0) - 3) * 2; }, 0); return Math.max(0, Math.min(100, Math.round(S.meters.service + mor))); }
+  function svcMor() { const r = S.roster || []; return r.reduce(function (a, k) { return a + ((S.loyal[k] == null ? 3 : S.loyal[k]) - 3) * 2 - Math.max(0, (S.stress[k] || 0) - 3) * 2; }, 0); } // officers' loyalty and stress, folded into the top-bar Service
+  function svc() { return Math.max(0, Math.min(100, Math.round(S.meters.service + svcMor()))); }
   // batch G: what the meters do at the ends. Service under 30: officers refuse bold plans until rested.
   // Service 80+: the first plan you send each day gets +5% ("the team's flying"). No.10 trust under 20 at the end
   // of Days 1-5: Hale rings at midnight, and next morning No.10 takes one side file off the desk (a lost case).
@@ -206,7 +207,8 @@
   function tip(key) { return S.day > 1 && S.tips && PREFS.get("tips") && !S.replayFirst && tipFresh(key) ? '<div class="tip" data-tip="' + key + '"><b>Tip</b><span>' + D.TIPS[key] + '</span><button class="tipx" data-tipx="' + key + '">Got it</button></div>' : ""; }
   function pips(n, cls, label) { let s = ""; for (let i = 1; i <= 5; i++) s += '<i class="' + (i <= n ? "on" : "") + '"></i>'; return '<div class="tr ' + cls + '">' + label + '<div class="pips">' + s + "</div></div>"; }
   const mname = function (m) { return D.METERS.filter(function (x) { return x.id === m; })[0].name; };
-  function deltas(ch) { return '<div class="deltas">' + Object.keys(ch).map(function (m) { return '<span class="' + (ch[m] >= 0 ? "up" : "down") + '">' + (ch[m] >= 0 ? "+" : "") + ch[m] + " " + mname(m) + "</span>"; }).join("") + "</div>"; }
+  // QA round 4: a meter that ended where it started is not listed (no "+0"), and losses use a real minus sign like the rest of the card
+  function deltas(ch) { return '<div class="deltas">' + Object.keys(ch).filter(function (m) { return ch[m]; }).map(function (m) { return '<span class="' + (ch[m] > 0 ? "up" : "down") + '">' + sgn(ch[m]) + " " + mname(m) + "</span>"; }).join("") + "</div>"; }
   function headline(h) { return '<div class="headline"><small>The London Evening Bugle \u00b7 late edition</small><div>' + esc(h) + "</div></div>"; }
   // portrait follows the officer's state: strained when stress is high
   // how an officer looks today: fresh, tired, injured, or proud after a win. The painted face follows it.
@@ -869,9 +871,15 @@
   // trait badges: three per officer, at a glance
   function badges(k) { return '<div class="badges">' + traitsOf(k).map(function (t) { return '<span class="badge' + (t.v < 0 ? " neg" : "") + (t.grown ? " grown" : "") + '" title="' + esc(t.tx) + '">' + esc(t.n) + "</span>"; }).join("") + "</div>"; }
   // the odds dial: a brass gauge, the needle at the odds, the reasons underneath
-  function dial(r, label) {
+  function dial(r, label, brief) {
     const v = r ? r.odds : 0, ang = -90 + v * 1.8;
-    const reasons = r ? r.parts.slice().sort(function (x, y) { return Math.abs(y[1]) - Math.abs(x[1]); }).slice(0, 4).map(function (p) { return '<span class="' + (p[1] > 0 ? "up" : "down") + '">' + (p[1] > 0 ? "+" : "\u2212") + Math.abs(p[1]) + " " + esc(p[0]) + "</span>"; }).join("") : '<span class="mute">' + (label || "Drag an officer onto the case") + "</span>";
+    // QA round 4: the dial's lines add up to its number: where the officer and plan start, the four biggest reasons, the
+    // rest in one line, and the 5-92% limit if it bit
+    const dl = function (v, t, cls) { return '<span class="' + (cls || (v > 0 ? "up" : "down")) + '">' + (v > 0 ? "+" : "\u2212") + Math.abs(v) + " " + esc(t) + "</span>"; };
+    const srt = r ? r.parts.slice().sort(function (x, y) { return Math.abs(y[1]) - Math.abs(x[1]); }) : [], rest = srt.slice(4).reduce(function (t, p) { return t + p[1]; }, 0);
+    const lim = r ? r.odds - r.base - srt.reduce(function (t, p) { return t + p[1]; }, 0) : 0;
+    // (the officer-pick preview while a file is pressed stays at the four reasons: a taller dial there moved the files mid-tap)
+    const reasons = r ? (brief ? "" : '<span class="dnote">' + r.base + " officer and plan</span>") + srt.slice(0, 4).map(function (p) { return dl(p[1], p[0]); }).join("") + (!brief && rest ? dl(rest, "other things", "dnote") : "") + (!brief && lim ? dl(lim, (lim < 0 ? "the 92%" : "the 5%") + " limit", "dnote") : "") : '<span class="mute">' + (label || "Drag an officer onto the case") + "</span>";
     return '<div class="dial" id="dial" aria-live="polite"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 110 62" class="arc"/><path d="M10 62 A50 50 0 0 1 35 18.7" class="arc bad"/><path d="M85 18.7 A50 50 0 0 1 110 62" class="arc good"/><g class="needle" style="transform:rotate(' + ang + 'deg)"><line x1="60" y1="62" x2="60" y2="18"/></g><circle cx="60" cy="62" r="5" class="hub"/></svg>' +
       '<div class="dv"><b id="dialv">' + (r ? v + "%" : "\u2014") + '</b><small>odds of success</small></div><div class="reasons" id="dialr">' + reasons + "</div></div>";
   }
@@ -879,7 +887,7 @@
   function setDial(r, label) {
     const d = $("dial"); if (!d) return;
     const og = d.querySelector(".needle"), from = og ? og.style.transform : "", v0 = parseInt(($("dialv") || {}).textContent, 10);
-    d.outerHTML = dial(r, label);
+    d.outerHTML = dial(r, label, true); // the officer-pick preview
     const n = document.querySelector("#dial .needle"); if (!n) return;
     const to = n.style.transform, v1 = r ? r.odds : NaN;
     if (from && from !== to && !FEEL.reduce) { n.style.transition = "none"; n.style.transform = from; void n.getBoundingClientRect(); n.style.transition = ""; requestAnimationFrame(function () { n.style.transform = to; }); }
@@ -1022,18 +1030,23 @@
   // panel 6 v14 (Wayne): the live-op result card says each thing once. One headline line for the call ("Hold worked. Odds 55% → 71%.
   // Gareth safe."; on Hard the risk dots), the BECAUSE reasons, one result line with the real top-bar totals, the officer chips,
   // and a "Show the maths" disclosure with the breakdown. The old "Your call" box, sums box and top-bar box are gone.
+  // QA round 4: what the radio call itself did to the odds, so "Odds A% -> B%" lists every step from A to B
+  const sgnPct = function (v) { return (v > 0 ? "+" : "\u2212") + Math.abs(v) + "%"; };
+  function callParts(L) {
+    return [[{ push: "pushing", hold: "holding" }[L.choice] || "your call", L.mod || 0], ["signs of a trap", L.trapMod || 0], ["what was happening on the ground", L.ground || 0]].filter(function (x) { return x[1]; });
+  }
   function opCallLine(op, k, res) {
     if (!op.hold && !op.abort && !op.push) return "";
     const L = S.lastOp || {}, nm = esc(first(k)), hard = S.diff === "hard";
     const afterN = op.risk || riskLevel(L.odds), beforeN = L.base != null ? riskLevel(L.base) : null;
     const odds = function () {
       if (hard) return beforeN == null ? "Risk " + riskTag(afterN) + "." : beforeN === afterN ? "Risk stayed " + riskTag(afterN) + "." : "Risk " + riskTag(beforeN) + " \u2192 " + riskTag(afterN) + ".";
-      return L.base == null ? "Odds " + L.odds + "%." : L.base === L.odds ? "Odds stayed " + L.odds + "%." : "Odds " + L.base + "% \u2192 " + L.odds + "%.";
+      return L.base == null ? "Odds " + L.odds + "%." : L.base === L.odds ? "Odds stayed " + L.odds + "%." : "Odds " + L.base + "% \u2192 " + L.odds + "% (" + callParts(L).map(function (x) { return x[0] + " " + sgnPct(x[1]); }).join(", ") + ").";
     };
     let what;
     if (op.abort) what = "Pulled out. " + (L.base == null ? "" : hard ? "Risk was " + riskTag(beforeN) + ". " : "Odds were " + L.base + "%. ") + nm + " safe, no stress.";
     else if (op.hold) what = { win: "Hold worked.", mixed: "Hold: partly done.", loss: "Hold, and it went wrong." }[res] + " " + odds() + " " + (res !== "loss" ? nm + " safe." : op.trap && L.wounded ? nm + " wounded by the trap." : L.soft ? nm + " safe; losses halved." : nm + " safe.");
-    else what = { win: "Push paid off: gains \u00d7" + OPT.push.winX + ".", mixed: "Push: partly done, nothing extra.", loss: "Push failed." }[res] + " " + odds() + (res === "loss" ? " " + nm + "\u2019s cover " + (L.burned ? "blown." : "held.") : L.tired ? " " + nm + " tired." : "");
+    else what = { win: !L.gain ? "Push paid off, but the top bar was already full." : L.floor ? "Push paid off: gains \u00d7" + OPT.push.winX + ", topped up to the least a pushed win pays." : "Push paid off: gains \u00d7" + OPT.push.winX + ".", mixed: "Push: partly done, nothing extra.", loss: "Push failed." }[res] + " " + odds() + (res === "loss" ? " " + nm + "\u2019s cover " + (L.burned ? "blown." : "held.") : ""); // QA round 4: "tired" is said once, in the story line
     return '<p class="opcall">' + what + "</p>";
   }
   // the result line: the top bar's own totals for this case (Service includes officer stress and loyalty)
@@ -1041,20 +1054,36 @@
     const one = function (lab, d) { return '<span class="' + (d > 0 ? "up" : d < 0 ? "down" : "") + '">' + lab + " " + (d ? sgn(d) : "unchanged") + "</span>"; };
     return '<p class="oresult" aria-label="Top bar: No.10 trust ' + (dt ? sgn(dt) : "unchanged") + ", Service " + (dv ? sgn(dv) : "unchanged") + '">' + one("No.10 trust", dt) + " \u00b7 " + one("Service", dv) + "</p>";
   }
+  // QA round 4: the odds in full on the result card. Every step from the officer's starting chance to the final odds, so the
+  // numbers add up exactly: start, each listed factor, the 5-92% limit if it bit = the odds before the call; then the call's steps.
+  const ODDS_LAB = { "Right for the job": "Right officer for the job" };
+  function oddsSteps(L, k) {
+    const W = L.why || { base: L.base, parts: [] }, st = [[esc(first(k)) + " on this plan", W.base]].concat(W.parts.map(function (p) { return [esc(ODDS_LAB[p[0]] || p[0]), p[1]]; }));
+    const sum = st.reduce(function (t, x) { return t + x[1]; }, 0); if (L.base !== sum) st.push(["the " + (L.base > sum ? "5" : "92") + "% limit", L.base - sum]);
+    return st;
+  }
+  function oddsNote(L, k, abort) {
+    const st = oddsSteps(L, k), cp = abort ? [] : callParts(L);
+    return "The odds: " + st.map(function (x, i) { return i ? x[0] + " " + sgnPct(x[1]) : x[0] + " " + x[1] + "%"; }).join(", ") + (st.length > 1 ? " = " + L.base + "%" : "") + (abort ? " when you pulled out." : cp.length ? " before the call; " + cp.map(function (x) { return x[0] + " " + sgnPct(x[1]); }).join(", ") + " = " + L.odds + "%." : " before the call, and the call kept them there.");
+  }
   // Show the maths: each gauge's parts add up to the result line
-  function mathsBox(ch, paid, back, cc, dt, dv, op, k) {
+  function mathsBox(M, cc, op, k) {
     const L = S.lastOp || {}, lab = { hold: "holding", push: "pushing", abort: "pulling out" }[cc] || "your call";
     const row = function (name, tot, parts) {
       parts = parts.filter(function (x) { return x[0]; });
-      return '<p class="' + (tot > 0 ? "up" : tot < 0 ? "down" : "") + '"><b>' + name + ":</b> " + (parts.length > 1 ? parts.map(function (x) { return "<span>" + x[1] + " " + sgn(x[0]) + "</span>"; }).join(", ") + " <span>= " + sgn(tot) + "</span>" : parts.length ? "<span>" + parts[0][1] + " " + sgn(tot) + "</span>" : "unchanged") + "</p>";
+      return '<p class="' + (tot > 0 ? "up" : tot < 0 ? "down" : "") + '"><b>' + name + ":</b> " + (parts.length > 1 ? parts.map(function (x) { return "<span>" + x[1] + " " + sgn(x[0]) + "</span>"; }).join(", ") + " <span>= " + (tot ? sgn(tot) : "no change") + "</span>" : parts.length ? "<span>" + parts[0][1] + " " + sgn(tot) + "</span>" : "unchanged") + "</p>";
     };
-    const cT = ch.capital || 0, pT = paid.capital || 0, bk = back || 0, cS = ch.service || 0, pS = paid.service || 0;
-    const rows = row("No.10 trust", dt, [[cT - pT - bk, "the case"], [pT, lab], [bk, "No.10 heard about it"], [dt - cT, "the top bar\u2019s 0\u2013100 limit"]]) +
-      row("Service", dv, [[cS - pS, "the case"], [pS, lab], [dv - cS, "officers\u2019 stress and loyalty"]]);
+    // QA round 4: each part is what it meant to do (the case as the game shapes it, the call's price, No.10's thanks), the
+    // officers' morale, and then whatever the top bar's 0-100 limit took off, so the parts always add up to the result line
+    const w = M.want || {}, x = M.extra || {}, bk = M.back || 0, dt = M.dt, dv = M.dv, cT = w.capital || 0, pT = x.capital || 0, cS = w.service || 0, pS = x.service || 0, mo = M.mor || 0;
+    const rows = row("No.10 trust", dt, [[cT, "the case"], [pT, lab], [bk, "No.10 heard about it"], [dt - cT - pT - bk, "the top bar\u2019s 0\u2013100 limit"]]) +
+      row("Service", dv, [[cS, "the case"], [pS, lab], [mo, "officers\u2019 stress and loyalty"], [dv - cS - pS - mo, "the top bar\u2019s 0\u2013100 limit"]]);
     const notes = [];
-    if (S.diff !== "hard" && op.trap && !op.abort && L.base != null) notes.push("The odds: " + L.base + "% before the call, " + sgn(op.mod || 0) + "% for the call, " + sgn(L.trapMod || 0) + "% for the trap = " + L.odds + "%.");
+    if (S.diff !== "hard" && L.base != null) notes.push(oddsNote(L, k, !!op.abort));
     if (S.diff !== "hard" && op.push && L.res === "loss") notes.push("The chance " + esc(first(k)) + "\u2019s cover would be blown was " + L.burnP + "%.");
+    if (L.floor) notes.push("A pushed win always pays at least No.10 trust +" + OPT.push.winMin.capital + " and Service +" + OPT.push.winMin.service + ".");
     if (bk) notes.push("Closed cases win the Prime Minister back.");
+    if (dt - cT - pT - bk || dv - cS - pS - mo) notes.push("The top bar runs from 0 to 100: anything past either end is lost.");
     return '<details class="maths"><summary>Show the maths</summary><div class="sums">' + rows + "</div>" + notes.map(function (t) { return '<p class="mnote">' + t + "</p>"; }).join("") +
       '<p class="mnote">' + SVC_NOTE.trim() + ' <button type="button" class="linkbtn svchelp" data-svchelp="1">How Service works</button></p></details>';
   }
@@ -1078,6 +1107,11 @@
     // Embassy route: trust +8, No.10 \u22126, secrecy \u221210), and a mismatched officer drains Service; on a win shape() keeps
     // No.10 trust and Service at zero or better (the goodwill still lands). Partials and losses keep the real costs.
     if (res === "win") Object.defineProperty(delta, "win", { value: true });
+    // QA round 4 (Wayne's TestFlight shot): a pushed win on a plan whose gains are off the top bar (the Embassy route) showed
+    // "gains x2.5" with both meters unchanged. A pushed win now always pays at least OPT.push.winMin on the top bar.
+    if (res === "win" && op.push && OPT.push.winMin) { const f = fold(delta), mn = OPT.push.winMin; let up = false;
+      ["capital", "service"].forEach(function (m) { if ((f[m] || 0) < mn[m]) { delta[m] = (delta[m] || 0) + mn[m] - (f[m] || 0); up = true; } });
+      if (up) Object.defineProperty(delta, "floor", { value: true }); }
     return delta;
   }
   // the radio call's own price, paid straight onto the meters
@@ -1091,28 +1125,30 @@
   // apply() shapes it (a pushed win x2.5), plus the call's own price. Used by the buttons' Best case and the meanings panel.
   function opGain(id, k, a, kitId, choice, trap, res) {
     const op = { push: choice === "push", hold: choice === "hold", abort: choice === "abort", trap: !!trap }, d = shape(caseDelta(id, k, a, kitId, op, res || "win")), x = callPrice(op, res || "win");
-    return { capital: (d.capital || 0) + (x.capital || 0), service: (d.service || 0) + (x.service || 0) };
+    const bk = choice !== "abort" && S.day >= 4 ? NO10_BACK[res || "win"] || 0 : 0; // QA round 4: from Day 4, No.10's thanks for a closed case is part of the best case
+    return { capital: (d.capital || 0) + (x.capital || 0) + bk, service: (d.service || 0) + (x.service || 0) };
   }
   function resolve(id, k, a, kitId, op) {
     if (S.done[id]) return; // a case closes once: a second tap while the result is showing changes nothing
     op = op || {};
-    const t0 = score(S.meters.capital), v0 = svc(); // Batch M: the top bar before this case, for the Hold/Abort result line
+    const t0 = score(S.meters.capital), v0 = svc(), mor0 = svcMor(); // Batch M: the top bar before this case, for the Hold/Abort result line
     const cc = op.push ? "push" : op.hold ? "hold" : op.abort ? "abort" : null, trapOn = !!op.trap && (op.push || op.hold);
     // on a trap: cut and capped (opmodel.js); trapMod is what the trap actually took off, so the card's sums add up
     // panel 6 v2: the chance comes from opmodel.js, exactly as the buttons said; op.mod becomes what the call itself changed
+    const why0 = oddsParts(id, k, a, kitId); // QA round 4: the starting odds' parts, read before the officer's stress moves
     const base0 = oddsFor(id, k, a, kitId) + (op.push || op.hold ? driftOf(id, k) : 0), cl95 = function (x) { return Math.max(5, Math.min(95, Math.round(x))); };
     const callOdds = op.push || op.hold ? OPM.odds(cc, base0, false) : null, trapOdds = callOdds == null ? null : OPM.odds(cc, base0, trapOn);
     if (callOdds != null) op.mod = callOdds - cl95(base0);
     const trapMod = trapOn ? trapOdds - callOdds : 0;
-    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat(trapMod ? [["Signs of a trap", trapMod]] : []).concat((op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground", driftOf(id, k)]] : []) };
+    S.lastWhy = { id: id, k: k, fit: AG(k).good.indexOf(id) >= 0, rec: recIdx(id, k) === CASES()[id].approaches.indexOf(a), parts: oddsParts(id, k, a, kitId).parts.concat(cc && S.diff !== "hard" ? [] : op.mod ? [[op.push ? "Pushed on" : op.hold ? "Held: the trail cooled" : "Your call on the radio", op.mod]] : []).concat((!cc || S.diff === "hard") && trapMod ? [["Signs of a trap", trapMod]] : []).concat((!cc || S.diff === "hard") && (op.push || op.hold) && driftOf(id, k) ? [["What was happening on the ground", driftOf(id, k)]] : []) }; // QA round 4: off Hard, a live op's call, trap and drift are listed on the Odds line instead (Hard's line has dots, not numbers)
     const s = CASES()[id], kitD = op.abort ? { soft: true } : kitId ? D.KIT[kitId] : {}, raw = oddsFor(id, k, a, kitId), drift = op.push || op.hold ? driftOf(id, k) : 0, odds = trapOdds != null ? trapOdds : cl95(raw + drift + (op.mod || 0)), hrs = hoursFor(k, a, kitId), r = rnd() * 100;
-    if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today
     let res = r < odds * 0.7 ? "win" : r < odds ? "mixed" : "loss";
     if (op.abort) res = "loss";
     const wrongSite = wrongSiteOf(id);
     if (wrongSite) res = "loss"; // the wrong site: the real target goes dark whatever happens where we were
     if (window.__SPY_FORCE__) res = window.__SPY_FORCE__;
     const delta = caseDelta(id, k, a, kitId, op, res); // before the officer's stress and loyalty move (the officer's own pick is read from them)
+    if (flyOn()) S.flyDay = S.day; // the +5% is spent on the first plan sent today (QA round 4: after caseDelta, so the officer's own pick, and the Best case built on it, read the same odds the buttons did)
     if (kitId) S.kit[kitId]--;
     const st0 = S.stress[k], lo0 = S.loyal[k], over = recIdx(id, k) !== s.approaches.indexOf(a), worked = st0 >= 4;
     const fitK = AG(k).good.indexOf(id) >= 0, recK = !over; // for the log (the Service side is in caseDelta)
@@ -1124,14 +1160,16 @@
     if (!op.abort) S.stress[k] = clamp5(S.stress[k] + (O.plan ? planStress : 0) + O.stress + (res === "loss" && !kitD.soft && !wrongSite ? O.lossStress : res === "win" ? -1 : 0));
     if (!op.abort) S.loyal[k] = clamp5(S.loyal[k] + (res === "loss" ? -1 : res === "win" && a.risk === "low" ? 1 : 0) - (over ? 1 : 0) - (worked ? 1 : 0));
     else S.loyal[k] = clamp5(S.loyal[k] + O.loyal);
-    const ch = apply(delta);
+    const want = shape(delta); // QA round 4: what the case meant to move, before the 0-100 limit (Show the maths lists the limit on its own)
+    const ch = apply(delta), gain = (ch.capital || 0) > 0 || (ch.service || 0) > 0;
     // the price of the radio call, exactly as the button said
     const extra = callPrice(op, res);
     const paid = {};
     Object.keys(extra).forEach(function (m) { const b = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, b + extra[m])); const d = S.meters[m] - b; paid[m] = d; if (d) ch[m] = (ch[m] || 0) + d; });
     const back = no10Back(res, ch);
     const burnP = OPM.burn(!!op.trap, st0);
-    S.lastOp = cc ? { choice: cc, odds: odds, base: Math.max(5, Math.min(95, raw)), drift: drift, res: res, extra: extra, paid: paid, back: back, trap: !!op.trap, trapMod: trapMod, burnP: Math.round(burnP * 100), loyal: op.abort ? S.loyal[k] - lo0 : 0, soft: res === "loss" && op.hold && !wrongSite && !kitD.soft && OPM.holdLossX(!!op.trap) !== 1 } : null;
+    S.lastOp = cc ? { choice: cc, odds: odds, base: Math.max(5, Math.min(95, raw)), drift: drift, res: res, extra: extra, paid: paid, back: back, trap: !!op.trap, trapMod: trapMod, burnP: Math.round(burnP * 100), loyal: op.abort ? S.loyal[k] - lo0 : 0, soft: res === "loss" && op.hold && !wrongSite && !kitD.soft && OPM.holdLossX(!!op.trap) !== 1,
+      mod: op.mod || 0, ground: op.push || op.hold ? cl95(raw + drift) - raw : 0, gain: gain, floor: !!delta.floor, why: why0 } : null;
     S.done[id] = res; S.used[k] = true; S.sent = S.sent || {}; S.sent[k] = (S.sent[k] || 0) + 1; advance(hrs);
     if (res === "win") { S.vet = S.vet || {}; S.vet[k] = (S.vet[k] || 0) + 1; }
     if (window.FUN) FUN.xp(k, res);
@@ -1179,14 +1217,16 @@
       const timeTx = (cc ? "" : (S.diff === "hard" ? "Risk: " + riskTag(riskLevel(odds)) : odds + "% odds") + " \u00b7 ") + "took " + hrs + "h \u00b7 now " + hh(S.hour);
       const dt = score(S.meters.capital) - t0, dv = svc() - v0, offi = '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (worked ? '<span class="down">Overworked</span>' : "") + "</div>";
       render('<div class="card outcome ' + res + (op.abort ? " pulled" : "") + '"><span class="stamp thud">' + (op.abort ? "PULLED OUT" : { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res]) + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + '</h2></div><p class="otime">' + timeTx.charAt(0).toUpperCase() + timeTx.slice(1) + "</p><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
-        (cc ? callLine + (op.abort ? "" : because(id, k, a.t, ch, res)) + resultLine(dt, dv) + offi + mathsBox(ch, paid, back, cc, dt, dv, op, k) + (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "")
+        (cc ? callLine + (op.abort ? "" : because(id, k, a.t, ch, res)) + resultLine(dt, dv) + offi + mathsBox({ want: want, extra: extra, back: S.day >= 4 && res !== "loss" && !op.abort ? NO10_BACK[res] || 0 : 0, dt: dt, dv: dv, mor: svcMor() - mor0 }, cc, op, k) + (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "")
           : because(id, k, a.t, ch, res) + deltas(ch) + backLine(back) + (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "") + offi) +
         (op.abort && op.trap ? '<p class="opafter">' + esc("Back at the car, " + nm + " sits for a long minute before turning the key.") + "</p>" : "") + headline(head) + "</div>" +
         '<button class="btn primary" id="go">Back to the desk</button>',
-        "The gauges moved. The papers noticed. " + nm + " will remember this.");
+        (dt || dv ? "The gauges moved. " : "The top bar held steady. ") + "The papers noticed. " + nm + " will remember this."); // QA round 4: the caption follows the real top-bar change
       if (window.SFX && SFX.sting) SFX.sting(res);
       if (window.VOICE && !op.abort) VOICE.play("op_" + k + "_" + (res === "win" ? "done" : res === "mixed" ? "part" : "hurt"));
       caseReadout(id, res);
+      // QA round 4: opening "Show the maths" brings it up above the caption bar (scroll-padding in spy.css keeps it clear)
+      document.querySelectorAll("#view details.maths").forEach(function (d) { d.addEventListener("toggle", function () { if (d.open) d.scrollIntoView({ block: "nearest", behavior: FEEL.reduce ? "auto" : "smooth" }); }); });
       document.querySelectorAll("[data-svchelp]").forEach(function (hb) { hb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); MENU.help(null, "service"); }; });
       S.lastWhy = null; $("go").onclick = briefing;
       if (window.FUN) FUN.event("case", { id: id, k: k, res: res });
