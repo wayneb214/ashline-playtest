@@ -115,7 +115,7 @@
   // One list for the glossary and the live-op panel, lowest risk first, no percentages. Panel 6 v9 (Wayne): the odds words are
   // gone everywhere, so these dots are the game's only risk scale (live op, Hold/Push buttons, Hard's plan cards and results).
   const RISK = [["\u25cf\u25cb\u25cb\u25cb\u25cb", "low", "usually works"], ["\u25cf\u25cf\u25cb\u25cb\u25cb", "some", "works more often than not"], ["\u25cf\u25cf\u25cf\u25cb\u25cb", "real", "could go either way"], ["\u25cf\u25cf\u25cf\u25cf\u25cb", "high", "fails more often than it works"], ["\u25cf\u25cf\u25cf\u25cf\u25cf", "very high", "usually fails"]];
-  const RISK_NOTE = "A Hold or Push always has some risk, and a Push always shows more dots than a Hold.";
+  const RISK_NOTE = "A Hold or Push always has some risk. Push\u2019s chance is never better than Hold\u2019s, so it never shows fewer dots.";
   function riskHTML(lead) { return lead + '<ul class="risklist">' + RISK.map(function (r) { return '<li><span class="riskdots" role="img" aria-label="risk ' + (RISK.indexOf(r) + 1) + ' of 5">' + r[0] + "</span> <b>" + r[1] + "</b>: " + r[2] + "</li>"; }).join("") + "</ul>" + RISK_NOTE; }
   const GLOSS = [
     ["C", "You: the chief of Albion House, the invented secret service in this story."],

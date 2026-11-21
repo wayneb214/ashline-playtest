@@ -28,7 +28,7 @@
   // op-balance v5/v7 (Wayne): three labelled lines on every button, in one aligned layout. Hold and Push: Best case / Worst case /
   // Risk. Abort has only one result, so: Outcome / Cost / Risk. Short, neutral, true to the effects; plain words, no percentages.
   // panel 6 v7: the risk is 5 dots (A.riskLevel, filled = chance of failure) with a short reason true to the state; Hold and Push
-  // never show the same count. The exact working is on the result card afterwards.
+  // show the dots of their own real chance (round 4: they may share a count). The exact working is on the result card afterwards.
   // ALL the button wording lives in WORDS: change it here and nowhere else. {placeholders} are filled from the real state:
   //   {nm} officer's code name, {loss} the on-screen meters if the call fails (A.opLoss: the plan's own losses as the game applies
   //   them, halved on a non-trap Hold, plus the call's price),
@@ -67,10 +67,9 @@
     const lossTxt = function (o) { const t = W.meters.filter(function (x) { return o[x[0]]; }).map(function (x) { return (x[1] + " " + m(o[x[0]])).replace(/ /g, "\u00a0"); }); return t.length ? t.join(", ") : W.lossNone; };
     const loss = { push: A.opLoss(id, k, a, kit, "push", trap), hold: A.opLoss(id, k, a, kit, "hold", trap) };
     const gain = { push: A.opGain(id, k, a, kit, "push", trap), hold: A.opGain(id, k, a, kit, "hold", trap) };
-    // panel 6 v7: Push is always the riskier call, so when both land on the same dot count Push shows one more (Hold one
-    // fewer if Push is already at 5). Truthful: Push's chance is always the lower of the two.
+    // round 4 (Wayne): each call shows its TRUE dots from its own chance; Push's chance is never above Hold's, so it never shows
+    // fewer dots, but the two can share a count. (Was panel 6 v7: Push one more on a tie.)
     let rh = A.riskLevel(T.hold.odds), rp = A.riskLevel(T.push.odds);
-    if (rp <= rh) { if (rh < 5) rp = rh + 1; else { rp = 5; rh = 4; } }
     const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: wfill(pr.sv, { nm: nm }), p: pr.p };
     const V = {
       push: Object.assign({}, base, { gain: lossTxt(gain.push), loss: lossTxt(loss.push), risk: A.riskDots(rp), rl: rp, why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
