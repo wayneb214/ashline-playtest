@@ -65,7 +65,7 @@
     ["capital", "service", "mood"].forEach(function (m) { if (S.meters[m] != null) S.meters[m] = score(S.meters[m]); });
     $("meters").innerHTML = D.METERS.map(function (m) {
       const v = m.id === "service" ? svc() : S.meters[m.id], d = changes && changes[m.id];
-      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '" aria-label="' + m.name + " " + v + ' out of 100"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + m.name + '</span></div><div class="mval"><b>' + v + "</b><small>/100</small>" + (d ? ' <span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span>" : "") + '</div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
+      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '" aria-label="' + m.name + " " + v + ' out of 100"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + '<span class="mfull">' + m.name + '</span><span class="mshort" aria-hidden="true">' + (m.id === "capital" ? "No.10" : m.name) + '</span></span></div><div class="mval"><b>' + v + "</b><small>/100</small>" + (d ? ' <span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span>" : "") + '</div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
     nights10();
     if (window.FUN) FUN.track(S);
@@ -363,11 +363,13 @@
   // ---------- the cold open: Standard, straight in; the Prime Minister rings within the minute ----------
   // panel 6 item 19: a first game goes straight in on Standard; a returning player (Day 1 finished before, or any ending
   // found) picks the difficulty first, Hard included once it is unlocked, then gets the same opening as everyone
-  function returning() { return !!store.get(TIPS_DONE) || pastGames().length > 0 || (window.REPLAY && REPLAY.unlocked()); }
+  function returning() { return !!store.get(TIPS_DONE) || pastGames().length > 0 || (window.REPLAY && REPLAY.unlocked()); } // a sacked week counts (recordEnding)
   function newGame() { if (returning()) difficulty(); else coldOpen(); }
   function coldOpen(diff, tips) {
     store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); });
-    tips = tips !== false; PREFS.set("tips", tips); if (diff) PREFS.set("diff", diff); fresh(diff || "standard", tips); if (diff) S.diffAsked = true; store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S }));
+    // QA round 3: a new game started without the picker (Replay a day > Day 1) keeps the last difficulty and Tips choice
+    const remDiff = PREFS.get("diff"), useDiff = diff || (D.DIFFICULTY[remDiff] && !(remDiff === "hard" && window.REPLAY && !REPLAY.unlocked()) ? remDiff : "standard");
+    tips = tips == null ? PREFS.get("tips") !== false : tips !== false; PREFS.set("tips", tips); if (diff) PREFS.set("diff", diff); fresh(useDiff, tips); if (diff) S.diffAsked = true; store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S }));
     // the opening film first (if cutscenes are on), then the How it works cards once, then Downing Street and the phone
     const day1 = function () { if (!CINE.maybe("day1", pm0)) pm0(); };
     const howto = function () { if (window.HOWTO && HOWTO.due()) HOWTO.show(day1, true); else day1(); };
@@ -394,6 +396,7 @@
   function diffAfterDay1(next) {
     let pick = S.diff || "standard";
     const draw = function () {
+      meters(); // QA round 3: the top bar shows the new morning (no "Late" chip, today's Service), not last night's
       render('<div class="card dossier" data-screen="diff1">' + LH + '<div class="kicker" style="margin-top:8px">Day 1 is done \u00b7 the rest of the week</div><h2>How hard from here?</h2><p>You played Day 1 on <b>' + esc(D.DIFFICULTY[S.diff || "standard"].name) + "</b>. Keep it, or change it for Days 2 to 6.</p>" +
         Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k], lock = k === "hard" && window.REPLAY && !REPLAY.unlocked(); return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"' + (lock ? " disabled" : "") + '><div class="t">' + d.name + (k === "standard" ? " \u00b7 recommended" : "") + (lock ? " \ud83d\udd12 finish Day 3 to unlock" : "") + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
         '</div><div class="sticky-go"><button class="btn primary" id="go">Carry on \u00b7 ' + D.DIFFICULTY[pick].name + "</button></div>", "You can change it again from a new game.");
@@ -456,6 +459,7 @@
 
   function briefing() {
     if (S.opPending && window.OPS && OPS.settlePending && OPS.settlePending()) return; // N5: a call made before the app closed
+    if (S.opLive && window.OPS && OPS.resumeLive && OPS.resumeLive()) return; // QA round 3: an op still on the radio starts again, unchanged
     if (window.MINI) MINI.inject(S);
     if (S.hour >= 24) return summary();
     markBar(); // Batch N: the top bar as you leave the desk; every result card measures from here
@@ -505,11 +509,22 @@
   // and the ticker (a headline); every call is kept on the officer's file and in the epilogue. All print, nothing spoken.
   const CALLW = { push: "pushed", hold: "held", abort: "pulled out" };
   function placeOf(E) { const w = String(E.where || ""); return / or |\?/.test(w) ? "\u2018" + E.title + "\u2019" : w.split(",")[0]; }
+  // QA round 3: an officer who is detained, burned, sent home or held in Kessgrad now can't be "in before eight this morning"
+  function outNow(k) { return !!((S.lost || {})[k] || (S.held === k && (S.day === 5 || S.heldAway))); }
+  // QA round 3: a plan or case title inside a sentence: only its first letter drops to lower case, and not for a name
+  // ("Accuse Tom" -> "accuse Tom", "Have No.10 get ahead of it" -> "have No.10 get ahead of it", "Downing Street" stays)
+  function lowerFirst(t) {
+    t = String(t == null ? "" : t); const w = t.split(/[\s,]/)[0];
+    if (!w || /^(Downing|Borough|Navy|Linden|LINDEN|Kesk|Ash|Hale|Albion|Whitehall|Westminster|London|York|Bath|Harwich|Manchester|Kessgrad|Varenia\w*|I|I\u2019\w+|No\.10|Day)$/.test(w) || /.[A-Z0-9]/.test(w)) return t;
+    return t.charAt(0).toLowerCase() + t.slice(1);
+  }
+  // QA round 3: the folder tab shows a file number (day and place on the desk), not a cut-down internal case id
+  function fileNo(id) { const i = (S.order || []).indexOf(id); return "FILE " + S.day + "/" + (i >= 0 ? ("0" + (i + 1)).slice(-2) : "00"); }
   function echoOf(E) {
     const n = AG(E.k) ? first(E.k) : "your officer", w = placeOf(E), d = "on Day " + E.day;
-    if (E.c === "abort") return { k: E.k, note: E.gone ? "" : n + " hasn\u2019t forgotten " + w + ", when you called the pull-out. Ash says " + n + " was in before eight this morning.", file: "Pulled out of " + w + " " + d + ". Came home safe.", fate: "Never forgot the night you pulled them out of " + w + "." };
+    if (E.c === "abort") return { k: E.k, note: E.gone || outNow(E.k) ? "" : n + " hasn\u2019t forgotten " + w + ", when you called the pull-out. Ash says " + n + " was in before eight this morning.", file: "Pulled out of " + w + " " + d + ". Came home safe.", fate: "Never forgot the night you pulled them out of " + w + "." };
     if (E.c === "push" && E.res === "win") return { k: E.k, note: "No.10 heard about " + w + ". Someone in Downing Street called it \u2018bold\u2019.", head: "Whitehall whispers of a daring night in " + w, file: "Pushed on in " + w + " " + d + ", and pulled it off.", fate: "Still dines out on " + w + "." };
-    if (E.c === "push" && E.res === "loss") return { k: E.k, note: w + " still stings. The corridor knows " + n + " was pushed too hard" + (E.burned ? ", and paid for it with their cover." : "."), head: "Questions over a botched night in " + w, file: "Pushed too hard in " + w + " " + d + (E.burned ? ". Cover blown." : "."), fate: "Doesn\u2019t talk about " + w + "." };
+    if (E.c === "push" && E.res === "loss") return { k: E.k, note: w + " still stings. The corridor knows " + n + " was pushed too hard" + (E.burned ? ", and paid for it with " + pro(E.k, 2) + " cover." : "."), head: "Questions over a botched night in " + w, file: "Pushed too hard in " + w + " " + d + (E.burned ? ". Cover blown." : "."), fate: "Doesn\u2019t talk about " + w + "." };
     if (E.c === "push") return { k: E.k, note: w + " got done, loudly. People are talking.", file: "Pushed on in " + w + " " + d + ". It half worked.", fate: "Still argues about " + w + "." };
     if (E.res !== "win") return { k: E.k, note: "The target who slipped away in " + w + " has surfaced again: a watcher thinks they were seen at a London terminus. Ash has opened a file note.", file: "Held in " + w + " " + d + ". The target slipped away.", fate: "Still wonders who got away in " + w + "." };
     return { k: E.k, note: "Patience paid in " + w + ". " + n + " is quietly pleased about it.", file: "Held in " + w + " " + d + ", and it worked.", fate: "Learned patience in " + w + "." };
@@ -715,7 +730,7 @@
     let text;
     if (!S.log.length) text = "Morning, C. Tea\u2019s on the desk. We\u2019ll take today one file at a time. Start with the leak: it\u2019s due by " + hh(dueOf("leak")) + ".";
     else if (fresh2) text = "<b>Flash from the night desk.</b> Someone means to cut a North Sea cable tonight. Two reports, two places. " + (cableAhead() ? "It\u2019s on the pile, under today\u2019s other files. We\u2019ll reach it tonight." : "I\u2019ve put it top of the pile.");
-    else if (gone.length) text = "We ran out of time on <b>" + gone.map(function (id) { return CASES()[id].title.toLowerCase(); }).join(" and ") + "</b>. It\u2019s gone, C. The papers have it.";
+    else if (gone.length) text = "We ran out of time on <b>" + gone.map(function (id) { return lowerFirst(CASES()[id].title); }).join(" and ") + "</b>. It\u2019s gone, C. The papers have it.";
     else if (!S.porter && S.log.length) { S.porter = true; text = "Small thing. The night porter says one of ours came back to the building at three this morning without signing in. All he saw was <b>" + D.AGENTS[S.mole].look + "</b>."; }
     else text = benchLine();
     if (fresh2) { S.flashShown = true; if (window.SFX) SFX.tele(); FEEL.buzz("ring"); }
@@ -917,7 +932,7 @@
     const s = CASES()[id];
     const free = S.roster.filter(function (k) { return !S.used[k]; }).sort(function (x, y) { return (AG(y).good.indexOf(id) >= 0) - (AG(x).good.indexOf(id) >= 0); }).slice(0, 3);
     const lt = late(id);
-    render('<div data-screen="officer-pick"><div class="casefile manila" id="dropzone"><span class="cftab">CASE ' + esc(String(id).toUpperCase().slice(0, 6)) + '</span><span class="cfstamp">SECRET</span>' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><p class="redline">Source: <span class="redact">\u2588\u2588\u2588\u2588\u2588\u2588</span> \u00b7 Ref <span class="redact">\u2588\u2588\u2588\u2588</span> \u00b7 Seen by C only</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") +
+    render('<div data-screen="officer-pick"><div class="casefile manila" id="dropzone"><span class="cftab">' + fileNo(id) + '</span><span class="cfstamp">SECRET</span>' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><p class="redline">Source: <span class="redact">\u2588\u2588\u2588\u2588\u2588\u2588</span> \u00b7 Ref <span class="redact">\u2588\u2588\u2588\u2588</span> \u00b7 Seen by C only</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") +
       dial(null) + '<h3 class="question">Who do you send?</h3><div class="otray">' + free.map(function (k) { return officerTile(k, id); }).join("") + '</div><button class="linkbtn" id="back">Back to the desk</button></div>',
       "Tap a file to read it. Tap Send, or drag the file onto the case, to send them.");
     dragSend(id, function (k) { approach(id, k); });
@@ -982,6 +997,7 @@
     const ch = {};
     const d2 = shape(delta);
     Object.keys(d2).forEach(function (m) { const before = S.meters[m] == null ? 55 : S.meters[m]; S.meters[m] = Math.max(0, Math.min(100, before + d2[m])); if (m !== "mood" && S.meters[m] !== before) ch[m] = S.meters[m] - before; });
+    if (window.FUN && FUN.track) FUN.track(S); // QA round 3: every change counts for "trust", not only the ones the top bar shows
     return ch;
   }
   // the painted vignette for an outcome: case-specific art on success, otherwise by result
@@ -1221,7 +1237,7 @@
   function no10Back(res, ch) {
     if (S.day < 4 || !NO10_BACK[res]) return 0;
     const b = Math.min(NO10_BACK[res], 100 - S.meters.capital); if (b <= 0) return 0;
-    S.meters.capital += b; ch.capital = (ch.capital || 0) + b; S.no10Back = (S.no10Back || 0) + b; return b;
+    S.meters.capital += b; ch.capital = (ch.capital || 0) + b; if (window.FUN && FUN.track) FUN.track(S); S.no10Back = (S.no10Back || 0) + b; return b;
   }
   const backLine = function (b) { return b ? '<p class="no10back">\u260e No.10 heard about it: <b>+' + b + " trust</b>. Closed cases win the Prime Minister back.</p>" : ""; };
   function finishCase(id, res, k, appr, head, ch, stampWord, body, imgHtml, hintTxt) {
@@ -1327,7 +1343,9 @@
     const craft = (W.reduce(function (t, x) { return t + x; }, 0) + 0.3) / (W.length + 1) * 100;
     return { trust: score(v.capital), service: svc(), record: Math.round(rec), craft: Math.round(craft), mood: ((v.mood == null ? 55 : v.mood) - 55) / 10, bonus: S.diff === "easy" ? 8 : 0 };
   }
-  function gradeScore() { const g = gradeParts(); return g.trust * 0.35 + g.service * 0.2 + g.record * 0.25 + g.craft * 0.2 + g.mood + g.bonus; }
+  function gradeScore() { return boardScore() + gradeParts().bonus; }
+  // QA round 3: the Game Center board is shared by every difficulty, so the score sent there leaves out Easy's +8
+  function boardScore() { const g = gradeParts(); return g.trust * 0.35 + g.service * 0.2 + g.record * 0.25 + g.craft * 0.2 + g.mood; }
   // Above C needs tradecraft, not luck: on Standard and Hard an A needs 75%+ tradecraft and a B 60%+.
   function gradeOf() {
     const avg = gradeScore(); let g = avg >= 68 ? "A" : avg >= 60 ? "B" : avg >= 50 ? "C" : avg >= 40 ? "D" : "E";
@@ -1375,7 +1393,7 @@
       (S.day === 5 && window.AH4 && AH4.interceptClue ? AH4.interceptClue() : "") + (S.day === 6 && window.AH4 && AH4.knightGap ? '<p class="knightgap">' + AH4.knightGap() + "</p>" : "") +
       (S.day === 6 && (S.echoes || []).length ? (function () { const t = callTally(); return '<p class="calltally">Your radio calls this week: pushed ' + t.push + " \u00b7 held " + t.hold + " \u00b7 pulled out " + t.abort + "</p>"; })() : "") +
       (S.day === 6 ? endWhyHTML() : "") +
-      (function () { const g = gradeParts(); return '<p class="gradeparts">Graded on: No.10 trust and Service (top bar) \u00b7 cases closed <b>' + g.record + "%</b> \u00b7 tradecraft <b>" + g.craft + "%</b>" + (g.bonus ? " \u00b7 Easy +" + g.bonus : "") + (S.diff !== "easy" && g.craft < 75 ? '<br><small>An A needs 75% tradecraft over the week, a B 60%: the right officer, on the plan they rate best.</small>' : "") + "</p>"; })() + (window.FUN ? FUN.medalHTML(S) : "") +
+      (function () { const g = gradeParts(); return '<p class="gradeparts">Graded on: No.10 trust and Service (top bar) \u00b7 cases closed <b>' + g.record + "%</b> \u00b7 tradecraft <b>" + g.craft + "%</b>" + (g.bonus ? " \u00b7 Easy +" + g.bonus + " (your grade only; the leaderboard score leaves it out)" : "") + (S.diff !== "easy" && g.craft < 75 ? '<br><small>An A needs 75% tradecraft over the week, a B 60%: the right officer, on the plan they rate best.</small>' : "") + "</p>"; })() + (window.FUN ? FUN.medalHTML(S) : "") +
       '<ul class="log" style="text-align:left">' + S.log.map(function (l) {
         const s = CASES()[l.id];
         return "<li>" + (l.k ? '<img class="portrait" src="' + pic(AG(l.k).img) + '" alt="">' : '<span class="portrait dash">\u2014</span>') +
@@ -1492,7 +1510,7 @@
     if (l.appr === "Taken by No.10") return "No.10 took it off your desk";
     if (l.id === "chase" && S.chase) return "of the chase across London: your watchers scored " + S.chase.score + " of 9";
     const s = CASES()[l.id] || {};
-    if (l.k && s.kind !== "accuse") return "you sent " + first(l.k) + " \u00b7 " + String(l.appr).toLowerCase();
+    if (l.k && s.kind !== "accuse") return "you sent " + first(l.k) + " \u00b7 " + lowerFirst(l.appr);
     return "you chose \u201c" + l.appr + "\u201d";
   }
   function nightPaper() {
@@ -1589,7 +1607,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
+    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

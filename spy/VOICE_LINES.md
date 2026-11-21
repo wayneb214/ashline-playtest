@@ -147,15 +147,15 @@ All made with Chatterbox performing our own invented Kokoro reference voices; ev
 | `react_panic_sit_hartley` | Tom Hartley (Harrier) | Right. Fine. |
 | `call_panic_ada` | Ada Finch | C? It’s Ada. There’s a grey car outside the hotel. The same one as this morning. I think I’m blown. Do I run? |
 | `react_panic_sit_ada` | Ada Finch | Right. Fine. |
-| `call_panic_hollis` | Major Tom Hollis | C? It’s Tom. There’s a grey car outside the hotel. The same one as this morning. I think I’m blown. Do I run? |
-| `react_panic_sit_hollis` | Major Tom Hollis | Right. Fine. |
+| `call_panic_hollis` | Major Giles Hollis | C? There’s a grey car outside the hotel. The same one as this morning. I think I’m blown. Do I run? |
+| `react_panic_sit_hollis` | Major Giles Hollis | Right. Fine. |
 | `call_panic_sam` | Sam Bhatt | C? It’s Sam. There’s a grey car outside the hotel. The same one as this morning. I think I’m blown. Do I run? |
 | `react_panic_sit_sam` | Sam Bhatt | Right. Fine. |
 | `op_macrae_part` | Fiona Macrae (Linnet) | Half a job, C. Better than none. |
 | `op_pryce_part` | Gareth Pryce (Wren) | Partly done, C. They saw something. |
 | `op_hartley_part` | Tom Hartley (Harrier) | Half of it. Not good enough. |
 | `op_ada_part` | Ada Finch | Half of it, C. Not the half we wanted. |
-| `op_hollis_part` | Major Tom Hollis | A draw, C. We live to fight another day. |
+| `op_hollis_part` | Major Giles Hollis | A draw, C. We live to fight another day. |
 | `op_sam_part` | Sam Bhatt | Got some of it, C. Not all. |
 | `op_ada_pos` | Ada Finch | Ada. In position. Everything’s where the file said. |
 | `op_ada_eyes` | Ada Finch | Eyes on. Matches the photograph. |
@@ -170,19 +170,19 @@ All made with Chatterbox performing our own invented Kokoro reference voices; ev
 | `op_ada_send2` | Ada Finch | I’ll check it twice. |
 | `op_ada_send3` | Ada Finch | Leave it with me. |
 | `op_ada_freed` | Ada Finch | You came back for me. Thank you, C. |
-| `op_hollis_pos` | Major Tom Hollis | Hollis. In position. Lovely evening for it. |
-| `op_hollis_eyes` | Major Tom Hollis | Target in sight. Steady now. |
-| `op_hollis_lost` | Major Tom Hollis | Lost him. Not to worry. I’ll pick him up. |
-| `op_hollis_ask` | Major Tom Hollis | Decision time, C. Push or pull? |
-| `op_hollis_push` | Major Tom Hollis | Right. Over the top. |
-| `op_hollis_hold` | Major Tom Hollis | Holding. I’ve waited in worse places. |
-| `op_hollis_abort` | Major Tom Hollis | Withdrawing. In good order. |
-| `op_hollis_done` | Major Tom Hollis | All done, C. Textbook. |
-| `op_hollis_hurt` | Major Tom Hollis | Took a knock, C. Nothing a cup of tea won’t fix. |
-| `op_hollis_send1` | Major Tom Hollis | Very good, C. |
-| `op_hollis_send2` | Major Tom Hollis | Consider it done. |
-| `op_hollis_send3` | Major Tom Hollis | Righto. On my way. |
-| `op_hollis_freed` | Major Tom Hollis | Knew you wouldn’t leave an old soldier, C. |
+| `op_hollis_pos` | Major Giles Hollis | Hollis. In position. Lovely evening for it. |
+| `op_hollis_eyes` | Major Giles Hollis | Target in sight. Steady now. |
+| `op_hollis_lost` | Major Giles Hollis | Lost him. Not to worry. I’ll pick him up. |
+| `op_hollis_ask` | Major Giles Hollis | Decision time, C. Push or pull? |
+| `op_hollis_push` | Major Giles Hollis | Right. Over the top. |
+| `op_hollis_hold` | Major Giles Hollis | Holding. I’ve waited in worse places. |
+| `op_hollis_abort` | Major Giles Hollis | Withdrawing. In good order. |
+| `op_hollis_done` | Major Giles Hollis | All done, C. Textbook. |
+| `op_hollis_hurt` | Major Giles Hollis | Took a knock, C. Nothing a cup of tea won’t fix. |
+| `op_hollis_send1` | Major Giles Hollis | Very good, C. |
+| `op_hollis_send2` | Major Giles Hollis | Consider it done. |
+| `op_hollis_send3` | Major Giles Hollis | Righto. On my way. |
+| `op_hollis_freed` | Major Giles Hollis | Knew you wouldn’t leave an old soldier, C. |
 | `op_sam_pos` | Sam Bhatt | Sam here. Parked up, engine running. |
 | `op_sam_eyes` | Sam Bhatt | Got him. Grey coat, walking fast. |
 | `op_sam_lost` | Sam Bhatt | Lost him at the lights. Going round the block. |

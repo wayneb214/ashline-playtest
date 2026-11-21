@@ -28,6 +28,9 @@
       return Promise.all(saved.map(function (k) { return Promise.resolve(P.get({ key: k })).then(function (g) { if (g && g.value != null) setItem.call(localStorage, k, g.value); }); }))
         .then(function () { try { sessionStorage.setItem("albion-restored", "1"); } catch (e) {} location.reload(); });
     }
+    // QA round 3: the restore worked (localStorage is back), so drop the once-only flag: a later wipe in the same web
+    // view session is restored too. If a restore ever failed, localStorage stays empty and the flag still stops a loop.
+    if (once && had.length) { try { sessionStorage.removeItem("albion-restored"); } catch (e) {} }
     copyUp(); ready = true; // first launch of this build (or a normal launch): the native copy matches localStorage
   }).catch(function () { ready = true; });
   window.SAVESYNC = { ready: function () { return ready; } };

@@ -30,6 +30,19 @@
       Array.prototype.forEach.call(n.parentElement.children, function (x) { if (x !== n && !x.contains(top) && !/^(SCRIPT|STYLE|LINK)$/.test(x.tagName)) want.push(x); });
     document.querySelectorAll("[data-inerted]").forEach(function (e) { if (want.indexOf(e) < 0) { e.inert = false; e.removeAttribute("data-inerted"); } });
     want.forEach(function (e) { if (!e.inert) { e.inert = true; e.setAttribute("data-inerted", "1"); } });
+    // QA round 3: when the last modal (a cutscene, a sheet) closes, focus goes back to where it was, or to the new screen's
+    // heading, rather than being left on <body>, where VoiceOver starts again from the top of the page
+    if (top && !wasUp) { wasUp = true; back = document.activeElement && document.activeElement !== document.body && !top.contains(document.activeElement) ? document.activeElement : null; }
+    else if (!top && wasUp) { wasUp = false; const b = back; back = null; setTimeout(function () { refocus(b); }, 0); }
+  }
+  let wasUp = false, back = null;
+  function refocus(b) {
+    const a = document.activeElement; if (a && a !== document.body && a.isConnected) return; // something already took focus
+    if (document.querySelector('[aria-modal="true"]')) return;
+    let el = b && b.isConnected && !b.closest("[inert]") ? b : null;
+    if (!el) { el = document.querySelector("#app h1, #app h2, #app [role=heading]"); if (el && !el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1"); }
+    if (!el) el = document.querySelector("#app button:not([disabled]), #app [role=button], #app a[href]");
+    if (el && el.focus) try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
   }
   let t = 0; const run = function () { modal(); if (t) return; t = setTimeout(function () { t = 0; label(document.body); }, 60); };
   new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true });

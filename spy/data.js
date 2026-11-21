@@ -68,7 +68,7 @@ window.AH_DATA = (function () {
   // ---------- officers you can recruit when one is lost ----------
   const RECRUITS = {
     ada: { name: "Ada Finch", code: "Kestrel", role: "Analyst turned field officer \u00b7 \u2018Kestrel\u2019", img: "ada", tense: null, happy: "ada", skill: 3, loyalty: 3, stress: 1, cover: 3, good: ["courier", "leak", "safehouse"], quirk: "careful", quirkTxt: "Meticulous: +10% on careful plans", note: "Two years on the Varenian desk", recruit: true },
-    hollis: { name: "Major Tom Hollis", code: "Heron", role: "Old soldier \u00b7 \u2018Heron\u2019 \u00b7 steady hands", img: "hollis", tense: null, happy: "hollis", skill: 4, loyalty: 3, stress: 0, cover: 2, good: ["sabotage", "exit", "safehouse"], quirk: "steady", quirkTxt: "Unflappable: bold plans add no stress", note: "Retired, bored, reliable", recruit: true },
+    hollis: { name: "Major Giles Hollis", code: "Heron", role: "Old soldier \u00b7 \u2018Heron\u2019 \u00b7 steady hands", img: "hollis", tense: null, happy: "hollis", skill: 4, loyalty: 3, stress: 0, cover: 2, good: ["sabotage", "exit", "safehouse"], quirk: "steady", quirkTxt: "Unflappable: bold plans add no stress", note: "Retired, bored, reliable", recruit: true },
     sam: { name: "Sam Bhatt", code: "Swift", role: "Driver \u00b7 \u2018Swift\u2019 \u00b7 knows every road", img: "sam", tense: null, happy: "sam", skill: 3, loyalty: 3, stress: 1, cover: 4, good: ["defector", "exit"], quirk: "quick", quirkTxt: "Back roads: every plan takes 1 hour less", note: "Ex-police, ex-everything", recruit: true }
   };
 

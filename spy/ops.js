@@ -165,18 +165,27 @@
   // QA round 1 (N5): a call made before the app closed is settled on resume, before the desk opens again
   function settlePending() {
     const A = window.AH, S = A.S(), p = S.opPending; if (!p) return false;
-    delete S.opPending; if (S.done && S.done[p.id]) return false;
+    delete S.opPending; delete S.opLive; if (S.done && S.done[p.id]) return false;
     const c = A.CASES()[p.id], a = (c && c.approaches || []).filter(function (x) { return x.t === p.a.t; })[0] || p.a; // the live plan, not the saved copy
     settleCall(A, p.id, p.k, a, p.kit, p.trap, p.c); return true;
   }
-  function run(id, k, a, kit) {
+  // QA round 3: an op that was on the radio (no call made yet) when the app closed starts again on resume, with the same
+  // officer, plan, trap and tail, so closing the app can't be used to re-plan after hearing how it was going
+  function resumeLive() {
+    const A = window.AH, S = A.S(), p = S.opLive; if (!p) return false;
+    if (S.opPending || (S.done && S.done[p.id]) || !A.CASES()[p.id]) { delete S.opLive; return false; }
+    const c = A.CASES()[p.id], a = (c.approaches || []).filter(function (x) { return x.t === p.a.t; })[0] || p.a;
+    run(p.id, p.k, a, p.kit, p); return true;
+  }
+  function run(id, k, a, kit, again) {
     const A = window.AH, $ = A.$, esc = A.esc, fast = A.FAST || window.__SPY_FAST__;
     const total = fast ? 1500 : ({ low: 15000, med: 20000, high: 25000 }[a.risk] || 20000), askAt = 0.45;
     // No reply clock: the radio waits for your call, and nothing is ever chosen for you (Wayne, batch J)
     let t = 0, asked = false, ready = false, chosen = null, logged = 0, skipped = false;
-    const lost = A.rnd() < 0.35, ckey = "d" + A.S().day + "_" + id, st = { lostAt: null, abortAt: null };
+    const lost = again ? !!again.lost : A.rnd() < 0.35, ckey = "d" + A.S().day + "_" + id, st = { lostAt: null, abortAt: null };
     // op-balance: is this one a trap? Decided once, before anything is said; the tell comes just before the question
-    const trap = A.trapFor ? A.trapFor(id, k) : false; A.S().opsRun = (A.S().opsRun || 0) + 1;
+    const trap = again ? !!again.trap : A.trapFor ? A.trapFor(id, k) : false; if (!again) A.S().opsRun = (A.S().opsRun || 0) + 1;
+    A.S().opLive = { id: id, k: k, a: a, kit: kit || null, trap: !!trap, lost: lost }; A.save("briefing"); // QA round 3: see resumeLive
     let tellTxt = null; // what the officer saw, repeated over the buttons so it can't scroll away
     pron = PRON[ckey] || null; eyesId = eyesFor(k, A);
     // Ash's two lines for this mission: one after the officer has eyes on, one just before the question
@@ -210,7 +219,7 @@
       let i = 0; p.classList.add("typing");
       const iv = setInterval(function () { i += 2; p.textContent = txt.slice(0, i); r.scrollTop = r.scrollHeight; if (i >= txt.length || !p.isConnected) { clearInterval(iv); p.textContent = txt; p.classList.remove("typing"); } }, 24);
     };
-    const finish = function () { clearInterval(timer); timer = null; delete A.S().opPending; settleCall(A, id, k, a, kit, trap, chosen); cur.id = null; };
+    const finish = function () { clearInterval(timer); timer = null; delete A.S().opPending; delete A.S().opLive; settleCall(A, id, k, a, kit, trap, chosen); cur.id = null; };
     const choose = function (c) {
       if (chosen) return; chosen = c; FEEL.buzz(c === "abort" ? "heavy" : "tap");
       // QA round 1 (N5): the call is saved the moment it is made, so closing the app before the result can't undo it
@@ -306,7 +315,7 @@
   function bind(draw) {
     document.querySelectorAll("[data-verb]").forEach(function (b) { b.onclick = function () { cur.verb = b.getAttribute("data-verb"); cur.touched = true; if (window.SFX && SFX.type) SFX.type(); draw(); }; });
     const r = document.getElementById("pace"); if (r) r.onchange = function () { cur.pace = +r.value; if (window.SFX && SFX.tick) SFX.tick(); draw(); };
-    MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide toward <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
+    MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide towards <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
   }
-  window.OPS = { settlePending: settlePending, terms: terms, WORDS: WORDS, wfill: wfill, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
+  window.OPS = { settlePending: settlePending, resumeLive: resumeLive, terms: terms, WORDS: WORDS, wfill: wfill, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
 })();

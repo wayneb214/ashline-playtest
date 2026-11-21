@@ -101,7 +101,7 @@
         // ask for a rating once, after the Act 1 ending, and only after a good night (native plugin only; nothing on the web)
         if (S.deal !== "deal" && (S.done.exfil === "win" || S.done.exfil === "mixed")) setTimeout(askReview, 4000);
       }
-      if (S.day === 6 && window.AH4) { const e = AH4.ending(); if (window.REPLAY) REPLAY.found("a2_" + e); if (window.NATIVE && A().gradeScore) NATIVE.gcScore(Math.round(A().gradeScore() * 100)); if (e === "knight") unlock("knight"); if (S.days && S.days[1] && S.days[5]) unlock("six"); }
+      if (S.day === 6 && window.AH4) { const e = AH4.ending(); if (window.REPLAY) REPLAY.found("a2_" + e); if (window.NATIVE && A().boardScore) NATIVE.gcScore(Math.round(A().boardScore() * 100)); /* QA round 3: no Easy bonus on the shared board */ if (e === "knight") unlock("knight"); if (S.days && S.days[1] && S.days[5]) unlock("six"); }
     }
   }
   // Batch M: three locked achievements to try next, in the order a game reaches them, each with a hint that matches

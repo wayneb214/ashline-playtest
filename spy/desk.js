@@ -118,7 +118,7 @@
     const photo = photoLine(k);
     C().panic = { k: k, photo: photo ? photo.when : null };
     call({ id: "panic", voice: "call_panic_" + k, voice2: photo ? photo.vid : null, line: "DESK LINE \u00b7 COLLECT CALL", img: a.AG(k).img, ring: a.first(k) + ", from a hotel phone", who: a.AG(k).name, say: "Tell " + a.first(k),
-      text: "C? It\u2019s " + a.first(k) + ". There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?" + (photo ? " " + photo.text : ""),
+      text: "C? " + (k === "hollis" ? "" : "It\u2019s " + a.first(k) + ". ") + "There\u2019s a grey car outside the hotel. The same one as this morning. <b>I think I\u2019m blown.</b> Do I run?" + (photo ? " " + photo.text : ""),
       opts: [{ k: "sit", t: "Sit tight. Walk out in the morning.", chips: '<span class="chip risk-low">+' + a.svcShown(3) + ' Service</span><span class="chip risk-high">' + a.first(k) + " loyalty \u22121 \u00b7 stress +1</span>" },
         { k: "home", t: "Get out now. Ash books you home.", chips: '<span class="chip risk-high">\u2212' + Math.abs(a.svcShown(-3)) + ' Service</span><span class="chip risk-low">' + a.first(k) + " loyalty +1 \u00b7 stress \u22121</span>" }],
       def: "sit", hint: "Officers remember who picked up.",

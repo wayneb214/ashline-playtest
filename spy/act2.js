@@ -27,7 +27,7 @@
         ap("Walk up and ask him the time", "Rattle him and see where he runs.", 0, "high", 2, { secrecy: 4, capital: 4 }, { trust: -4 }, { safety: -8, secrecy: -8 })],
       head: { win: "Quiet week on the Albert Embankment", mixed: "Photographer seen on Lambeth rooftop", loss: "Scuffle outside government building in Lambeth" } },
     manchester: { kind: "officer", art: "v-manchester", title: "The trade delegation", where: "Manchester", place: "Manchester", due: 15, pen: { capital: -8 },
-      brief: "A Varenian trade delegation is in Manchester to sign a deal the Chancellor wants. One interpreter is Grey House. Find who he meets, and don't spoil the deal.",
+      brief: "A Varenian trade delegation is in Manchester to sign a deal the Chancellor wants. One interpreter is Grey House. Find who he meets, and don\u2019t spoil the deal.",
       approaches: [ap("A seat at the hotel bar", "One of ours, a good book and the next table.", 8, "low", 0, { secrecy: 6, capital: 4 }, { secrecy: -2 }, { capital: -6 }),
         ap("Join the delegation as a translator", "Paperwork through the Board of Trade. Close, and on the record.", 6, "med", 1, { capital: 8, secrecy: 2 }, { capital: -4 }, { capital: -12, trust: -4 }),
         ap("Search his room during the dinner", "Twenty minutes and a borrowed key card.", 0, "high", 2, { secrecy: 8, capital: 2 }, { capital: -6 }, { capital: -14, trust: -6 })],
