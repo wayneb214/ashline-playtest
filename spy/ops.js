@@ -50,7 +50,7 @@
     means: [["Risk", "{riskList}"],
       ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing."],
       ["Best case", "what the top bar gains if it works. A Push has worse odds than a Hold, but makes the plan\u2019s gains two and a half times as big (at least No.10 trust +5, Service +3)."],
-      ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse bold plans until rested. Every plan\u2019s chance it works moves with it: at 0, about 12% lower than at 50. It can\u2019t end the game on its own."],
+      ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse bold plans until rested. The lower it is, the less likely every plan is to work. It can\u2019t end the game on its own."],
       ["Cover may be blown", "if a Push fails, the other side may get a look at the officer. If they do, the officer is out of the field for good."],
       ["Full losses", "on a trap they were waiting, so holding back doesn\u2019t help: the whole loss lands and the officer is hurt. Hold also costs No.10 trust \u22121 and Service \u22126 whatever happens (the team is tied up waiting), so a Hold can cost more than a Push."]],
     // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
