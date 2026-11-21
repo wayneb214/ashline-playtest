@@ -114,7 +114,7 @@
   // panel 6 v7 (Wayne 15:31): the Hold/Push/trap buttons show risk as 5 dots (spy.js riskLevel; filled = chance of failure).
   // One list for the glossary and the live-op panel, lowest risk first, no percentages. Panel 6 v9 (Wayne): the odds words are
   // gone everywhere, so these dots are the game's only risk scale (live op, Hold/Push buttons, Hard's plan cards and results).
-  const RISK = [["\u25cf\u25cb\u25cb\u25cb\u25cb", "low", "usually works"], ["\u25cf\u25cf\u25cb\u25cb\u25cb", "some", "works more often than not"], ["\u25cf\u25cf\u25cf\u25cb\u25cb", "real", "could go either way"], ["\u25cf\u25cf\u25cf\u25cf\u25cb", "high", "fails more often than it works"], ["\u25cf\u25cf\u25cf\u25cf\u25cf", "very high", "usually fails"]];
+  const RISK = [["\u25cf\u25cb\u25cb\u25cb\u25cb", "low", "usually works (fails 1 time in 5 or less)"], ["\u25cf\u25cf\u25cb\u25cb\u25cb", "some", "works more often than not (fails up to 2 times in 5)"], ["\u25cf\u25cf\u25cf\u25cb\u25cb", "real", "could go either way (fails 2 to 3 times in 5)"], ["\u25cf\u25cf\u25cf\u25cf\u25cb", "high", "fails more often than it works (up to 4 times in 5)"], ["\u25cf\u25cf\u25cf\u25cf\u25cf", "very high", "usually fails (more than 4 times in 5)"]]; // round 4: even bands of 1 in 5
   const RISK_NOTE = "A Hold or Push always has some risk. Push\u2019s chance is never better than Hold\u2019s, so it never shows fewer dots.";
   function riskHTML(lead) { return lead + '<ul class="risklist">' + RISK.map(function (r) { return '<li><span class="riskdots" role="img" aria-label="risk ' + (RISK.indexOf(r) + 1) + ' of 5">' + r[0] + "</span> <b>" + r[1] + "</b>: " + r[2] + "</li>"; }).join("") + "</ul>" + RISK_NOTE; }
   const GLOSS = [

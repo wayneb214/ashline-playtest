@@ -1018,7 +1018,8 @@
   // panel 6 v7 (Wayne 15:31): the Hold/Push/trap buttons show risk as 5 dots, not odds words. Filled dots = chance of failure,
   // 1 = lowest risk. Levels by the chance it works: 70+ = 1, 55-69 = 2, 40-54 = 3, 25-39 = 4, under 25 = 5. A Hold is at most
   // 85% (never risk-free). The bands are 15 wide and Push is 14 below Hold, so ops.js nudges Push a step when they would match.
-  const RISK = [70, 55, 40, 25];
+  const RISK = [80, 60, 40, 20]; // the chance it works at or above which each dot count starts (round 4: was 70/55/40/25)
+  // round 4 (Wayne): even bands by the chance it fails: 1 dot up to 20%, 2 up to 40%, 3 up to 60%, 4 up to 80%, 5 above 80%
   function riskLevel(p) { let i = 0; while (i < RISK.length && p < RISK[i]) i++; return i + 1; }
   function riskDots(n) { return "\u25cf".repeat(n) + "\u25cb".repeat(5 - n); }
   function riskTag(n) { return '<span class="riskdots" role="img" aria-label="risk ' + n + ' of 5">' + riskDots(n) + "</span>"; }
@@ -1041,10 +1042,10 @@
     const afterN = op.risk || riskLevel(L.odds), beforeN = L.base != null ? riskLevel(L.base) : null;
     const odds = function () {
       if (hard) return beforeN == null ? "Risk " + riskTag(afterN) + "." : beforeN === afterN ? "Risk stayed " + riskTag(afterN) + "." : "Risk " + riskTag(beforeN) + " \u2192 " + riskTag(afterN) + ".";
-      return L.base == null ? "Odds " + L.odds + "%." : L.base === L.odds ? "Odds stayed " + L.odds + "%." : "Odds " + L.base + "% \u2192 " + L.odds + "% (" + callParts(L).map(function (x) { return x[0] + " " + sgnPct(x[1]); }).join(", ") + ").";
+      return L.base == null ? "Chance it works " + L.odds + "%." : L.base === L.odds ? "Chance it works stayed " + L.odds + "%." : "Chance it works " + L.base + "% \u2192 " + L.odds + "% (" + callParts(L).map(function (x) { return x[0] + " " + sgnPct(x[1]); }).join(", ") + ").";
     };
     let what;
-    if (op.abort) what = "Pulled out. " + (L.base == null ? "" : hard ? "Risk was " + riskTag(beforeN) + ". " : "Odds were " + L.base + "%. ") + nm + " safe, no stress.";
+    if (op.abort) what = "Pulled out. " + (L.base == null ? "" : hard ? "Risk was " + riskTag(beforeN) + ". " : "Chance it would work: " + L.base + "%. ") + nm + " safe, no stress.";
     else if (op.hold) what = { win: "Hold worked.", mixed: "Hold: partly done.", loss: "Hold, and it went wrong." }[res] + " " + odds() + " " + (res !== "loss" ? nm + " safe." : op.trap && L.wounded ? nm + " wounded by the trap." : L.soft ? nm + " safe; losses halved." : nm + " safe.");
     else what = { win: !L.gain ? "Push paid off, but the top bar was already full." : L.floor ? "Push paid off: gains \u00d7" + OPT.push.winX + ", topped up to the least a pushed win pays." : "Push paid off: gains \u00d7" + OPT.push.winX + ".", mixed: "Push: partly done, nothing extra.", loss: "Push failed." }[res] + " " + odds() + (res === "loss" ? " " + nm + "\u2019s cover " + (L.burned ? "blown." : "held.") : ""); // QA round 4: "tired" is said once, in the story line
     return '<p class="opcall">' + what + "</p>";
@@ -1064,7 +1065,7 @@
   }
   function oddsNote(L, k, abort) {
     const st = oddsSteps(L, k), cp = abort ? [] : callParts(L);
-    return "The odds: " + st.map(function (x, i) { return i ? x[0] + " " + sgnPct(x[1]) : x[0] + " " + x[1] + "%"; }).join(", ") + (st.length > 1 ? " = " + L.base + "%" : "") + (abort ? " when you pulled out." : cp.length ? " before the call; " + cp.map(function (x) { return x[0] + " " + sgnPct(x[1]); }).join(", ") + " = " + L.odds + "%." : " before the call, and the call kept them there.");
+    return "Chance it works: " + st.map(function (x, i) { return i ? x[0] + " " + sgnPct(x[1]) : x[0] + " " + x[1] + "%"; }).join(", ") + (st.length > 1 ? " = " + L.base + "%" : "") + (abort ? " when you pulled out." : cp.length ? " before the call; " + cp.map(function (x) { return x[0] + " " + sgnPct(x[1]); }).join(", ") + " = " + L.odds + "%." : " before the call, and the call kept them there.");
   }
   // Show the maths: each gauge's parts add up to the result line
   function mathsBox(M, cc, op, k) {
