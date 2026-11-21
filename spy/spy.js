@@ -262,7 +262,7 @@
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (window.FUN ? '<button class="btn primary" id="tach">\u2605 Achievements' + (FUN.count ? " \u00b7 " + FUN.count() + " of " + FUN.total : "") + "</button>" : "") +
-      (window.REVIEW && REVIEW.played() ? '<button type="button" class="btn primary" id="trate">\u2b50 Rate this game</button>' : "") +
+      (window.REVIEW && REVIEW.played() && REVIEW.canRate() ? '<button type="button" class="btn primary" id="trate">\u2b50 Rate this game</button>' : "") +
       '<div class="cinerow"><button class="btn ghost" id="opening">\u25b6 Watch the opening</button><button class="btn ghost" id="cinema">Settings</button></div>' + (window.REPLAY ? REPLAY.titleHTML() : "") + '<button class="linkbtn" id="helpbtn">Help &amp; FAQ</button>' +
       '<div class="fine">A work of fiction. Albion House and every state, firm and person in it are invented.</div></div></div>');
     LOOK.place(); LOOK.rain(true); LOOK.night(8); if (window.REPLAY) REPLAY.bindTitle();
@@ -281,7 +281,8 @@
     if (!snap) { fresh(S.diff); } else restore(snap);
     S.seenIntro = true; save("briefing"); chrome(true); meters(); ticker(); briefing();
   }
-  function resume() { chrome(true); meters(); ticker(); S.screen === "sacked" ? sacked() : S.screen === "summary" ? summary() : briefing(); }
+  function resume() { $("view").innerHTML = ""; chrome(true); // S1: the title (and its Continue) is gone before any cutscene starts
+    meters(); ticker(); S.screen === "sacked" ? sacked() : S.screen === "summary" ? summary() : briefing(); }
   // Batch M: after Replay a day, one card says what stands from the days before and what starts again, read from the
   // restored state itself (so it is always true). It stays until the first case of the replayed day is closed, or Got it.
   function markReplay() { S.replayOf = S.day; S.replayFirst = true; staleAfter(S.day); }
@@ -366,7 +367,7 @@
   function newGame() { if (returning()) difficulty(); else coldOpen(); }
   function coldOpen(diff, tips) {
     store.del(SAVE); [2, 3, 4, 5, 6].forEach(function (d) { store.del(DAYK[d]); });
-    tips = tips !== false; PREFS.set("tips", tips); fresh(diff || "standard", tips); if (diff) S.diffAsked = true; store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S }));
+    tips = tips !== false; PREFS.set("tips", tips); if (diff) PREFS.set("diff", diff); fresh(diff || "standard", tips); if (diff) S.diffAsked = true; store.set(DAY1, JSON.stringify({ v: 1, seed: seed, S: S }));
     // the opening film first (if cutscenes are on), then the How it works cards once, then Downing Street and the phone
     const day1 = function () { if (!CINE.maybe("day1", pm0)) pm0(); };
     const howto = function () { if (window.HOWTO && HOWTO.due()) HOWTO.show(day1, true); else day1(); };
@@ -397,7 +398,7 @@
         Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k], lock = k === "hard" && window.REPLAY && !REPLAY.unlocked(); return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"' + (lock ? " disabled" : "") + '><div class="t">' + d.name + (k === "standard" ? " \u00b7 recommended" : "") + (lock ? " \ud83d\udd12 finish Day 3 to unlock" : "") + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
         '</div><div class="sticky-go"><button class="btn primary" id="go">Carry on \u00b7 ' + D.DIFFICULTY[pick].name + "</button></div>", "You can change it again from a new game.");
       document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { pick = b.getAttribute("data-d"); draw(); }; });
-      $("go").onclick = function () { S.diffAsked = true; if (pick !== S.diff) { shiftStart(S.diff, pick); S.diff = pick; S.kit = Object.assign({}, D.DIFFICULTY[pick].kit); } save("briefing"); next(); };
+      $("go").onclick = function () { S.diffAsked = true; PREFS.set("diff", pick); if (pick !== S.diff) { shiftStart(S.diff, pick); S.diff = pick; S.kit = Object.assign({}, D.DIFFICULTY[pick].kit); } save("briefing"); next(); };
     };
     draw();
   }
@@ -408,7 +409,9 @@
     S.meters.capital = score(S.meters.capital + b.capital - a.capital); S.meters.service = score(S.meters.service + b.service - a.service);
   }
   function difficulty() {
-    let pick = "standard", tips = true;
+    // QA round 1 (N2): the picker starts on the last difficulty played (if it is still open) and the last Tips choice
+    let pick = PREFS.get("diff") || "standard", tips = PREFS.get("tips") !== false;
+    if (!D.DIFFICULTY[pick] || (pick === "hard" && window.REPLAY && !REPLAY.unlocked())) pick = "standard";
     const draw = function () {
       render('<div class="card dossier" data-screen="diff0">' + LH + '<div class="kicker" style="margin-top:8px">Before Day 1 \u00b7 welcome back</div><h2>How hard a week?</h2><p>This sets all six days. You can still change it after Day 1.</p>' +
         Object.keys(D.DIFFICULTY).map(function (k) { const d = D.DIFFICULTY[k], lock = k === "hard" && window.REPLAY && !REPLAY.unlocked(); return '<button class="card appr' + (pick === k ? " sel" : "") + '" data-d="' + k + '"' + (lock ? " disabled" : "") + '><div class="t">' + d.name + (k === "standard" ? " \u00b7 recommended" : "") + (lock ? " \ud83d\udd12 finish Day 3 to unlock" : k === "hard" ? " \u00b7 unlocked" : "") + '</div><p style="margin:0">' + d.txt + "</p></button>"; }).join("") +
@@ -452,6 +455,7 @@
   function stuck() { return remaining().every(function (id) { return needsOfficer(id) && !freeAgents().length; }); }
 
   function briefing() {
+    if (S.opPending && window.OPS && OPS.settlePending && OPS.settlePending()) return; // N5: a call made before the app closed
     if (window.MINI) MINI.inject(S);
     if (S.hour >= 24) return summary();
     markBar(); // Batch N: the top bar as you leave the desk; every result card measures from here
@@ -503,7 +507,7 @@
   function placeOf(E) { const w = String(E.where || ""); return / or |\?/.test(w) ? "\u2018" + E.title + "\u2019" : w.split(",")[0]; }
   function echoOf(E) {
     const n = AG(E.k) ? first(E.k) : "your officer", w = placeOf(E), d = "on Day " + E.day;
-    if (E.c === "abort") return { k: E.k, note: E.gone ? "" : n + " hasn\u2019t forgotten " + w + ", when you called the pull-out. Ash says " + n + " was in before eight this morning.", file: "Pulled out of " + w + " " + d + ". Remembers you had their back.", fate: "Never forgot the night you pulled them out of " + w + "." };
+    if (E.c === "abort") return { k: E.k, note: E.gone ? "" : n + " hasn\u2019t forgotten " + w + ", when you called the pull-out. Ash says " + n + " was in before eight this morning.", file: "Pulled out of " + w + " " + d + ". Came home safe.", fate: "Never forgot the night you pulled them out of " + w + "." };
     if (E.c === "push" && E.res === "win") return { k: E.k, note: "No.10 heard about " + w + ". Someone in Downing Street called it \u2018bold\u2019.", head: "Whitehall whispers of a daring night in " + w, file: "Pushed on in " + w + " " + d + ", and pulled it off.", fate: "Still dines out on " + w + "." };
     if (E.c === "push" && E.res === "loss") return { k: E.k, note: w + " still stings. The corridor knows " + n + " was pushed too hard" + (E.burned ? ", and paid for it with their cover." : "."), head: "Questions over a botched night in " + w, file: "Pushed too hard in " + w + " " + d + (E.burned ? ". Cover blown." : "."), fate: "Doesn\u2019t talk about " + w + "." };
     if (E.c === "push") return { k: E.k, note: w + " got done, loudly. People are talking.", file: "Pushed on in " + w + " " + d + ". It half worked.", fate: "Still argues about " + w + "." };

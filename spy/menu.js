@@ -69,7 +69,7 @@
         "<h2>Answer clocks</h2>" + seg("tmr", [["1", "On"], ["0", "Off"]], PREFS.get("timers") === false ? "0" : "1") +
         '<p class="fine">Off: phone calls and Ash\u2019s questions wait for you, with no countdown and no answer picked for you.</p>' +
         
-        (window.REVIEW && REVIEW.rateHTML && REVIEW.played() ? "<h2>Enjoying it?</h2>" + REVIEW.rateHTML("mn-rate") : "") + "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") + '<p class="fine">Tips switch back on with every new game, in case someone else is playing.</p>' +
+        (window.REVIEW && REVIEW.rateHTML && REVIEW.played() && REVIEW.canRate() ? "<h2>Enjoying it?</h2>" + REVIEW.rateHTML("mn-rate") : "") + "<h2>Tips</h2>" + seg("tips", [["1", "Show tips"], ["0", "Hide tips"]], PREFS.get("tips") ? "1" : "0") + '<p class="fine">Tips switch back on with every new game, in case someone else is playing.</p>' +
         (document.body.classList.contains("on-title") && A().canReplayDay && A().canReplayDay() ? '<h2>Replay a day</h2><button class="btn ghost" id="st-days">Replay a day</button>' : "") +
         (window.CINE ? '<h2>Cutscenes</h2><button class="btn ghost" id="st-cine">Cutscenes and replays</button>' : "") +
         (window.HOWTO ? '<h2>How to play</h2><button class="btn ghost" id="st-howto">How to play</button>' : "") +
@@ -97,6 +97,7 @@
       "<p><b>Design, story and code:</b> Wayne Byrne.</p><p><b>Music and sound:</b> original, synthesised live in your device.</p>" +
       "<p><b>Voices:</b> made with Kokoro-82M (Apache 2.0) and Chatterbox (MIT). No real person\u2019s voice was cloned.</p>" +
       "<p><b>Paintings and cutscenes:</b> original artwork made for this game.</p>" +
+      "<p><b>Fonts:</b> Cormorant Garamond (\u00a9 the Cormorant Project Authors), Courier Prime (\u00a9 the Courier Prime Project Authors) and IM Fell English SC (\u00a9 Igino Marini), used under the SIL Open Font License 1.1.</p>" +
       '<p class="fine privacy">No accounts, no tracking. Saves stay on this device.</p><button class="btn primary" id="cr-back">Back</button>', "settings");
     $("cr-back").onclick = function () { back(); };
   }
@@ -124,7 +125,7 @@
     ["Stress and loyalty", "Each officer\u2019s strain and faith in you. High stress makes a blown cover more likely on a Push, and at full stress a failure can get them signed off; very low loyalty can end in a resignation."],
     ["Push", "On the radio: the long shot. Worse odds than Hold, but two and a half times the plan\u2019s gains if it works; a failure costs in full, the officer comes back wounded, and their cover can be blown."],
     ["Hold", "On the radio: wait and watch. Better odds than Push and the plan\u2019s normal gains; waiting costs some Service and a little No.10 trust, a failure costs half, and the officer stays safe (not on a trap)."],
-    ["Abort", "On the radio: pull the officer out. The case is lost and No.10 trust drops, but the officer comes home and remembers you had their back."],
+    ["Abort", "On the radio: pull the officer out. The case is lost and No.10 trust drops, but the officer comes home safe and their loyalty goes up by one (unless it is already at the top)."],
     ["Risk dots", "{riskList}"],
     ["Partly works", "Done, but not cleanly: a smaller gain, and people ask questions."],
     ["Trap and tell", "Sometimes the other side is waiting. The officer reports a warning sign (the tell, marked \u26a0) before you choose. On a trap, Hold costs in full."],

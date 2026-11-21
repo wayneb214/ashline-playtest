@@ -1518,3 +1518,31 @@ ul.risklist { margin: 4px 0 6px; padding-left: 1.3em; list-style: none; } ul.ris
 .opchoice .opbtn > b { flex: none; width: auto; font-size: 1.125rem; }
 .opchoice .opbtn small.optrade { flex: none; font-size: 1.0625rem; line-height: 1.3; }
 .opchoice .opbtn .riskdots { font-size: 16px; }
+
+/* QA round 1 (S2): the two meters always fit the top bar. On 375-390 px phones the grid used to be 392 px wide and
+   the Service meter ran off the right edge; the columns may now shrink, and narrow screens tighten the spacing. */
+.meters { grid-template-columns: minmax(0, 1.24fr) minmax(0, 1fr); min-width: 0; } /* "No.10 trust" is the longer label */
+.meter { min-width: 0; }
+@media (max-width: 400px) {
+  .hud { gap: 6px; }
+  .meters { column-gap: 6px; }
+  .meter { letter-spacing: -0.01em; }
+  .meter .mgauge { width: 18px; margin-right: 3px; }
+  .meter .lamp { margin-right: 4px; }
+}
+
+/* QA round 1 (S7, N1): small tap targets made 44 px. "What follows you" (Days 3-6) opens from a 44 px tall row; the Pace
+   slider's touch box is 44 px tall; the Tips and Cutscenes tick boxes sit in a full-width 48 px row (the whole row ticks it). */
+.followstrip { padding: 0 10px; }
+.followstrip[open] { padding-bottom: 8px; }
+.followstrip summary { min-height: 44px; box-sizing: border-box; padding: 12px 0; }
+.pace input { height: 44px; min-height: 44px; }
+.tipsopt { min-height: 48px; width: 100%; box-sizing: border-box; }
+.tipsopt input { width: 26px; height: 26px; }
+
+/* QA round 1 (N7): on short screens (iPhone SE, 667 px) the caption panel sat over the live op's radio. The radio already
+   prints every line it speaks, so the caption stays out of the way there. */
+@media (max-height: 700px) {
+  body:has([data-screen="op"]) #subtitle { display: none; }
+}
+

@@ -37,7 +37,8 @@
     A.chrome(false);
     A.render('<div data-screen="whatif"><div class="card dossier"><div class="kicker">Bonus day \u00b7 ' + s.k + " \u00b7 " + (i + 1) + " of 3</div>" +
       '<img class="vignette" src="' + A.pic(s.img) + '" alt=""><h2>' + s.t + "</h2><p>" + s.p + "</p>" +
-      s.c.map(function (c, j) { return '<button class="card appr" data-wi="' + j + '"><div class="t">' + c[0] + "</div></button>"; }).join("") + "</div></div>", "Nothing here touches your saved game.");
+      // QA round 1 (N8): the two choices come in a random order, so the careful one is not always the first
+      (Math.random() < 0.5 ? [0, 1] : [1, 0]).map(function (j) { return '<button class="card appr" data-wi="' + j + '"><div class="t">' + s.c[j][0] + "</div></button>"; }).join("") + "</div></div>", "Nothing here touches your saved game.");
     document.querySelectorAll("[data-wi]").forEach(function (b) { b.onclick = function () { scene(i + 1, score + s.c[+b.getAttribute("data-wi")][1]); }; });
   }
   function end(score) {

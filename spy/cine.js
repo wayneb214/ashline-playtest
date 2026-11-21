@@ -110,6 +110,7 @@
     const t = timeShots(shots);
     const el = document.createElement("div"); el.className = "cine" + (reduce() ? " still" : "") + (opts.trailer ? " trailer" : ""); el.id = "cine";
     el.setAttribute("role", "dialog"); el.setAttribute("aria-label", SCENES[id].name);
+    if (!opts.trailer) el.setAttribute("aria-modal", "true"); // S1: the page behind goes inert (a11y.js), so nothing under a cutscene can be pressed
     el.innerHTML = '<div class="cine-stage">' + shots.map(shotHTML).join("") + '</div><div class="lb top"></div><div class="lb bot"></div><div class="cine-cap" aria-live="polite"><small></small><span></span></div>' +
       (opts.trailer ? "" : '<div class="cine-skip">Tap to skip</div>');
     return { id: id, shots: shots, total: t, el: el, nodes: null, cap: "", elapsed: 0, last: 0, tilt: [0, 0], aim: [0, 0], opts: opts };
@@ -284,7 +285,10 @@
   function markSeen(id) { seen[id] = 1; store.set(SEEN, JSON.stringify(seen)); }
   function play(id, done, opts) {
     opts = opts || {};
-    if (run) finish(true);
+    // QA round 1 (S1): a scene cut short by a new one must not run its own "done" (that used to start a second scene
+    // inside this call, which was then orphaned on the page with its video still playing, and memory ran away)
+    if (run) { run.done = null; finish(true); }
+    if (gated) { gated.el.remove(); gated = null; }
     const wasSeen = !!seen[id]; markSeen(id);
     if (window.VOICE && !opts.trailer) VOICE.hush(); document.querySelectorAll("#toasts .toast").forEach(function (t) { t.remove(); });
     const r = build(id, opts); r.done = done; r.wasSeen = wasSeen;

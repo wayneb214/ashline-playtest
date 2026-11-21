@@ -157,6 +157,18 @@
     m.style.left = (x / 4).toFixed(2) + "%"; m.style.top = (y / 3).toFixed(2) + "%"; // percentages, so it stays put when the map shrinks
     p.style.strokeDasharray = L; p.style.strokeDashoffset = L * (1 - w.r);
   }
+  // the end of a live op: the case is resolved with the call that was made (also used to settle a call saved mid-op)
+  function settleCall(A, id, k, a, kit, trap, chosen) {
+    const T = A.opTerms(id, k, a, kit, trap), RV = terms(A, id, k, a, kit, trap).V;
+    A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: T.push.mod, trap: trap, risk: RV.push.rl } : chosen === "abort" ? { abort: true, trap: trap } : { hold: true, mod: T.hold.mod, trap: trap, risk: RV.hold.rl });
+  }
+  // QA round 1 (N5): a call made before the app closed is settled on resume, before the desk opens again
+  function settlePending() {
+    const A = window.AH, S = A.S(), p = S.opPending; if (!p) return false;
+    delete S.opPending; if (S.done && S.done[p.id]) return false;
+    const c = A.CASES()[p.id], a = (c && c.approaches || []).filter(function (x) { return x.t === p.a.t; })[0] || p.a; // the live plan, not the saved copy
+    settleCall(A, p.id, p.k, a, p.kit, p.trap, p.c); return true;
+  }
   function run(id, k, a, kit) {
     const A = window.AH, $ = A.$, esc = A.esc, fast = A.FAST || window.__SPY_FAST__;
     const total = fast ? 1500 : ({ low: 15000, med: 20000, high: 25000 }[a.risk] || 20000), askAt = 0.45;
@@ -182,6 +194,7 @@
     const beats = [fresh(LINES.travel, A), LINES.pos[0], fresh(LINES.mid, A), null, fresh(LINES.mid, A), fresh(LINES.end, A)], vb = [null, "pos", "eyes", null, lost ? "lost" : null, null];
     const AT = [0, ARR, 0.3, askAt, 0.62, 0.82], KIND = ["travel", "pos", "eyes", "ask", lost ? "lost" : "mid", "end"]; // when each beat is due (fraction of the op)
     const line = function (i) { const L = voiced(k, vb[i]); if (L) { speak(k, vb[i]); if (vb[i] === "lost") st.lostAt = t / total; return said(L); } if (vb[i] === "lost") st.lostAt = t / total; return fill(beats[i], A, k, id); };
+    if (window.VOICE && VOICE.uncap) VOICE.uncap(); // N4: the desk caption fades as the radio opens; the line itself finishes
     A.render('<div data-screen="op" data-music="tense">' + mapHTML(A, id, k, a) + '<div class="card opcard"><div class="kicker">Live \u00b7 ' + esc(A.CASES()[id].where) + '</div><h2>' + esc(A.CASES()[id].title) + '</h2>' +
       '<div class="opmeta">' + A.face(k) + '<div><b>' + esc(A.AG(k).name) + '</b><br><span>' + esc(a.t) + ' \u00b7 Risk: ' + A.riskTag(A.riskLevel(A.oddsFor(id, k, a, kit))) + '</span></div></div>' +
       '<div class="radio" id="radio"></div><div class="sr-only" id="radiosr" aria-live="polite"></div><div class="opbarw"><div id="opbar" style="width:0%"></div></div><div id="opask"></div>' +
@@ -197,9 +210,11 @@
       let i = 0; p.classList.add("typing");
       const iv = setInterval(function () { i += 2; p.textContent = txt.slice(0, i); r.scrollTop = r.scrollHeight; if (i >= txt.length || !p.isConnected) { clearInterval(iv); p.textContent = txt; p.classList.remove("typing"); } }, 24);
     };
-    const finish = function () { clearInterval(timer); timer = null; const T = A.opTerms(id, k, a, kit, trap); const RV = terms(A, id, k, a, kit, trap).V; A.resolve(id, k, a, kit, chosen === "push" ? { push: true, mod: T.push.mod, trap: trap, risk: RV.push.rl } : chosen === "abort" ? { abort: true, trap: trap } : { hold: true, mod: T.hold.mod, trap: trap, risk: RV.hold.rl }); cur.id = null; };
+    const finish = function () { clearInterval(timer); timer = null; delete A.S().opPending; settleCall(A, id, k, a, kit, trap, chosen); cur.id = null; };
     const choose = function (c) {
       if (chosen) return; chosen = c; FEEL.buzz(c === "abort" ? "heavy" : "tap");
+      // QA round 1 (N5): the call is saved the moment it is made, so closing the app before the result can't undo it
+      A.S().opPending = { id: id, k: k, a: a, kit: kit || null, trap: !!trap, c: c }; A.save("briefing");
       $("opask").innerHTML = '<p class="opchose">' + esc(CHOICE[c].t) + '</p>'; const Lc = voiced(k, c); say(Lc ? said(Lc) : fill(LINES[c], A, k, id), "me", c); if (Lc) speak(k, c);
       if (c === "abort") { t = Math.max(t, total * 0.9); st.abortAt = t / total; logged = 99; } // they walk back along the route; nothing more is seen at the target
     };
@@ -293,5 +308,5 @@
     const r = document.getElementById("pace"); if (r) r.onchange = function () { cur.pace = +r.value; if (window.SFX && SFX.tick) SFX.tick(); draw(); };
     MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide toward <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
   }
-  window.OPS = { terms: terms, WORDS: WORDS, wfill: wfill, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
+  window.OPS = { settlePending: settlePending, terms: terms, WORDS: WORDS, wfill: wfill, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
 })();

@@ -207,6 +207,8 @@
     once: function (id) { this._said = this._said || {}; if (this._said[id]) return; this._said[id] = 1; this.play(id); },
     hush: function () { queue = []; clearTimeout(gap); gap = null; blocked = null; if (cur) cur.pause(); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
     busy: function () { return speaking() || queue.length > 0 || !!gap; },
+    // QA round 1 (N4): fade the caption off without stopping the voice (a desk line finishing as the live op opens)
+    uncap: function () { capT.forEach(clearTimeout); capT = []; clearTimeout(subT); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
     // app backgrounded or a call came in: hold the line where it is, carry on from there when we're back
     hold: function () { if (cur && !cur.paused && !cur.ended) { cur._held = true; cur.pause(); return true; } return false; },
     unhold: function () { if (cur && cur._held) { cur._held = false; const p = cur.play(); if (p && p.catch) p.catch(function () {}); } },

@@ -22,7 +22,8 @@
   const PLAYED = "albion-played";
   function played() { try { return FORCE || !!localStorage.getItem(PLAYED); } catch (e) { return false; } }
   function markPlayed() { try { localStorage.setItem(PLAYED, "1"); } catch (e) {} }
-  function rateHTML(id) { if (!played()) return ""; return '<button type="button" class="btn ghost ratebtn" id="' + id + '">\u2605 Rate this game</button>'; }
+  // QA round 1 (N3): no Rate button where rating can't open (the web playtest)
+  function rateHTML(id) { if (!played() || !canRate()) return ""; return '<button type="button" class="btn ghost ratebtn" id="' + id + '">\u2605 Rate this game</button>'; }
   function bindRate(id) { const b = document.getElementById(id); if (b) b.onclick = function () { openReviewPage(); }; }
   // the system prompt; never throws, never waits, never asks twice
   function requestReview() {
