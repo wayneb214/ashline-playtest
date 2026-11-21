@@ -50,7 +50,7 @@
     means: [["Risk", "{riskList}"],
       ["Partly works", "the job gets done, but not cleanly: the plan\u2019s smaller result, and no extra payoff for pushing."],
       ["Best case", "what the top bar gains if it works. A Push has worse odds than a Hold, but makes the plan\u2019s gains two and a half times as big (at least No.10 trust +5, Service +3)."],
-      ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse bold plans until rested."],
+      ["Service", "the second meter on the top bar: your officers\u2019 strength and morale. Under 30, they refuse bold plans until rested. The lower it is, the less likely every plan is to work. It can\u2019t end the game on its own."],
       ["Cover may be blown", "if a Push fails, the other side may get a look at the officer. If they do, the officer is out of the field for good."],
       ["Full losses", "on a trap they were waiting, so holding back doesn\u2019t help: the whole loss lands and the officer is hurt. Hold also costs No.10 trust \u22121 and Service \u22126 whatever happens (the team is tied up waiting), so a Hold can cost more than a Push."]],
     // the reason after the dot: plain and true to the state ({nm} officer code name, {sv} "she\u2019s"/"he\u2019s", {p} "her"/"his")
@@ -65,6 +65,8 @@
     const T = A.opTerms(id, k, a, kit, trap), nm = A.AG(k).code || A.first(k), m = function (n) { return n < 0 ? "\u2212" + (-n) : "+" + n; };
     const S = A.S(), tired = (S.stress || {})[k] >= 3, W = WORDS;
     const lossTxt = function (o) { const t = W.meters.filter(function (x) { return o[x[0]]; }).map(function (x) { return (x[1] + " " + m(o[x[0]])).replace(/ /g, "\u00a0"); }); return t.length ? t.join(", ") : W.lossNone; };
+    // round 5: when a fail would take the top-bar Service to 0, or under 30 (no bold plans), the Worst case says so
+    const svcTo = function (o) { const v = A.svc(), d = o.service || 0; if (d >= 0) return ""; return v + d <= 0 ? " (Service to 0)" : v >= 30 && v + d < 30 ? " (Service under 30)" : ""; };
     const loss = { push: A.opLoss(id, k, a, kit, "push", trap), hold: A.opLoss(id, k, a, kit, "hold", trap) };
     const gain = { push: A.opGain(id, k, a, kit, "push", trap), hold: A.opGain(id, k, a, kit, "hold", trap) };
     // round 4 (Wayne): each call shows its TRUE dots from its own chance; Push's chance is never above Hold's, so it never shows
@@ -72,8 +74,8 @@
     let rh = A.riskLevel(T.hold.odds), rp = A.riskLevel(T.push.odds);
     const pr = W.pron[k] || W.pron.other, base = { nm: nm, sv: wfill(pr.sv, { nm: nm }), p: pr.p };
     const V = {
-      push: Object.assign({}, base, { gain: lossTxt(gain.push), loss: lossTxt(loss.push), risk: A.riskDots(rp), rl: rp, why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
-      hold: Object.assign({}, base, { gain: lossTxt(gain.hold), loss: lossTxt(loss.hold), trust: m(T.hold.trust), risk: A.riskDots(rh), rl: rh, why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
+      push: Object.assign({}, base, { gain: lossTxt(gain.push), loss: lossTxt(loss.push) + svcTo(loss.push), risk: A.riskDots(rp), rl: rp, why: wfill(trap ? W.why.pushTrap : tired ? W.why.pushTired : W.why.push, base) }),
+      hold: Object.assign({}, base, { gain: lossTxt(gain.hold), loss: lossTxt(loss.hold) + svcTo(loss.hold), trust: m(T.hold.trust), risk: A.riskDots(rh), rl: rh, why: wfill(trap ? W.why.holdTrap : W.why.hold, base) }),
       abort: Object.assign({}, base, { trust: lossTxt({ capital: T.abort.trust }), loyal: T.abort.loyalGain ? wfill(W.loyal.gain, { n: m(T.abort.loyalGain) }) : W.loyal.top }) };
     const tpl = { push: W.push, hold: T.hold.safe ? W.hold : W.holdTrap, abort: W.abort }, L = {};
     Object.keys(tpl).forEach(function (c) {

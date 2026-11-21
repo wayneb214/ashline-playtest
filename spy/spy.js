@@ -65,7 +65,7 @@
     ["capital", "service", "mood"].forEach(function (m) { if (S.meters[m] != null) S.meters[m] = score(S.meters[m]); });
     $("meters").innerHTML = D.METERS.map(function (m) {
       const v = m.id === "service" ? svc() : S.meters[m.id], d = changes && changes[m.id];
-      return '<div class="meter' + (v < 35 ? " low" : "") + (m.id === "capital" ? " pm" : "") + '" aria-label="' + m.name + " " + v + ' out of 100"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + '<span class="mfull">' + m.name + '</span><span class="mshort" aria-hidden="true">' + (m.id === "capital" ? "No.10" : m.name) + '</span></span></div><div class="mval"><b>' + v + "</b><small>/100</small>" + (d ? ' <span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span>" : "") + '</div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
+      return '<div class="meter' + (v < 35 ? " low" : m.id === "service" && v < 50 ? " amber" : "") + (m.id === "service" && v < 10 ? " crit" : "") + (m.id === "capital" ? " pm" : "") + '" aria-label="' + m.name + " " + v + ' out of 100"><div class="row"><span>' + (m.id === "capital" ? '<i class="lamp" style="opacity:' + (0.3 + v / 140).toFixed(2) + '" aria-hidden="true"></i>' : '<svg class="mgauge" viewBox="0 0 24 14" aria-hidden="true"><path d="M2 13a10 10 0 0 1 20 0" /><line x1="12" y1="13" x2="12" y2="4" transform="rotate(' + (-90 + v * 1.8) + ' 12 13)"/></svg>') + '<span class="mfull">' + m.name + '</span><span class="mshort" aria-hidden="true">' + (m.id === "capital" ? "No.10" : m.name) + '</span></span></div><div class="mval"><b>' + v + "</b><small>/100</small>" + (d ? ' <span class="delta ' + (d > 0 ? "up" : "down") + '">' + (d > 0 ? "+" : "") + d + "</span>" : "") + '</div><div class="bar"><div class="fill" style="width:' + v + '%"></div></div></div>';
     }).join("");
     nights10();
     if (window.FUN) FUN.track(S);
@@ -118,7 +118,20 @@
     if (!no10Due() || S.no10Called === S.day) return go(); S.no10Called = S.day; save("summary"); window.DESK.no10Warn(go);
   }
   function moodHead() { const m = S.meters.mood == null ? 55 : S.meters.mood; return m >= 65 ? "Poll: public warms to the government on security" : m >= 45 ? "Poll: voters shrug at Whitehall spy rows" : m >= 30 ? "Poll: public faith in the secret services slips" : "Poll: voters lose faith in Whitehall\u2019s spies"; }
-  function ticker() { $("tk-run").innerHTML = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join(""); }
+  // round 5 (Wayne: "the late edition banner cuts words off"): a new headline waits for the end of the loop, when the old text has
+  // fully scrolled off, instead of swapping in mid-scroll (that jumped the line sideways); every loop runs at one reading speed.
+  const TK_PX_S = 45;
+  function tkSet(run, html) {
+    if (run.dataset.html !== html) { run.innerHTML = html; run.dataset.html = html; }
+    run.tkNext = null; const w = run.offsetWidth; if (!w) return;
+    run.style.animation = "none"; void run.offsetWidth; run.style.animation = ""; run.style.animationDuration = Math.max(12, w / TK_PX_S).toFixed(2) + "s";
+  }
+  function ticker() {
+    const run = $("tk-run"), html = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join("");
+    if (!run.tkHooked) { run.tkHooked = true; run.addEventListener("animationiteration", function () { if (run.tkNext != null || run.tkW !== run.offsetWidth) { tkSet(run, run.tkNext != null ? run.tkNext : run.dataset.html); run.tkW = run.offsetWidth; } }); }
+    if (html === (run.tkNext != null ? run.tkNext : run.dataset.html)) return;
+    if (!run.dataset.html || !run.offsetWidth) { tkSet(run, html); run.tkW = run.offsetWidth; } else run.tkNext = html;
+  }
   // panel 6 v8: the page leaves room under it for the fixed tip bar at its real height (.view padding uses --hb)
   (function () { const h = document.getElementById("hintbar"); if (!h) return; const set = function () { document.documentElement.style.setProperty("--hb", h.offsetHeight + "px"); }; set(); if (window.ResizeObserver) new ResizeObserver(set).observe(h); })();
   function chrome(on) { ["hud", "ticker", "hintbar"].forEach(function (id) { $(id).classList.toggle("hidden", !on); }); document.body.classList.toggle("on-title", !on); }
@@ -128,6 +141,11 @@
   // differently the line says so (otherwise "+2 Service" beside "Service 62\u219262" looks like a mistake)
   const SVC_NOTE = " The top-bar Service includes officer stress and loyalty.";
   const LOW_ALERT = function (t) { return "No.10 trust has just dropped under 20 (now " + t + "). " + (S.day === 6 ? "Under 15 at the end of today means resigning." : "Under 15 at the end of Day 6 means resigning, and under 20 at midnight No.10 takes a file. " + sackRule()) + (S.day >= 4 ? " Each case you close wins back +3." : ""); };
+  // round 5: what low Service does, in the game's own numbers: under 30 officers refuse bold plans; every plan's chance moves
+  // 1 point per 4 Service from 50 (oddsFor: (svc - 50) / 4), so at 0 it is 12 or 13 points lower. Service alone never ends the game.
+  const SVC_WARN = [30, 10];
+  const SVC_FACTS = "Under 30, officers refuse bold plans until they\u2019re rested. Every plan\u2019s chance it works also moves with Service: at 0 it is about 12% lower than at 50. Service on its own can\u2019t get you sacked or end the game; successes and a rested team bring it back.";
+  const SVC_ALERT = function (x, v) { return "Service has just dropped under " + x + " (now " + v + "). " + SVC_FACTS; };
   const SACK_ALERT = function (t) { return "No.10 trust has just dropped under " + SACK_LOW + " (now " + t + "). " + sackRule(); };
   function barText() {
     const b = S && S.bar0; if (!b) return "";
@@ -154,6 +172,10 @@
     let alertTx = ""; const t1 = score(S.meters.capital);
     const sackX = S.day <= 5 && S.bar0 && S.bar0.t >= SACK_LOW && t1 < SACK_LOW && S.sackAlerted !== S.day;
     if (sackX || (S.day >= 4 && S.bar0 && S.bar0.t >= NO10_LOW && t1 < NO10_LOW && S.lowAlerted !== S.day)) { if (sackX) S.sackAlerted = S.day; S.lowAlerted = S.day; alertTx = sackX ? SACK_ALERT(t1) : LOW_ALERT(t1); const al = document.createElement("p"); al.className = "lowalert"; al.setAttribute("role", "alert"); al.textContent = alertTx; pEl.insertAdjacentElement("beforebegin", al); }
+    // round 5 (Wayne: "Service dropped to 0 and I didn't get any warnings"): the moment the top-bar Service drops under 30, and
+    // again under 10, the result card says plainly what that means (once a day for each)
+    const v1 = svc(), svX = S.bar0 ? SVC_WARN.filter(function (x) { return S.bar0.v >= x && v1 < x && !((S.svcAlerted || {})[x] === S.day); }).pop() : null;
+    if (svX) { S.svcAlerted = S.svcAlerted || {}; SVC_WARN.forEach(function (x) { if (S.bar0.v >= x && v1 < x) S.svcAlerted[x] = S.day; }); const sx = SVC_ALERT(svX, v1), al = document.createElement("p"); al.className = "lowalert svcalert"; al.setAttribute("role", "alert"); al.textContent = sx; pEl.insertAdjacentElement("beforebegin", al); alertTx = (alertTx ? alertTx + " " : "") + sx; }
     // Batch P: screen readers hear the stamp first (CLOSED, PARTIAL, FAILED...), then the top bar
     const st = oc.querySelector(".stamp"), stTx = st ? st.textContent.trim() : "";
     announce((stTx ? stTx.charAt(0) + stTx.slice(1).toLowerCase() + ". " : "") + (own ? own.getAttribute("aria-label") + "." : tx) + (alertTx ? " " + alertTx : ""));
@@ -493,7 +515,7 @@
         risk: risk, late: lt > 0 && !done, soon: !done && lt <= 0 && left <= 2, due: due, left: left, lockT: lockT, lock4: lock4, off: !!(done || noOff || lockT || lock4), why: why, sub: sub };
     });
     FILES = {}; cards.forEach(function (c) { FILES[c.id] = c; });
-    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + storyLine() + replayCard() + lowTrustCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + echoCard() + deskHtml(cards) +
+    render('<div data-screen="brief"></div><div class="lh paper">HIS MAJESTY\u2019S GOVERNMENT \u00b7 TOP SECRET \u00b7 UK EYES ONLY</div><div class="kicker">' + (S.day >= 4 ? "Day " + S.day + " \u00b7 " + window.AH4.NAMEOF[S.day] : S.day === 3 ? "Day 3 \u00b7 The Green Coat" : S.day === 2 ? "Day 2 \u00b7 Pale Hour" : "Morning brief for C") + (S.day >= 4 && /Albion House/.test(window.AH4.NAMEOF[S.day]) ? "" : " \u00b7 Albion House") + "</div>" + storyLine() + replayCard() + closedNote() + lowTrustCard() + tip("briefing") + (S.day === 3 ? window.AH3.followStrip() : S.day >= 4 ? window.AH4.followStrip() : "") + no10Note() + echoCard() + deskHtml(cards) +
       (S.day === 2 ? window.AH2.boardButton() : "") + '<button class="linkbtn" id="endday">Call it a day</button>', warnTxt || lowWarn() || "Tap a file to pick it up.");
     if (no10Took() && !S.no10.said && window.VOICE) { S.no10.said = true; save("briefing"); VOICE.play("ash_no10_took"); }
     briefVoice(line.text, line.worried);
@@ -596,7 +618,7 @@
       '<div class="sticky-go"><button class="btn primary" id="sackepi">\u25b6 Epilogue \u00b7 ' + esc((window.REPLAY ? REPLAY.NAMES : {}).sacked || "Out after days") + '</button>' + (window.REPLAY ? REPLAY.endButtonHTML() : "") + '<button class="btn ghost" id="again">New game</button></div>',
       "The Prime Minister wanted your letter. You were sacked.");
     setTimeout(function () { if (window.VOICE && $("paper")) VOICE.play("bulletin_sacked"); }, 700);
-    $("sackepi").onclick = function () { if (window.VOICE) VOICE.stop(); if (window.ENDINGS) ENDINGS.play("sacked", true); };
+    $("sackepi").onclick = function () { if (window.VOICE) VOICE.stop(); if (window.ENDINGS) ENDINGS.play("sacked", true, function () { ENDINGS.pull("sacked", sackPaper); }); }; // round 5: then the replay screen
     if (window.REPLAY && REPLAY.bindEnd) REPLAY.bindEnd();
     $("again").onclick = function () { store.del(SAVE); difficulty(); }; // anyone at a day's end has played: the picker first
   }
@@ -617,7 +639,19 @@
   // ---------- the desk: case files spread out under the lamp ----------
   const DESK_RANK = { low: 1, med: 2, high: 3 }, RISKW = ["No fieldwork", "Careful plans", "Measured plans", "Bold plans"]; // panel 6 v10: the plans' usual style, not a risk (risk is the dots)
   let FILES = {}; // today's files by id, for the lifted view
-  function dueWords(c) { return c.done && c.id === no10Took() ? "No.10 is handling it" : c.done ? { win: "Closed", mixed: "Partial", loss: "Failed" }[c.done] : c.late ? "Overdue \u00b7 was " + hh(c.due) : "Due " + hh(c.due) + (c.left <= 5 ? " \u00b7 " + c.left + "h left" : ""); }
+  // round 5 (Wayne: "a case aborted before I picked anything"): a file that ran out of time says so, not "Failed", and an overdue
+  // file says when it will close
+  function expiredToday(id) { return (S.log || []).some(function (l) { return l.id === id && !l.k && /^Expired/.test(l.appr || ""); }); }
+  function dueWords(c) { return c.done && c.id === no10Took() ? "No.10 is handling it" : c.done && expiredToday(c.id) ? "Ran out of time" : c.done ? { win: "Closed", mixed: "Partial", loss: "Failed" }[c.done] : c.late ? "Overdue \u00b7 closes " + hh(c.due + EXPIRE) : "Due " + hh(c.due) + (c.left <= 5 ? " \u00b7 " + c.left + "h left" : ""); }
+  // round 5: the desk says which files closed without you today, and why (No.10 took one, or nobody went in time)
+  function closedNote() {
+    const gone = (S.log || []).filter(function (l) { return !l.k && /^Expired/.test(l.appr || ""); });
+    if (!gone.length) return "";
+    return '<div class="no10take closednote" role="note" data-screen-note="closed"><span class="stamp">RAN OUT OF TIME</span>' + gone.map(function (l) {
+      const c = CASES()[l.id], t = S.day === 2 ? window.AH2.titleOf(l.id) : c.title;
+      return "<p><b>" + esc(t) + "</b> was due at " + hh(dueOf(l.id)) + ". Nobody had started it by " + hh(dueOf(l.id) + EXPIRE) + ", so it closed and counts as a lost case.</p>";
+    }).join("") + "</div>";
+  }
   function deskHtml(cards) {
     return '<div class="desk-b"><div class="desk-spread">' + cards.map(function (c) {
       const rot = [-2.2, 1.6, 1.2, -1.8, -1.1, 2.0, 0.8][c.i % 7], pri = c.done ? "done" : c.left <= 2 ? "red" : c.left <= 5 ? "amber" : "green";
@@ -637,9 +671,9 @@
     d.innerHTML = '<div class="dk-sheet"><div class="dk-hmg">HIS MAJESTY\u2019S GOVERNMENT \u00b7 SECRET \u00b7 UK EYES ONLY</div>' +
       '<span class="dk-clip" aria-hidden="true"></span><img class="dk-photo" src="' + c.img + '" alt="Painting of ' + esc(c.s.where || "the scene") + '">' +
       '<div class="dk-kick">Case file \u00b7 ' + esc(c.s.where || "") + '</div><h2>' + esc(c.title) + '</h2>' +
-      '<div class="dk-chips"><span class="dk-chip r' + c.risk + '">' + RISKW[c.risk] + '</span><span class="dk-chip' + (c.late ? " late" : c.soon ? " soon" : "") + '">' + (c.done ? dueWords(c) : c.late ? "Overdue \u00b7 was due " + hh(c.due) : "Due " + hh(c.due) + " \u00b7 " + c.left + (c.left === 1 ? " hour left" : " hours left")) + "</span></div>" +
+      '<div class="dk-chips"><span class="dk-chip r' + c.risk + '">' + RISKW[c.risk] + '</span><span class="dk-chip' + (c.late ? " late" : c.soon ? " soon" : "") + '">' + (c.done ? dueWords(c) : c.late ? "Overdue \u00b7 was due " + hh(c.due) + " \u00b7 closes " + hh(c.due + EXPIRE) : "Due " + hh(c.due) + " \u00b7 " + c.left + (c.left === 1 ? " hour left" : " hours left")) + "</span></div>" +
       (c.s.brief ? "<p>" + esc(c.s.brief) + "</p>" : "") + (c.why || c.sub ? '<p class="dk-note">' + esc(c.why || c.sub) + "</p>" : "") +
-      '<div class="dk-sig">Initialled for C \u00b7 Albion House, London</div>' +
+      (c.done ? "" : soonNote(id)) + '<div class="dk-sig">Initialled for C \u00b7 Albion House, London</div>' +
       '<div class="dk-go">' + (c.off ? '<button class="btn ghost" disabled>' + (c.done ? "Already dealt with" : c.lockT ? "Not yet: finish the earlier file" : c.lock4 ? "Not yet" : "No officer free") + "</button>" : '<button class="btn primary" id="dk-start">Start this case</button>') +
       '<button class="btn ghost" id="dk-back">Put it back</button></div></div>';
     document.body.appendChild(d);
@@ -947,6 +981,17 @@
     $("back").onclick = briefing;
     MENU.coach("traits", "Each officer has <b>three traits</b>. Tap a file to read it. Tap <b>Send</b>, or drag the file onto the case, to send them.");
   }
+  // round 5: before you send anyone, the plan screen says which other files would close (run out of time) while this one runs
+  // round 5: the lifted case file also lists any other file that closes in the next 4 hours if nobody starts it
+  function soonNote(id) {
+    const L = remaining().filter(function (x) { return x !== id && dueOf(x) + EXPIRE > S.hour && dueOf(x) + EXPIRE <= S.hour + 4; });
+    return L.length ? '<p class="dk-note dk-soon">\u23f1 Meanwhile: ' + L.map(function (x) { return esc(S.day === 2 ? window.AH2.titleOf(x) : CASES()[x].title) + " closes at " + hh(dueOf(x) + EXPIRE); }).join("; ") + " if nobody has started it.</p>" : "";
+  }
+  function closeWarn(id, ends) {
+    const L = remaining().filter(function (x) { return x !== id && dueOf(x) + EXPIRE <= ends && dueOf(x) + EXPIRE > S.hour; });
+    if (!L.length) return "";
+    return '<p class="closewarn" role="note">\u23f1 This plan runs until ' + hh(ends) + ". " + L.map(function (x) { return "<b>" + esc(S.day === 2 ? window.AH2.titleOf(x) : CASES()[x].title) + "</b> closes at " + hh(dueOf(x) + EXPIRE); }).join(" and ") + (L.length > 1 ? "; they" : "; it") + " would count as lost.</p>";
+  }
   function approach(id, k) {
     const s = CASES()[id];
     let sel = recIdx(id, k), kit = null, kitOpen = false, drawn = false;
@@ -970,7 +1015,7 @@
       const a0 = s.approaches[sel];
       render('<div data-screen="approach"><div class="ash-note card slimnote">' + face(k) + '<div class="note"><div class="who">' + esc(AG(k).name) + " " + condChip(k, "inline") + '</div><span class="tx">' + (S.stress[k] >= 4 ? "I can do it, C. Just not the loud way. I\u2019m running on empty." : rec >= 0 ? "If it were me, I\u2019d go with \u2018" + esc(s.approaches[rec].t) + "\u2019." : "How do you want it played?") + "</span></div></div>" + lesson(id, "approach") +
         '<h3 class="question">How do they play it?</h3>' + opts + (S.day === 2 && window.AH2 && AH2.boardThen && s.approaches.some(function (a) { return lockOf(a) === "needs" && canUnlock(a); }) ? '<button type="button" class="btn ghost" id="toboard">\ud83d\udccc Open the evidence board</button>' : "") + kitRow + (window.OPS ? OPS.controls(id, k, a0) : "") + dial(oddsParts(id, k, a0, kit)) +
-        '<div class="sticky-go"><button class="btn primary sendbtn" id="go">Send ' + esc(first(k)) + " \u00b7 " + esc(a0.t) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
+        closeWarn(id, Math.min(24, S.hour + hoursFor(k, a0, kit))) + '<div class="sticky-go"><button class="btn primary sendbtn" id="go">Send ' + esc(first(k)) + " \u00b7 " + esc(a0.t) + '</button></div><button class="linkbtn" id="back">Send someone else</button></div>',
         "Pick a plan. The dial shows the odds, and why.", drawn);
       if (!drawn && window.VOICE && s.approaches.some(function (x) { return lockOf(x) === "svc"; })) setTimeout(function () { VOICE.caption(AG(k).code || first(k), REFUSE); }, 300);
       drawn = true;
@@ -1447,7 +1492,7 @@
       S.day === 1 ? "To be continued. Day 2 starts at eight." : S.day === 2 ? "To be continued. Day 3 starts at eight." : S.day < 6 ? "To be continued. Day " + (S.day + 1) + " starts at eight." : "The end of Act 2. The spymaster has gone home, one way or another.");
     $("again").onclick = function () { store.del(SAVE); difficulty(); }; // anyone at a day's end has played: the picker first
     $("paperbtn").onclick = function () { FEEL.tearThen($("flash"), function () { paper({ back: summary }); }); };
-    if ($("epibtn")) $("epibtn").onclick = function () { if (window.VOICE) VOICE.stop(); ENDINGS.play(ENDINGS.current(), true); };
+    if ($("epibtn")) $("epibtn").onclick = function () { if (window.VOICE) VOICE.stop(); const e = ENDINGS.current(); ENDINGS.play(e, true, S.day === 6 ? function () { ENDINGS.pull(e, summary); } : null); }; // round 5: after the last epilogue, the replay screen
     if (window.REPLAY && REPLAY.bindEnd) REPLAY.bindEnd();
     if ($("day2")) $("day2").onclick = function () { no10Night(function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY2)); save("briefing"); if (S.diffAsked) window.AH2.briefingIntro(); else diffAfterDay1(function () { store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: S })); window.AH2.briefingIntro(); }); }); }); };
     if ($("day3")) $("day3").onclick = function () { no10Night(function () { FEEL.tearThen($("flash"), function () { restore(loadJSON(DAY3)); save("briefing"); window.AH3.briefingIntro(); }); }); };
@@ -1542,7 +1587,7 @@
   function lowWarn() {
     const m = S.meters || {};
     if (m.capital != null && m.capital <= 25) return "No.10 trust is low (" + m.capital + "/100). Wins win it back.";
-    if (m.service != null && m.service <= 25) return "Service is low (" + m.service + "/100). Safer plans and the right officer protect it.";
+    if (m.service != null && m.service <= 25) return "Service is low (" + m.service + "/100). Under 30, officers refuse bold plans; at 0, every plan is about 12% less likely to work. Safer plans and the right officer protect it.";
     return "";
   }
   // tonight's front page, on the summary itself: every story is one of your choices

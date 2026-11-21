@@ -81,5 +81,50 @@
     if (S.day === 6 && (S.ended || S.screen === "summary") && window.AH4 && AH4.ending) return "a2_" + AH4.ending();
     return null;
   }
-  window.ENDINGS = { play: play, gallery: gallery, current: current, ART: ART, HINT: HINT, fate: fate };
+  // ---- round 5 (Wayne): the replay screen after the last epilogue (Day 6, or the sacking) ----
+  // How close you came, from the same rules as act2.js ending(): resign < front page < quiet exit < knighted.
+  const LADDER = ["a2_resign", "a2_scandal", "a2_quiet", "a2_knight"];
+  const plural = function (n, w) { return n + " " + w + (n === 1 ? "" : "s"); };
+  const andList = function (L) { return L.length > 1 ? L.slice(0, -1).join(", ") + " and " + L[L.length - 1] : L[0] || ""; };
+  // what the next ending up needs that this game didn't have: { pts, trust, sd } (sd: Downing Street must not be lost)
+  function nextGap(e, inp, under10) {
+    const p = inp ? inp.p : 0, t = inp ? inp.t : 0, sd = inp ? inp.showdown : null;
+    if (e === "sacked") return { next: null, trust: Math.max(0, (under10 || 10) - t) };
+    if (e === "a2_resign") return { next: "a2_scandal", trust: sd === "loss" ? Math.max(0, 30 - t) : Math.max(0, 15 - t), pts: 0, sd: false };
+    if (e === "a2_scandal") return { next: "a2_quiet", pts: Math.max(0, 4 - p), trust: Math.max(0, 30 - t), sd: sd === "loss" };
+    if (e === "a2_quiet") return { next: "a2_knight", pts: Math.max(0, 6 - p), trust: Math.max(0, 45 - t), sd: sd === "loss" };
+    return { next: null };
+  }
+  function closeLine(e) {
+    const N = NAMES(), q = function (k) { return "\u201c" + A().esc(N[k] || "") + "\u201d"; }, S = A().S();
+    if (e === "a2_knight") return "You got " + q(e) + ", the top ending. Nothing was missing.";
+    if (e === "sacked") {
+      const low = (A().SACK_LOW || 10), t = A().score(S.meters.capital);
+      return "You got " + q(e) + " on Day " + S.day + ". Staying in the job needed No.10 trust " + low + " or more at midnight; you ended the day on " + t + ", " + plural(Math.max(1, low - t), "point") + " short.";
+    }
+    const g = nextGap(e, window.AH4 && AH4.endingInputs ? AH4.endingInputs() : null), bits = [];
+    if (g.pts) bits.push(plural(g.pts, "story point"));
+    if (g.trust) bits.push(g.trust + " No.10 trust");
+    const sdTx = g.sd ? (bits.length ? ", with Downing Street not lost" : "Downing Street not being lost") : "";
+    return "You got " + q(e) + ". " + q(g.next) + " was " + (bits.length || g.sd ? andList(bits) + sdTx + " away." : "within reach.");
+  }
+  function pull(e, back) {
+    const f = foundAll(), N = NAMES(), keys = Object.keys(ART), unfound = keys.filter(function (k) { return !f[k] && k !== e; });
+    const SEEN = "albion-replay-seen", first = !localStorage.getItem(SEEN); try { localStorage.setItem(SEEN, "1"); } catch (x) {}
+    const tip = unfound.length ? unfound[Math.floor((A().rnd ? A().rnd() : Math.random()) * unfound.length)] : null;
+    const hard = first && window.REPLAY && REPLAY.unlocked();
+    A().render('<div data-screen="replay-pull"><div class="card dossier rpull">' + A().LH + '<div class="kicker" style="margin-top:8px">The end of this game</div><h2 id="rp-h" tabindex="-1">How close you came</h2>' +
+      '<p class="rp-close" id="rp-close">' + closeLine(e) + "</p>" +
+      (hard ? '<p class="rp-unlock" role="status">\u2726 Hard mode unlocked: pick it when you start a new game.</p>' : "") +
+      '<h3 class="pasth" id="rp-gh">All endings \u00b7 ' + keys.filter(function (k) { return f[k]; }).length + " of " + keys.length + " found</h3>" +
+      '<ul class="rp-grid" aria-labelledby="rp-gh">' + keys.map(function (k) {
+        return f[k] ? '<li class="rp-card got' + (k === e ? " now" : "") + '"><img src="' + ART[k] + '" alt=""><b>' + A().esc(N[k] || "") + "</b><small>" + (k === e ? "This game" : "Found") + " \u00b7 " + ACT[k] + "</small></li>"
+          : '<li class="rp-card"><b>' + A().esc(N[k] || "") + "</b><small>" + ACT[k] + " \u00b7 " + HINT[k] + "</small></li>"; }).join("") + "</ul>" +
+      (tip ? '<p class="rp-tip"><b>Try next time:</b> ' + A().esc(N[tip] || "") + ". " + HINT[tip] + "</p>" : "") +
+      '</div><div class="sticky-go"><button class="btn primary" id="rp-new">New game</button><button class="btn ghost" id="rp-back">Back to the front page</button></div></div>', "Every ending you find is kept on this device.");
+    const h = document.getElementById("rp-h"); if (h) h.focus();
+    A().$("rp-new").onclick = function () { if (window.AH && AH.store) AH.store.del("albion-save-v1"); A().title(); };
+    A().$("rp-back").onclick = back || A().title;
+  }
+  window.ENDINGS = { play: play, gallery: gallery, current: current, ART: ART, HINT: HINT, fate: fate, pull: pull, closeLine: closeLine, nextGap: nextGap, LADDER: LADDER };
 })();

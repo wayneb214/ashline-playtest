@@ -299,7 +299,7 @@
     const s = S(), c = C(), n = s.log.length;
     if (s.day === 1 && s.call && !c.panic && s.log.filter(function (l) { return l.k; }).length >= 3) { if (panicCall() !== false) return true; }
     if (s.day === 2 && !c.hale2 && n >= 2) { haleCall(); return true; }
-    if (s.day === 3 && s.done.york && !c.lindenNote) { lindenNote(); return true; }
+    if (s.day === 3 && s.done.york && !c.lindenNote && s.log.some(function (l) { return l.id === "york" && l.k; })) { lindenNote(); return true; } // round 5: only if someone went to the York house (not when the file ran out of time)
     if (s.day === 3 && !c.kesk && n >= 3 && s.deal && s.deal !== "pending" && s.deal !== "deal" && !s.done.exfil) { keskCall(); return true; }
     return false;
   }

@@ -29,6 +29,9 @@ button { font: inherit; color: inherit; }
 .meter .bar { height: 6px; background: rgba(0,0,0,.45); border-radius: 3px; margin-top: 3px; overflow: hidden; border: 1px solid rgba(201,162,74,.35); }
 .meter .fill { height: 100%; background: linear-gradient(180deg, var(--brass-hi), var(--brass-lo)); transition: width .7s var(--ease); }
 .meter.low .fill { background: linear-gradient(180deg, #c94b3f, var(--oxblood)); }
+/* round 5: Service turns amber under 50, red under 35 (.low), and its number is outlined in red under 10 */
+.meter.amber .fill { background: linear-gradient(180deg, #e0a53a, #b07818); }
+.meter.crit { box-shadow: 0 0 0 2px #c94b3f; border-radius: 4px; }
 .meter .delta { animation: pop 1.8s var(--ease) both; font-weight: 700; }
 .meter .delta.up { color: #9fd3a8; } .meter .delta.down { color: #ff9a8a; }
 @keyframes pop { 0% { opacity: 0; transform: translateY(4px); } 15%, 75% { opacity: 1; transform: none; } 100% { opacity: 0; } }
@@ -36,10 +39,12 @@ button { font: inherit; color: inherit; }
 /* news ticker: evening paper */
 .ticker { display: flex; align-items: center; height: 28px; background: var(--paper); color: var(--paper-ink); font-size: 0.875rem; overflow: hidden; border-bottom: 1px solid #b9ab8c; }
 .tk-tag { flex-shrink: 0; padding: 0 10px; height: 100%; display: grid; place-items: center; background: var(--oxblood); color: var(--paper); font-family: var(--type); font-size: 0.875rem; letter-spacing: .06em; }
-.tk-win { flex: 1; overflow: hidden; white-space: nowrap; }
+.tk-win { flex: 1; overflow: hidden; white-space: nowrap; position: relative; contain: paint; margin-left: 6px; } /* round 5: clips the moving line on iOS too, with a gap after the label */
 .tk-run { display: inline-block; padding-left: 100%; animation: tick 30s linear infinite; font-family: var(--serif); font-weight: 700; font-style: italic; }
 .tk-run b { color: var(--oxblood); margin: 0 8px; font-style: normal; }
 @keyframes tick { to { transform: translateX(-100%); } }
+/* round 5: with reduced motion the line stands still from the left edge, newest headline first, and ends in an ellipsis */
+@media (prefers-reduced-motion: reduce) { .tk-run { display: inline; padding-left: 0; } .tk-win { text-overflow: ellipsis; } }
 
 .view { flex: 1; padding: 14px 14px 84px; }
 .view > * { animation: rise .5s var(--ease) both; }
@@ -551,6 +556,8 @@ body.in-cine #rain { opacity: .85; }
 .lampglow { position: absolute; left: 50%; top: -30px; width: 280px; height: 160px; margin-left: -140px; background: radial-gradient(ellipse at 50% 60%, rgba(255,200,110,.75), rgba(255,170,60,.25) 45%, transparent 70%); opacity: .45; pointer-events: none; }
 .lampshade { position: absolute; left: 50%; top: 8px; width: 120px; height: 34px; margin-left: -60px; background: linear-gradient(180deg, #2e6b45, #173d27); border-radius: 60px 60px 8px 8px; box-shadow: 0 6px 14px rgba(0,0,0,.4), inset 0 -3px 0 #d8b866; }
 .lamptip { font-family: var(--type); font-size: 0.875rem; color: #eadfc4; margin: 6px 0 8px; position: relative; }
+/* round 5 (Wayne: "the writing under the lamp is hard to read"): a dark card under the tip, so it stays clear when the glow brightens as you warm the letter */
+.lamptip { display: inline-block; max-width: 100%; box-sizing: border-box; padding: 6px 12px; border-radius: 6px; background: rgba(14, 11, 8, .8); text-shadow: 0 1px 2px #000; }
 .lnote { background: linear-gradient(180deg, #f6efe0, #e9dfc8); color: var(--paper-ink); padding: 16px; border-radius: 3px; transform: rotate(.6deg); }
 
 /* ---- Readability pass (iPhone SE to Pro Max): body text 16px, secondary 15px, nothing under 12px,
@@ -1340,6 +1347,9 @@ html, body { height: 100%; overflow: hidden; }
 .no10take { margin: 10px 0 12px; padding: 12px 14px; border: 2px solid #8a1f1f; border-radius: 4px; background: #f3e6cf; color: #2a1d12; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
 .no10take .stamp { display: inline-block; padding: 3px 8px; border: 2px solid #8a1f1f; color: #8a1f1f; font: 700 .9rem/1.2 var(--type, monospace); letter-spacing: .08em; transform: rotate(-1.5deg); }
 .no10take p { margin: 8px 0 0; font-size: 1rem; line-height: 1.4; }
+#view .no10take p, #view .no10take b { color: #2a1d12; } /* round 5: dark ink on the paper card (a general #view p colour was greying it out) */
+/* round 5: a file that would run out of time while this plan runs */
+.closewarn { margin: 10px 0; padding: 10px 12px; border-left: 4px solid #c9873a; background: rgba(20,14,8,.78); color: #f1e6cc; font-size: 1rem; line-height: 1.4; border-radius: 4px; }
 .desk-file.done .desk-stamp { white-space: normal; }
 .card.appr .refuse { margin-top: 6px; font-style: italic; color: #6b1d1d; font-size: max(14px, .95rem); line-height: 1.35; }
 .chip.fly { background: #e3f0dc; border-color: #4f7a3a; color: #234015; }
@@ -1568,3 +1578,17 @@ body:has([data-screen="op"].asking) #subtitle { display: none; }
 #view { scroll-padding-bottom: calc(var(--safe-b, 0px) + 120px); }
 /* QA round 4: the dial's starting point, "other things" and the limit lines: plain, so the chips stay the reasons */
 .dial .reasons .dnote { color: #d8c89c; font-weight: 400; background: rgba(255,255,255,.06); }
+
+/* round 5: the replay screen after the last epilogue: how close you came, every ending, one hint */
+.rpull .rp-close { font-size: 1.0625rem; line-height: 1.45; margin: 8px 0 10px; }
+.rpull .rp-unlock { font-size: 1rem; margin: 6px 0 10px; padding: 8px 10px; border-left: 4px solid var(--brass, #c9a24a); background: rgba(201,162,74,.12); }
+.rp-grid { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; }
+.rp-card { display: flex; flex-direction: column; gap: 4px; min-height: 44px; padding: 8px; border-radius: 4px; background: #15130f; color: #e9dfc6; border: 1px solid rgba(201,162,74,.35); }
+.rp-card b { font-size: .9375rem; line-height: 1.25; color: #f3ead6; }
+.rp-card small { font-size: .875rem; line-height: 1.35; color: #d8ccb0; }
+.rp-card.got { background: #f3ead6; color: #2a2216; border-color: #b9ab8c; }
+.rp-card.got b { color: #2a2216; } .rp-card.got small { color: #4a3f30; }
+.rp-card.got.now { outline: 3px solid var(--oxblood, #7a1f1a); outline-offset: 1px; }
+.rp-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 3px; }
+.rpull .rp-tip { font-size: 1rem; line-height: 1.45; margin: 4px 0 6px; }
+#rp-h:focus { outline: none; } #rp-h:focus-visible { outline: 2px solid var(--brass, #c9a24a); outline-offset: 3px; }
