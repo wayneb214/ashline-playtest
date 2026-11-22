@@ -233,40 +233,68 @@
       '<ol class="tg-track" aria-label="Corners: ' + hist.filter(function (h) { return h === "ok"; }).length + " clear of " + hist.length + '">' + t + "</ol>" +
       (last ? '<div class="tg-last ' + (last === "ok" ? "ok" : "bad") + '">Last corner: ' + TGK[last][1] + "</div>" : "") + "</div>";
   }
+  // Round 6 (Wayne: "way too fast, I couldn't even read it"): a rules card first, a per-corner time from how long the three
+  // cards take to read (200 words a minute plus 1.5s to react), tightening gently to a floor, and a pause after every corner.
+  const TAIL_PACE = { easy: [12000, 500, 10000], standard: [9000, 400, 7000], hard: [8000, 300, 6500] }; // first corner, less per corner, floor
+  function readMs(words) { return Math.ceil(words / 200 * 60000 + 1500); }
+  function tailLimit(diff, i, words) { const p = TAIL_PACE[diff] || TAIL_PACE.standard; return Math.max(readMs(words || 0), p[2], p[0] - p[1] * i); }
+  function wordsIn(el) { return (el.textContent.match(/\S+/g) || []).filter(function (w) { return /[A-Za-z0-9]/.test(w); }).length; }
+  function tailTimed() { return !(FEEL.reduce || (window.PREFS && PREFS.get("timers") === false)); }
+  const TGR = { ok: ["ok", "Clear street: lost them."], watch: ["bad", "Watcher: he saw you. +2 heat."], dead: ["bad", "Blocked: you double back past them. +1 heat."], slow: ["bad", "Too slow: they closed in. +1 heat."] };
   function tailGame() {
-    const s = S(), N = 6, limit = FEEL.reduce ? 0 : ({ easy: 4200, standard: 3000, hard: 2200 }[s.diff] || 3000);
-    let i = 0, heat = startHeat(), timer = null, cur = null, busy = false; const hist = [];
+    const s = S(), N = 6, timed = tailTimed();
+    let i = 0, heat = startHeat(), timer = null, cur = null, busy = true; const hist = [];
+    const intro = function () {
+      const first = tailLimit(s.diff, 0, 0);
+      window.__TAIL__ = { phase: "intro" };
+      A.render('<div class="tailgame" id="tailgame">' + tgTrack(N, 0, hist, heat, 6) +
+        '<div class="tg-intro"><h3>How the street game works</h3><ul class="tg-rules">' +
+        '<li><span class="what clear">Rain, and nobody</span><span>A clear street. <b>Pick this one.</b></span></li>' +
+        '<li><span class="what watch">\ud83d\udc41 Watcher</span><span>Someone watching. Walk past and you are spotted: <b>+2 heat</b>.</span></li>' +
+        '<li><span class="what dead">\u26d4 Blocked</span><span>No way through. You double back past them: <b>+1 heat</b>.</span></li>' +
+        (timed ? '<li><span class="what slow">\u23f1 Too slow</span><span>If the bar runs out before you pick: <b>+1 heat</b>.</span></li>' : "") +
+        "</ul><p><b>Heat</b> is how close the watchers are. After six corners: 0 or 1 heat and you\u2019re clean, which helps the border crossing tonight. 2 or 3 and you\u2019re seen. 4 or more and they follow you, which hurts the crossing. At 6 the walk ends early.</p>" +
+        "<p>" + (timed ? "You get about " + Math.round(first / 1000) + " seconds a corner; the bar shows how long is left. It starts when you tap Start." : "No timer: take your time at each corner.") + " Tap a street or swipe \u25c0 \u25b2 \u25b6.</p>" +
+        '<button class="btn primary" id="tgstart">Start corner 1</button></div></div>', "Read the rules, then tap Start. Nothing is timed yet.");
+      $("tgstart").onclick = corner;
+    };
     const corner = function () {
       const w = Math.floor(A.rnd() * 3); let b = Math.floor(A.rnd() * 2); if (b >= w) b++;
-      cur = { w: w, b: b, safe: 3 - w - b }; window.__TAIL__ = cur; busy = false;
-      const cue = ["A man in a flat cap reading the same page of his paper", "A woman on a bench who hasn\u2019t turned her page in a minute", "A taxi with its light off and the engine running"][Math.floor(A.rnd() * 3)];
+      cur = { w: w, b: b, safe: 3 - w - b }; busy = false;
+      const cue = ["Flat cap, reading the same page", "A woman on a bench, page never turns", "Taxi, light off, engine running"][Math.floor(A.rnd() * 3)];
       const dead = ["Scaffolding, no way through", "Locked gates", "Roadworks, fenced off"][Math.floor(A.rnd() * 3)];
       let lanes = "";
       for (let L = 0; L < 3; L++) lanes += '<button class="lane" data-l="' + L + '"><span class="arr">' + ARROW[L] + '</span><span class="ln">' + LANES[L] + '</span><span class="what ' + (L === w ? "watch" : L === b ? "dead" : "clear") + '">' + (L === w ? "\ud83d\udc41 " + cue : L === b ? "\u26d4 " + dead : "Rain, and nobody") + "</span></button>";
       A.render('<div class="tailgame" id="tailgame">' + tgTrack(N, i, hist, heat, 6) +
-        (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') +
-        '<div class="tg-lanes">' + lanes + '</div><div class="tg-msg" id="tgmsg">' + (i ? "" : "Swipe or tap the clear street.") + "</div></div>", limit ? "Pick the clear street before the bar runs out." : "No timer with reduced motion. Take your time.");
+        (timed ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') +
+        '<div class="tg-lanes">' + lanes + '</div><div class="tg-msg" id="tgmsg"></div></div>', timed ? "Pick the clear street before the bar runs out." : "No timer. Take your time.");
+      const limit = timed ? tailLimit(s.diff, i, wordsIn($("tailgame").querySelector(".tg-lanes"))) : 0;
+      cur.limit = limit; cur.words = wordsIn($("tailgame").querySelector(".tg-lanes")); cur.phase = "corner"; window.__TAIL__ = cur;
       document.querySelectorAll("[data-l]").forEach(function (b2) { b2.onclick = function () { pick(+b2.getAttribute("data-l")); }; });
       const g = $("tailgame"); let sx = 0, sy = 0;
       g.addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-      g.addEventListener("touchend", function (e) { const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) pick(dx < 0 ? 0 : 2); else if (dy < -40) pick(1); });
+      g.addEventListener("touchend", function (e) { if (busy) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) pick(dx < 0 ? 0 : 2); else if (dy < -40) pick(1); });
       if (limit) { const bar = $("tgbar"); requestAnimationFrame(function () { bar.style.transitionDuration = limit + "ms"; bar.classList.add("run"); }); timer = setTimeout(function () { pick(-1); }, limit); }
     };
     const key = function (e) { if (!$("tailgame")) return document.removeEventListener("keydown", key); const m = { ArrowLeft: 0, ArrowUp: 1, ArrowRight: 2 }[e.key]; if (m != null) pick(m); };
     document.addEventListener("keydown", key);
     const pick = function (L) {
-      if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer);
-      let msg, cls;
-      hist.push(L === cur.safe ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow");
-      if (L === cur.safe) { msg = "Clear. Nobody turns."; cls = "ok"; FEEL.buzz("tap"); }
-      else if (L === cur.w) { heat += 2; msg = "He saw you. A cough, a newspaper folded."; cls = "bad"; FEEL.buzz("loss"); }
-      else if (L === cur.b) { heat += 1; msg = "Dead end. You double back, past them."; cls = "bad"; FEEL.buzz("loss"); }
-      else { heat += 1; msg = "You hesitated. They\u2019re closer."; cls = "bad"; FEEL.buzz("loss"); }
-      const m = $("tgmsg"); m.textContent = msg; m.className = "tg-msg " + cls;
-      document.querySelectorAll("[data-l]").forEach(function (b2) { if (+b2.getAttribute("data-l") === cur.safe) b2.classList.add("safe"); });
-      setTimeout(function () { i++; if (i >= N || heat >= 6) { document.removeEventListener("keydown", key); A.advance(2); tailEnd(heat); } else corner(); }, FEEL.reduce || window.__SPY_FAST__ ? 150 : 650);
+      if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer); timer = null;
+      const r = L === cur.safe ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow";
+      hist.push(r); heat += { ok: 0, watch: 2, dead: 1, slow: 1 }[r]; FEEL.buzz(r === "ok" ? "tap" : "loss");
+      const bar = $("tgbar"); if (bar) { const w0 = getComputedStyle(bar).width; bar.style.transitionDuration = "0ms"; bar.style.width = w0; bar.classList.remove("run"); }
+      document.querySelectorAll("[data-l]").forEach(function (b2) { b2.disabled = true; const l = +b2.getAttribute("data-l"); if (l === cur.safe) b2.classList.add("safe"); else if (l === L) b2.classList.add("picked"); });
+      const end = i + 1 >= N || heat >= 6;
+      cur.phase = "result"; cur.result = r;
+      const m = $("tgmsg"); m.className = "tg-msg tg-result " + TGR[r][0];
+      m.innerHTML = '<div class="tg-rline">' + TGR[r][1] + '</div><div class="tg-rheat">Heat now ' + Math.min(heat, 6) + " of 6" + (heat >= 6 ? ": they\u2019re on you, the walk ends here." : "") + "</div>" +
+        '<button class="btn primary" id="tgnext">' + (end ? "See how it went" : "Next corner") + "</button>";
+      $("tgnext").onclick = function () { i++; if (end) { document.removeEventListener("keydown", key); A.advance(2); tailEnd(heat); } else corner(); };
+      try { $("tgnext").focus({ preventScroll: true }); } catch (e) { /* older WebKit */ }
+      try { m.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); } catch (e) { m.scrollIntoView(false); } // the result is always on screen, even at 320px
+      const hn = document.getElementById("hint"); if (hn) hn.textContent = end ? "That was the last corner." : "No timer now. Tap Next corner when you\u2019re ready.";
     };
-    corner();
+    intro();
   }
   function tailEnd(heat, skipped) {
     window.__TAIL__ = null;
@@ -429,5 +457,5 @@
     }[ending()];
   }
 
-  window.AH3 = { letter: letter, dealCall: dealCall, surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
+  window.AH3 = { tailLimit: tailLimit, readMs: readMs, TAIL_PACE: TAIL_PACE, letter: letter, dealCall: dealCall, surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };
 })();

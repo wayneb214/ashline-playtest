@@ -97,7 +97,7 @@
       "<p><b>Design, story and code:</b> Wayne Byrne.</p><p><b>Music and sound:</b> original, synthesised live in your device.</p>" +
       "<p><b>Voices:</b> made with Kokoro-82M (Apache 2.0) and Chatterbox (MIT). No real person\u2019s voice was cloned.</p>" +
       "<p><b>Paintings and cutscenes:</b> original artwork made for this game.</p>" +
-      "<p><b>Fonts:</b> Cormorant Garamond (\u00a9 the Cormorant Project Authors), Courier Prime (\u00a9 the Courier Prime Project Authors) and IM Fell English SC (\u00a9 Igino Marini), used under the SIL Open Font License 1.1.</p>" +
+      "<p><b>Fonts:</b> Cormorant Garamond (\u00a9 the Cormorant Project Authors), Courier Prime (\u00a9 the Courier Prime Project Authors), IM Fell English SC (\u00a9 Igino Marini) and Caveat (\u00a9 the Caveat Project Authors), used under the SIL Open Font License 1.1.</p>" +
       '<p class="fine privacy">No accounts, no tracking. Saves stay on this device.</p><button class="btn primary" id="cr-back">Back</button>', "settings");
     $("cr-back").onclick = function () { back(); };
   }
@@ -175,7 +175,7 @@
     let gone = false; const go = function () { if (gone) return; gone = true; c.classList.remove("on"); setTimeout(function () { c.remove(); }, 300); };
     c.querySelector("button").onclick = function (e) { e.stopPropagation(); go(); };
     c.querySelector(".coachoff").onclick = function (e) { e.stopPropagation(); PREFS.set("tips", false); go(); if (window.FUN && FUN.toast) FUN.toast("Tips off. Switch them back on in Settings."); };
-    setTimeout(go, 9000);
+    setTimeout(go, Math.max(9000, Math.ceil(((c.textContent.match(/\S+/g) || []).length) / 200 * 60000 + 1500))); // round 6: a long tip stays up long enough to read
   }
 
   window.MENU = { coach: coach, open: open, close: close, settings: settings, help: help, glossary: glossary, GLOSS: GLOSS, RISK: RISK, RISK_NOTE: RISK_NOTE, riskHTML: riskHTML, confirm: confirm, sheet: sheet };

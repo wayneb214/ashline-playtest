@@ -89,35 +89,74 @@
     if (window.__FACES_SVG__ !== true) return tap ? '<button class="fig" data-fig="' + i + '" ' + st + ' aria-label="Person ' + (i + 1) + ": " + desc + '">' + art + "</button>" : '<span class="fig" ' + st + ' role="img" aria-label="' + desc + '">' + art + "</span>";
     return tap ? '<button class="fig" data-fig="' + i + '" ' + st + ' aria-label="Person ' + (i + 1) + '">' + svg + "</button>" : '<span class="fig" ' + st + ">" + svg + "</span>";
   }
-  function spotRound(rnd) {
-    const r = function (n) { return Math.floor(rnd() * n); }, t = { c: r(4), h: HATS[r(3)], b: BAGS[r(3)] };
-    const same = function (a, b) { return a.c === b.c && a.h === b.h && a.b === b.b; };
-    const near = function () { const f = Object.assign({}, t), k = r(3); if (k === 0) f.c = (t.c + 1 + r(3)) % 4; else if (k === 1) f.h = HATS[(HATS.indexOf(t.h) + 1 + r(2)) % 3]; else f.b = BAGS[(BAGS.indexOf(t.b) + 1 + r(2)) % 3]; return f; };
-    const xs = [8, 30, 54, 76], A1 = [], B = [];
-    for (let i = 0; i < 4; i++) { let f; do { f = { c: r(4), h: HATS[r(3)], b: BAGS[r(3)] }; } while (same(f, t)); A1.push(f); B.push(near()); }
-    const ia = r(4), ib = r(4); A1[ia] = Object.assign({}, t); B[ib] = Object.assign({}, t);
-    A1.forEach(function (f, i) { f.x = xs[i]; }); B.forEach(function (f, i) { f.x = xs[(i + 2) % 4]; });
-    return { a: A1, b: B, ans: ib };
+  // Round 6 (Wayne: "should it be better?"): exactly one person is in both photos. Every figure's traits are written down
+  // (coat colour, hat, bag), nobody repeats inside a photo, and no other person in photo 1 matches anyone in photo 2, so the
+  // answer never depends on squinting. On Easy every photo-2 decoy differs from the target in two traits, not one.
+  const TRAITS = ["c", "h", "b"];
+  function diffs(a, b) { return TRAITS.filter(function (k) { return a[k] !== b[k]; }).length; }
+  function traitsOf(f) { return { coat: ["crimson", "navy", "grey", "mustard"][f.c], hat: { none: "no hat", trilby: "trilby", cap: "flat cap" }[f.h], bag: { none: "no bag", "case": "briefcase", brolly: "umbrella" }[f.b] }; }
+  function spotRound(rnd, diff) {
+    const r = function (n) { return Math.floor(rnd() * n); }, t = { c: r(4), h: HATS[r(3)], b: BAGS[r(3)] }, need = diff === "easy" ? 2 : 1;
+    const any = function () { return { c: r(4), h: HATS[r(3)], b: BAGS[r(3)] }; };
+    const clash = function (f, list) { return list.some(function (g) { return diffs(f, g) === 0; }); };
+    const A1 = [Object.assign({}, t)], B = [Object.assign({}, t)];
+    // photo 2 first: decoys look like the target but differ in a clearly drawn trait
+    for (let n = 0; B.length < 3 && n < 400; n++) { const f = any(); if (diffs(f, t) >= need && diffs(f, t) <= need + 1 && !clash(f, B)) B.push(f); }
+    // photo 1: decoys are anyone who is not the target and not anyone in photo 2
+    for (let n = 0; A1.length < 3 && n < 400; n++) { const f = any(); if (!clash(f, A1) && !clash(f, B)) A1.push(f); }
+    const shuffle = function (L) { for (let k = L.length - 1; k > 0; k--) { const j = r(k + 1), x = L[k]; L[k] = L[j]; L[j] = x; } return L; };
+    shuffle(A1); shuffle(B);
+    const xs = [3, 36, 69]; // three people per photo, drawn large (round 6: "zoomed in or fewer figures?")
+    A1.forEach(function (f, i) { f.x = xs[i]; f.traits = traitsOf(f); }); B.forEach(function (f, i) { f.x = xs[i]; f.traits = traitsOf(f); });
+    return { a: A1, b: B, ans: B.findIndex(function (f) { return diffs(f, t) === 0; }), target: traitsOf(t) };
+  }
+  // round 6: tap Zoom (or pinch) on a photo to see it full screen; Close (or Esc, or a tap on the dark) returns. The puzzle
+  // has no timer, so nothing needs pausing; choosing still happens in the normal view.
+  function zoomOpen(n) {
+    const src = document.querySelector('.photo[data-ph="' + n + '"]'); if (!src || document.getElementById("phzoom")) return;
+    const z = document.createElement("div"); z.id = "phzoom"; z.className = "phzoom mini"; z.setAttribute("role", "dialog"); z.setAttribute("aria-modal", "true"); z.setAttribute("aria-label", "Photo " + n + ", full screen");
+    const c = src.cloneNode(true); c.classList.remove("tap"); c.classList.add("zoomed");
+    c.querySelectorAll("button").forEach(function (b) { if (b.classList.contains("ph-zoom")) b.remove(); else { const sp = document.createElement("span"); sp.className = b.className; sp.setAttribute("style", b.getAttribute("style") || ""); sp.innerHTML = b.innerHTML; b.replaceWith(sp); } });
+    z.innerHTML = '<button class="btn primary phz-close" id="phzclose">Close \u2715</button>'; z.insertBefore(c, z.firstChild);
+    document.body.appendChild(z); window.__ZOOM__ = n;
+    const close = function () { z.remove(); window.__ZOOM__ = 0; document.removeEventListener("keydown", esc); const b = document.querySelector('[data-zoom="' + n + '"]'); if (b) b.focus({ preventScroll: true }); };
+    const esc = function (e) { if (e.key === "Escape") close(); };
+    document.addEventListener("keydown", esc);
+    document.getElementById("phzclose").onclick = close; z.onclick = function (e) { if (e.target === z) close(); };
+    document.getElementById("phzclose").focus({ preventScroll: true });
+  }
+  function wireZoom() {
+    document.querySelectorAll("[data-zoom]").forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); zoomOpen(b.getAttribute("data-zoom")); }; });
+    document.querySelectorAll(".photo[data-ph]").forEach(function (ph) {
+      ph.addEventListener("touchstart", function (e) { if (e.touches.length >= 2) { e.preventDefault(); zoomOpen(ph.getAttribute("data-ph")); } }, { passive: false });
+      ph.addEventListener("gesturestart", function (e) { e.preventDefault(); zoomOpen(ph.getAttribute("data-ph")); });
+    });
   }
   function spot() {
     const A = window.AH; let round = 0, hits = 0;
     const draw = function () {
-      const R = spotRound(A.rnd);
+      const R = spotRound(A.rnd, A.S().diff); window.__FACES__ = R;
       shell("faces", "Hands-on \u00b7 round " + (round + 1) + " of 2",
-        '<p class="mini-p">The caf\u00e9 watch photographed the front door twice. <b>Someone is in both.</b> Tap them in photo 2: same coat, hat and bag.</p>' +
-        '<div class="photo"><img src="img/h-fleet.jpg" alt="Lambeth, Monday 08:40"><small>1 \u00b7 Monday, 08:40</small>' + R.a.map(function (f, i) { return fig(f, i, false); }).join("") + "</div>" +
-        '<div class="photo tap"><img src="img/h-london.jpg" alt="Lambeth, Thursday 18:15"><small>2 \u00b7 Thursday, 18:15 \u00b7 tap one</small>' + R.b.map(function (f, i) { return fig(f, i, true); }).join("") + "</div>", "Who is in both photos? Tap them in photo 2.");
+        '<p class="mini-p">The caf\u00e9 watch photographed the front door twice. <b>Exactly one person is in both.</b> Tap them in photo 2: same coat, same hat (or none), same bag (or none).</p>' +
+        '<div class="photo" data-ph="1"><img src="img/h-fleet.jpg" alt="Lambeth, Monday 08:40"><small>1 \u00b7 Mon 08:40</small><button class="ph-zoom" data-zoom="1" aria-label="Zoom photo 1">\u2922 Zoom</button>' + R.a.map(function (f, i) { return fig(f, i, false); }).join("") + "</div>" +
+        '<div class="photo tap" data-ph="2"><img src="img/h-london.jpg" alt="Lambeth, Thursday 18:15"><small>2 \u00b7 Thu 18:15 \u00b7 tap one</small><button class="ph-zoom" data-zoom="2" aria-label="Zoom photo 2">\u2922 Zoom</button>' + R.b.map(function (f, i) { return fig(f, i, true); }).join("") + "</div>" + '<div id="figout" aria-live="polite"></div>', "Who is in both photos? Tap them in photo 2.");
+      wireZoom();
       document.querySelectorAll("[data-fig]").forEach(function (b) {
         b.onclick = function () {
           const ok = +b.getAttribute("data-fig") === R.ans; if (ok) hits++;
           b.classList.add(ok ? "hit" : "miss"); document.querySelector('[data-fig="' + R.ans + '"]').classList.add("hit");
           FEEL.buzz(ok ? "win" : "loss"); if (window.SFX && SFX.stamp) SFX.stamp();
           document.querySelectorAll("[data-fig]").forEach(function (x) { x.disabled = true; });
-          setTimeout(function () {
+          // round 6: a plain-words result and a button, instead of moving on after 1.1 seconds
+          const T = R.target, last = round + 1 >= 2, out = document.getElementById("figout");
+          out.innerHTML = '<p class="mini-p ' + (ok ? "ok" : "warn") + '"><b>' + (ok ? "Right." : "Not them.") + "</b> The person in both photos: " + T.coat + " coat, " + T.hat + ", " + T.bag + ".</p>" +
+            '<button class="btn primary" id="fignext">' + (last ? "See how it went" : "Next pair of photos") + "</button>";
+          A.$("fignext").onclick = function () {
             if (++round < 2) return draw();
             const res = hits === 2 ? "win" : hits ? "mixed" : "loss";
             done("faces", res, "Spotted " + hits + " of 2", { win: "Same man, both days. He buys a pint for someone on the staff every Friday. <b>One more name cleared for the leak file.</b>", mixed: "One right, one wrong. Enough to clear one name, not enough to follow him.", loss: "Wrong faces. The watcher walks off along the Embankment." }[res]);
-          }, FEEL.reduce ? 500 : 1100);
+          };
+          try { out.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); } catch (e) { out.scrollIntoView(false); }
         };
       });
     };
@@ -129,10 +168,12 @@
   const LIES = [
     { clues: ["Caf\u00e9 receipt: <b>two</b> teas, 16:40", "Met Office: the rain <b>stopped at noon</b>", "Ticket stub: the <b>18:05 train</b> to London"],
       t: "Watcher Dunn: \u201cShe came out of the caf\u00e9 at twenty to five with a friend and walked to the station. Dry evening.\u201d",
-      f: "Watcher Pike: \u201cShe left alone at four, put her umbrella up against the rain, and caught the six o\u2019clock bus south.\u201d" },
+      f: "Watcher Pike: \u201cShe left alone at four, put her umbrella up against the rain, and caught the six o\u2019clock bus south.\u201d",
+      why: "Pike has her alone, in the rain, on a bus. The receipt says two teas, the rain stopped at noon, and she took the train." },
     { clues: ["Car hire: a <b>grey estate</b>, back at 21:00", "Parking ticket: <b>Micklegate</b>, 19:10", "Her phone was <b>off all evening</b>"],
       t: "Watcher Dunn: \u201cGrey estate parked on Micklegate around seven. She had it back at the hire desk by nine.\u201d",
-      f: "Watcher Pike: \u201cA blue hatchback by the Minster. She was on her phone the whole time I watched.\u201d" }
+      f: "Watcher Pike: \u201cA blue hatchback by the Minster. She was on her phone the whole time I watched.\u201d",
+      why: "Pike has a blue hatchback and her on the phone. The hire car was a grey estate and her phone was off all evening." }
   ];
   function lie() {
     const A = window.AH; let round = 0, hits = 0;
@@ -141,17 +182,20 @@
       shell("lie", "Part one \u00b7 round " + (round + 1) + " of 2",
         '<p class="mini-p">Before anyone knocks: two local watchers, two stories. <b>One wasn\u2019t there.</b> Tap the story the clues rule out.</p>' +
         '<ul class="clues">' + L.clues.map(function (c) { return "<li>" + c + "</li>"; }).join("") + "</ul>" +
-        opts.map(function (o) { return '<button class="card appr story" data-lie="' + o[0] + '"><p style="margin:0">' + o[1] + '</p></button>'; }).join(""), "Tap the story that is the lie.");
+        opts.map(function (o) { return '<button class="card appr story" data-lie="' + o[0] + '"><p style="margin:0">' + o[1] + '</p></button>'; }).join("") + '<div id="lieout" aria-live="polite"></div>', "Tap the story that is the lie.");
       document.querySelectorAll("[data-lie]").forEach(function (b) {
         b.onclick = function () {
           const ok = b.getAttribute("data-lie") === "f"; if (ok) hits++;
           b.classList.add(ok ? "hit" : "miss"); FEEL.buzz(ok ? "win" : "loss"); if (window.SFX && SFX.stamp) SFX.stamp();
           document.querySelectorAll("[data-lie]").forEach(function (x) { x.disabled = true; });
-          setTimeout(function () {
+          const last = round + 1 >= 2, out = document.getElementById("lieout");
+          out.innerHTML = '<p class="mini-p ' + (ok ? "ok" : "warn") + '"><b>' + (ok ? "Right." : "Not that one.") + "</b> " + L.why + "</p>" + '<button class="btn primary" id="lienext">' + (last ? "See how it went" : "Next pair of stories") + "</button>";
+          A.$("lienext").onclick = function () {
             if (++round < 2) return draw();
             const res = hits === 2 ? "win" : hits ? "mixed" : "loss";
             done("lie", res, "Caught " + hits + " of 2 lies", { win: "Pike folds in ten minutes: he spent the evening in a pub and made it up. <b>Dunn\u2019s trail is the real one.</b>", mixed: "You doubt Pike, but not enough. Half the trail is good.", loss: "You believe the wrong man. York sends us the wrong way for an afternoon." }[res]);
-          }, FEEL.reduce ? 500 : 1100);
+          };
+          try { out.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); } catch (e) { out.scrollIntoView(false); }
         };
       });
     };
@@ -160,5 +204,5 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () { addCases(window.AH_DATA); });
-  window.MINI = { inject: inject, open: function (id) { ({ proof: cipher, faces: spot, lie: lie })[id](); }, HEAD: HEAD };
+  window.MINI = { spotRound: spotRound, zoomOpen: zoomOpen, inject: inject, open: function (id) { ({ proof: cipher, faces: spot, lie: lie })[id](); }, HEAD: HEAD };
 })();

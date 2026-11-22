@@ -311,24 +311,45 @@
       }; });
     };
     // the last leg: C on foot, three corners
+    // round 6: the Day 3 pace on Day 6 too: a short rules card with Start, reading-based time per corner, and a pause after each one
     const lanes = function (leg) {
-      let i = 0, heat = 0, busy = false, timer = null; const hist = [];
-      const limit = FEEL.reduce ? 0 : ({ easy: 4200, standard: 3000, hard: 2200 }[s.diff] || 3000);
+      let i = 0, heat = 0, busy = true, timer = null; const hist = [];
+      const timed = !(FEEL.reduce || (window.PREFS && PREFS.get("timers") === false));
+      const track = function () { return window.AH3 && AH3.tgTrack ? AH3.tgTrack(3, i, hist, heat, 6) : ""; };
+      const intro = function () {
+        window.__TAIL__ = { phase: "intro" };
+        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + '</span></div>' + track() +
+          '<div class="tg-intro"><h3>On foot again: three corners</h3><ul class="tg-rules"><li><span class="what clear">Rain, and the grey coat</span><span>The clear street. <b>Pick this one.</b></span></li>' +
+          '<li><span class="what watch">\ud83d\udc41 Driver</span><span>Kesk\u2019s driver sees you: <b>+2 heat</b>.</span></li><li><span class="what dead">\u26d4 Cordon</span><span>No way through: <b>+1 heat</b>.</span></li>' +
+          (timed ? '<li><span class="what slow">\u23f1 Too slow</span><span>The bar runs out: <b>+1 heat</b>.</span></li>' : "") + "</ul>" +
+          "<p>Low heat keeps Kesk in sight and adds to the chase score: 0 or 1 heat is best, 4 or more adds nothing.</p><p>" + (timed ? "About " + Math.round(AH3.tailLimit(s.diff, 0, 0) / 1000) + " seconds a corner, starting when you tap Start." : "No timer: take your time.") + "</p>" +
+          '<button class="btn primary" id="tgstart">Start corner 1</button></div></div>', "Read the rules, then tap Start. Nothing is timed yet.");
+        $("tgstart").onclick = corner;
+      };
       const corner = function () {
         const w = Math.floor(A.rnd() * 3); let b = Math.floor(A.rnd() * 2); if (b >= w) b++;
-        const cur = { w: w, b: b, safe: 3 - w - b }; window.__TAIL__ = cur; busy = false;
+        const cur = { w: w, b: b, safe: 3 - w - b }; busy = false;
         let html = ""; for (let L = 0; L < 3; L++) html += '<button class="lane" data-l="' + L + '"><span class="arr">' + ["\u25c0", "\u25b2", "\u25b6"][L] + '</span><span class="ln">' + ["Left", "Straight on", "Right"][L] + '</span><span class="what ' + (L === w ? "watch" : L === b ? "dead" : "clear") + '">' + (L === w ? "\ud83d\udc41 Kesk\u2019s driver, engine running" : L === b ? "\u26d4 A police cordon" : "Rain, and the grey coat ahead") + "</span></button>";
-        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + '</span></div>' + (window.AH3 && AH3.tgTrack ? AH3.tgTrack(3, i, hist, heat, 6) : "") + (limit ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') + '<div class="tg-lanes">' + html + '</div><div class="tg-msg" id="tgmsg">Stay on him. Pick the clear street.</div></div>', "Pick the clear street before the bar runs out.");
+        A.render('<div class="tailgame" id="tailgame"><div class="tg-top"><span>' + leg.t + '</span></div>' + track() + (timed ? '<div class="tg-timer"><i id="tgbar"></i></div>' : '<div class="tg-timer still"><i></i></div>') + '<div class="tg-lanes">' + html + '</div><div class="tg-msg" id="tgmsg"></div></div>', timed ? "Pick the clear street before the bar runs out." : "No timer. Take your time.");
+        const words = ($("tailgame").querySelector(".tg-lanes").textContent.match(/\S+/g) || []).filter(function (x) { return /[A-Za-z0-9]/.test(x); }).length;
+        const limit = timed ? AH3.tailLimit(s.diff, i, words) : 0; cur.limit = limit; cur.words = words; cur.phase = "corner"; window.__TAIL__ = cur;
         document.querySelectorAll("[data-l]").forEach(function (b2) { b2.onclick = function () { pick(+b2.getAttribute("data-l"), cur); }; });
         if (limit) { const bar = $("tgbar"); requestAnimationFrame(function () { bar.style.transitionDuration = limit + "ms"; bar.classList.add("run"); }); timer = setTimeout(function () { pick(-1, cur); }, limit); }
       };
       const pick = function (L, cur) {
-        if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer);
-        const ok = L === cur.safe; if (!ok) heat += L === cur.w ? 2 : 1; hist.push(ok ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow");
-        const m = $("tgmsg"); m.textContent = ok ? "Clear. The grey coat turns into Whitehall." : "Wrong turn. You double back."; m.className = "tg-msg " + (ok ? "ok" : "bad"); FEEL.buzz(ok ? "tap" : "loss");
-        setTimeout(function () { i++; if (i >= 3) { window.__TAIL__ = null; A.advance(1); X.score += heat <= 1 ? 2 : heat <= 3 ? 1 : 0; X.notes.push("C on foot, heat " + heat); X.leg++; step(); } else corner(); }, FEEL.reduce || window.__SPY_FAST__ ? 150 : 650);
+        if (busy || !$("tailgame")) return; busy = true; clearTimeout(timer); timer = null;
+        const r = L === cur.safe ? "ok" : L === cur.w ? "watch" : L === cur.b ? "dead" : "slow";
+        heat += { ok: 0, watch: 2, dead: 1, slow: 1 }[r]; hist.push(r); FEEL.buzz(r === "ok" ? "tap" : "loss");
+        const bar = $("tgbar"); if (bar) { const w0 = getComputedStyle(bar).width; bar.style.transitionDuration = "0ms"; bar.style.width = w0; bar.classList.remove("run"); }
+        document.querySelectorAll("[data-l]").forEach(function (b2) { b2.disabled = true; const l = +b2.getAttribute("data-l"); if (l === cur.safe) b2.classList.add("safe"); else if (l === L) b2.classList.add("picked"); });
+        cur.phase = "result"; cur.result = r; const end = i + 1 >= 3;
+        const m = $("tgmsg"); m.className = "tg-msg tg-result " + (r === "ok" ? "ok" : "bad");
+        m.innerHTML = '<div class="tg-rline">' + { ok: "Clear street: the grey coat turns into Whitehall.", watch: "His driver saw you. +2 heat.", dead: "Cordon: you double back. +1 heat.", slow: "Too slow: you lose a few yards. +1 heat." }[r] + '</div><div class="tg-rheat">Heat now ' + heat + "</div>" + '<button class="btn primary" id="tgnext">' + (end ? "See how it went" : "Next corner") + "</button>";
+        $("tgnext").onclick = function () { i++; if (end) { window.__TAIL__ = null; A.advance(1); X.score += heat <= 1 ? 2 : heat <= 3 ? 1 : 0; X.notes.push("C on foot, heat " + heat); X.leg++; step(); } else corner(); };
+        try { m.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); } catch (e) { m.scrollIntoView(false); }
+        const hn = document.getElementById("hint"); if (hn) hn.textContent = end ? "That was the last corner." : "No timer now. Tap Next corner when you\u2019re ready.";
       };
-      corner();
+      intro();
     };
     const finish = function () {
       if (s.done.chase || X.finished) return; X.finished = true; // panel 6 B1: one result

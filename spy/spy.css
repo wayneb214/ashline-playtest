@@ -338,6 +338,7 @@ p strong { color: inherit; }
 @font-face { font-family: "Cormorant Garamond"; font-weight: 600; font-style: normal; font-display: swap; src: url(fonts/cormorant-600.woff2) format("woff2"); }
 @font-face { font-family: "Courier Prime"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/courierprime-400.woff2) format("woff2"); }
 @font-face { font-family: "Courier Prime"; font-weight: 700; font-style: normal; font-display: swap; src: url(fonts/courierprime-700.woff2) format("woff2"); }
+@font-face { font-family: "Caveat"; font-weight: 600; font-style: normal; font-display: swap; src: url(fonts/caveat-600.woff2) format("woff2"); } /* round 6: a legible handwriting face for hidden ink and signatures (OFL, bundled) */
 @font-face { font-family: "IM Fell English SC"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/imfell-sc.woff2) format("woff2"); }
 :root {
   --display: "Cormorant Garamond", "Iowan Old Style", Palatino, Georgia, serif;
@@ -462,7 +463,8 @@ body.still *, body.still *::before, body.still *::after { animation: none !impor
 .kl-from { font-family: var(--type); font-size: 0.875rem; letter-spacing: .06em; text-transform: uppercase; color: var(--paper-mute); }
 .kl-name { font-weight: 700; font-size: 1.125rem; } .kl-role { font-family: var(--type); font-size: 0.875rem; color: #4a1414; }
 .kl-body p { font-style: italic; font-size: 0.9688rem; line-height: 1.5; margin: 0 0 8px; }
-.kl-sig { font-family: "Brush Script MT", "Segoe Script", cursive; font-style: normal !important; font-size: 2.125rem !important; color: var(--stamp); text-align: right; margin: 0 8px 0 0 !important; transform: rotate(-6deg); }
+.kl-sig { font-family: "Caveat", "Segoe Script", cursive; font-weight: 600; font-style: normal !important; font-size: 2.125rem !important; color: #3a2210; text-align: right; margin: 0 8px 0 0 !important; transform: rotate(-6deg); }
+#view p.kl-sig, #view .kletter p.kl-sig, #view .lnote p.kl-sig { color: #3a2210; } /* round 6: deep sepia signature, beats the general #view p colour */
 .kl-note { font-family: var(--type); font-size: 0.875rem; color: var(--paper-mute); margin: 8px 0 0; }
 .tailgame { position: relative; min-height: 600px; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; padding: 10px; background: linear-gradient(180deg, rgba(8,9,9,.55), rgba(8,9,9,.15) 30%, rgba(8,9,9,.75) 85%), url(img/tail-street.jpg) center 40% / cover no-repeat; touch-action: none; user-select: none; -webkit-user-select: none; }
 .tg-top { display: flex; justify-content: space-between; font-family: var(--type); font-size: 0.875rem; letter-spacing: .06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 3px #000; }
@@ -547,7 +549,7 @@ body.in-cine #rain { opacity: .85; }
 .cine.asking .cine-cap, .cine.asking .cine-skip { opacity: 0; }
 
 /* ---------- hidden ink and the desk lamp ---------- */
-.ink { --h: 0; font-family: "Brush Script MT", "Segoe Script", cursive; font-style: normal !important; font-size: 1.1875rem !important; line-height: 1.35 !important; color: rgba(122, 64, 18, var(--h)) !important; text-shadow: 0 0 calc(var(--h) * 6px) rgba(255, 170, 60, calc(var(--h) * .5)); margin: 4px 0 8px !important; min-height: 2.6em; border-top: 1px dashed rgba(42,36,27, calc(.15 - var(--h) * .15)); user-select: none; -webkit-user-select: none; }
+.ink { --h: 0; font-family: "Caveat", "Segoe Script", cursive; font-weight: 600; font-style: normal !important; font-size: 1.25rem !important; line-height: 1.3 !important; color: rgba(58, 34, 16, var(--h)) !important; text-shadow: 0 0 calc(var(--h) * 6px) rgba(255, 170, 60, calc(var(--h) * (1 - var(--h)) * 2)); margin: 4px 0 8px !important; min-height: 2.6em; border-top: 1px dashed rgba(42,36,27, calc(.15 - var(--h) * .15)); user-select: none; -webkit-user-select: none; }
 .kletter.warming, .lnote.warming { box-shadow: 0 0 0 2px rgba(255,190,90,.35), 0 18px 40px rgba(255,160,40,.25); }
 /* panel 6 v8 (Wayne: "I cant scroll" on Kesk's letter): a finger on the paper still scrolls the page; press and hold still warms the ink */
 .kletter, .lnote { touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; transition: translate .35s ease; }
@@ -796,7 +798,7 @@ body.paused #view, body.paused #hud { filter: blur(2px) brightness(.7); }
 /* scores out of 100 (fun step 0) */
 .meter .row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meter .mval { font-family: var(--type); color: var(--brass-hi); font-size: 1rem; line-height: 1.1; margin-top: 2px; white-space: nowrap; }
-.meter .mval b { font-size: 1.15rem; } .meter .mval small { color: var(--fog); font-size: 0.875rem; margin-left: 1px; }
+.meter .mval b { font-size: 1.15rem; } .meter .mval small { color: var(--fog-2); font-size: 0.875rem; margin-left: 1px; } /* round 6: was --fog, 4.1:1 on the teal bar */
 .meter .mval .delta { font-size: 0.875rem; }
 .hud .clock { flex: 0 0 auto; }
 /* hands-on mini cases (fun step 1) */
@@ -1592,3 +1594,85 @@ body:has([data-screen="op"].asking) #subtitle { display: none; }
 .rp-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 3px; }
 .rpull .rp-tip { font-size: 1rem; line-height: 1.45; margin: 4px 0 6px; }
 #rp-h:focus { outline: none; } #rp-h:focus-visible { outline: 2px solid var(--brass, #c9a24a); outline-offset: 3px; }
+
+/* ================= round 6: street-tail rules card and result pause ================= */
+.tg-intro { margin-top: 10px; padding: 14px; border-radius: 6px; background: rgba(10,12,11,.9); border: 1px solid rgba(232,200,116,.45); color: var(--paper); font-family: var(--serif); }
+.tg-intro h3 { margin: 0 0 8px; font-size: 1.125rem; color: var(--brass-hi); }
+#view .tg-intro p { color: var(--paper); font-size: 1rem; line-height: 1.4; margin: 8px 0; }
+.tg-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tg-rules li { display: grid; grid-template-columns: 6.5em 1fr; gap: 10px; align-items: center; font-size: 1rem; line-height: 1.35; }
+.tg-rules .what { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 44px; padding: 4px 6px; border-radius: 4px; font-size: 0.9375rem; background: rgba(239,230,210,.96); color: var(--paper-ink); }
+.tg-rules .what.watch { background: #7a1f1f; color: #fff; } .tg-rules .what.dead { background: #3c3c3c; color: #fff; } .tg-rules .what.slow { background: #6a2620; color: #fff; }
+.tg-intro .btn { width: 100%; margin-top: 8px; }
+.lane:disabled { color: var(--paper); opacity: 1; cursor: default; }
+.lane.picked { outline: 3px solid #ff9a8e; }
+.tg-result { margin-top: 10px; padding: 12px; border-radius: 6px; background: rgba(10,12,11,.92); text-shadow: none; }
+.tg-result .tg-rline { font-size: 1.125rem; } .tg-result .tg-rheat { margin-top: 4px; font-weight: 400; color: var(--paper); font-size: 1rem; }
+.tg-result .btn { width: 100%; margin-top: 10px; }
+.lane { min-height: clamp(190px, 42vh, 300px); }
+
+/* ================= round 6: Faces at the window, readable at 320px ================= */
+.mini .photo { aspect-ratio: 4 / 3; }
+.mini .photo > img { filter: sepia(.35) contrast(.85) brightness(.62) blur(1.5px); transform: scale(1.04); } /* the painted street stays behind; nobody in it reads as a candidate */
+.mini .photo .fig { width: 22%; height: 84%; bottom: 3%; }
+.mini .photo .fig .pf-hat { width: 74%; left: 11%; top: -6%; }
+.mini .photo .fig .pf-cap { width: 68%; left: 14%; top: -3%; }
+.mini .photo .fig .pf-case { width: 66%; right: -34%; top: 52%; }
+.mini .photo .fig img.pf-brolly { height: 60%; right: -22%; top: 38%; }
+.mini .photo .fig .pf { filter: drop-shadow(0 0 1.5px rgba(255,244,220,.75)) drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+.card.dossier.mini::after { display: none; } /* the little Union Flag tab had no meaning on a hands-on puzzle */
+.mini .mini-p.ok { color: #1f5a35; }
+#figout .btn, #lieout .btn { width: 100%; margin-top: 4px; }
+.card.appr.story[disabled] { opacity: 1; }
+[data-screen^="mini-"] #back { margin-bottom: 12px; }
+/* round 6: the tip bar is solid behind its text and only fades in its top 10px, so a link scrolling under it (Faces' "Back to the desk") can't show through the hint line */
+.hintbar { background: linear-gradient(0deg, rgba(10,12,11,.97) calc(100% - 10px), rgba(10,12,11,0)); }
+.mini .photo .fig .pf-hat { top: -10%; } .mini .photo .fig .pf-cap { top: -6.5%; }
+.mini .photo .fig { height: 76%; } .mini .photo .fig .pf-hat { top: -8%; } .mini .photo .fig .pf-cap { top: -5%; } /* hats sit on heads and clear the photo label */
+.mini .photo small { white-space: nowrap; top: 3px; }
+/* round 6, Wayne: "zoomed in or fewer figures?": three people per photo, cropped at the knee so coat, hat and bag fill the frame */
+.mini .photo { aspect-ratio: 1 / 1; }
+.mini .photo .fig { width: 30%; height: 128%; top: 13%; bottom: auto; align-items: flex-start; }
+.mini .photo .fig .pf { height: 100%; }
+.mini .photo .fig.hit, .mini .photo .fig.miss { outline-offset: -3px; }
+.ph-zoom { position: absolute; right: 6px; top: 4px; z-index: 3; min-width: 44px; min-height: 44px; padding: 0 10px; border: 1px solid rgba(243,234,214,.7); border-radius: 4px; background: rgba(0,0,0,.72); color: #f3ead6; font: 700 0.875rem var(--type, monospace); cursor: zoom-in; }
+.mini .photo small { top: 4px; line-height: 1.3; padding: 4px 6px; }
+.phzoom { position: fixed; inset: 0; z-index: 120; background: rgba(6,7,8,.96); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: calc(var(--safe-t, 0px) + 12px) 8px calc(var(--safe-b, 0px) + 16px); }
+.phzoom .photo.zoomed { width: min(100%, calc(100vh - 140px)); max-width: 720px; margin: 0; }
+.phzoom .photo.zoomed .fig { cursor: default; }
+.phzoom .phz-close { min-height: 48px; min-width: 160px; font-size: 1.125rem; }
+.mini .photo .fig { top: 22%; }
+.ph-zoom { top: auto; right: auto; left: 6px; bottom: 6px; }
+/* no painted passers-by behind the three people: a plain café front instead of the street paintings */
+.mini .photo > img { display: none; }
+.mini .photo[data-ph="1"] { background: linear-gradient(180deg, rgba(0,0,0,0) 62%, rgba(20,16,12,.85) 62.5%, #2a2620 100%), linear-gradient(90deg, #3b3226 0 8%, #e2b870 8% 30%, #3b3226 30% 36%, #d9aa5e 36% 64%, #3b3226 64% 70%, #e2b870 70% 92%, #3b3226 92%); filter: sepia(.35); }
+.mini .photo[data-ph="2"] { background: linear-gradient(180deg, rgba(0,0,0,0) 62%, rgba(12,14,18,.85) 62.5%, #1c1f24 100%), linear-gradient(90deg, #232a33 0 8%, #8a7a58 8% 30%, #232a33 30% 36%, #7d6e50 36% 64%, #232a33 64% 70%, #8a7a58 70% 92%, #232a33 92%); filter: sepia(.25); }
+.mini .photo .fig .pf { filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)); }
+.mini .photo .fig { height: 110%; top: 18%; } /* knee-up, and the bag or umbrella stays in frame */
+.mini .photo[data-ph="1"] { background: linear-gradient(180deg, #3b3226 0 7%, rgba(0,0,0,0) 7% 66%, rgba(20,16,12,.85) 66.5%, #2a2620 100%), linear-gradient(90deg, #3b3226 0 4%, #d8b273 4% 48%, #3b3226 48% 52%, #d8b273 52% 96%, #3b3226 96%); }
+.mini .photo[data-ph="2"] { background: linear-gradient(180deg, #232a33 0 7%, rgba(0,0,0,0) 7% 66%, rgba(12,14,18,.85) 66.5%, #1c1f24 100%), linear-gradient(90deg, #232a33 0 4%, #8a7a58 4% 48%, #232a33 48% 52%, #8a7a58 52% 96%, #232a33 96%); }
+/* ================= round 6 sweep: contrast fixes at the trough of every pulse and on paper ================= */
+@keyframes tickpulse { 50% { opacity: .78; } } /* was .45: "Swipe to answer" and the clock's Late/Overdue dropped under 4.5:1 mid-pulse */
+.clock small { color: var(--fog-2); } /* was --fog, 3.7-4.3:1 on the teal bar */
+[data-screen="op"] .opwait { opacity: 1; color: #4a3f31; } /* was 3:1-4.1:1 at .8 opacity */
+.redline { color: #3d2c12; } /* "Source:" on the manila file, was 2.2-4.1:1 */
+.casefile.manila .cfstamp { opacity: 1; color: #8a1712; border-color: #8a1712; } /* SECRET, was 3.2-3.6:1 */
+.clock.late small { color: #ffb8ad; } /* Late/Overdue: 4.5:1+ on the teal bar even mid-pulse */
+.casefile.manila .cfstamp { color: #74120e; border-color: #74120e; }
+.stamp { opacity: 1; } /* stamps were .82-.85 opacity, 3.3-3.9:1 on paper */
+.card .stamp.corner, .stamp.corner { color: #8f1c16; border-color: #8f1c16; }
+.outcome .stamp.thud { background: rgba(243,234,214,.9); mix-blend-mode: normal; } /* the result word over a painting gets a paper backing */
+.outcome.win .stamp.thud { color: #1d4a30; border-color: #1d4a30; } .outcome.mixed .stamp.thud { color: #5e4416; border-color: #5e4416; } .outcome.loss .stamp.thud { color: #8f1c16; border-color: #8f1c16; }
+.ocond { background: rgba(241,231,207,.97); }
+.card.echo .echwho, .agent .ech { color: #5e4722; }
+.medal.bronze .disc { background: radial-gradient(circle at 35% 30%, #e0a878, #8a5226 55%, #4f2a0e); }
+.desk-stamp { color: #8a1712; border-color: #8a1712; }
+.otile .o-tab { background: #dcc18a; }
+.casefile.manila .cftab { color: #3d2c12; }
+.tg-track .tgs.todo { opacity: .8; }
+.card.appr[disabled] { opacity: 1; filter: grayscale(.6); cursor: default; } /* a disabled choice still reads (was .5 opacity, 2.4:1) */
+.card.outcome:has(> .stamp.thud + .kbwrap) > .stamp.thud, .card.outcome.mixed:has(> .stamp.thud + .kbwrap) > .stamp.thud { background: rgba(244,236,216,.9); opacity: 1; filter: none; } /* round 6: the result word over the painting reads at 4.5:1+ (it was grainy ink at .92 on a .55 wash) */
+/* round 6 sweep: last small contrast fixes (title epilogue count, crunch "or", radio ask line on the photo) */
+#gallery .epicount { opacity: 1; }
+.crunch .or { opacity: 1; color: #4a3f31; }
+[data-screen="op"] .radio p.ask { color: #ffb6a1; }

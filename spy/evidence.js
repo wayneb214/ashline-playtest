@@ -61,7 +61,8 @@
     el.addEventListener("click", close);
     el.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " " || e.key === "Escape") close(); });
     el.tabIndex = -1; el.focus({ preventScroll: true });
-    setTimeout(close, 5600);
+    const words = (el.innerText.replace(/Tap to carry on/, "").match(/\S+/g) || []).length;
+    setTimeout(close, Math.max(5600, Math.ceil(words / 200 * 60000 + 1500))); // round 6: long enough to read everything on the still at 200 wpm
   }
   window.EVID = { has: has, show: show, SHOT: SHOT, key: key };
 })();

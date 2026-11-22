@@ -52,7 +52,8 @@
     let over = false; const end = function () { if (over) return; over = true; clearInterval(watch); t.classList.remove("on"); setTimeout(function () { t.remove(); tBusy = false; setTimeout(pump, 250); }, 350); };
     // if a file or pop-up opens while the toast is up, the toast gets out of the way at once
     const watch = setInterval(function () { if (blocked()) end(); }, 200);
-    setTimeout(end, q[1] === "ach" ? 3200 : 2800);
+    const words = (t.textContent.match(/\S+/g) || []).length; // round 6: at least a 200-wpm read plus 1.5s
+    setTimeout(end, Math.max(q[1] === "ach" ? 3200 : 2800, Math.ceil(words / 200 * 60000 + 1500)));
   }
   function askReview() {
     if (window.REVIEW && REVIEW.requestReview && !document.body.classList.contains("in-cine")) REVIEW.requestReview(); // once ever, native only

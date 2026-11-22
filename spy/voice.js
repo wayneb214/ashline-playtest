@@ -206,7 +206,7 @@
       if (!fast && queued(id)) { const self = this; return void setTimeout(function () { self.after(id, fn); }, 200); }
       let fired = false; const go = function () { if (fired) return; if (cur && cur._held) return void setTimeout(go, 500); fired = true; fn(); };
       if (fast) return void setTimeout(go, 0);
-      const read = o ? Math.min(6000, 1200 + o.text.length * 30) : 0;
+      const read = o ? Math.min(20000, 1500 + o.text.replace(/<[^>]+>/g, "").length * 60) : 0; // round 6: 200 words a minute (about 60ms a letter) plus 1.5s, when the line can't be heard
       setTimeout(function () {
         const a = cur, want = o && o.src ? new URL(o.src, location.href).href : "";
         if (a && want && a.src === want && !a.paused && !a.ended) {
