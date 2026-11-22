@@ -75,40 +75,77 @@
     MENU.coach("mini-proof", "Turn the dial with \u25c0 \u25b6 until the bottom line reads as English, then lock it. One wrong guess is forgiven.");
   }
 
-  // ---------- Day 2: spot the tail ----------
-  const COATS = ["#7a1f1f", "#2e4a6b", "#5b5b52", "#a07c3c"], HATS = ["none", "trilby", "cap"], BAGS = ["none", "case", "brolly"];
-  function fig(f, i, tap) {
-    const hat = f.h === "trilby" ? '<path d="M7 9h18M11 9c0-5 10-5 10 0" stroke="#111" stroke-width="3" fill="#222"/>' : f.h === "cap" ? '<path d="M10 9c0-5 12-5 12 0h4" stroke="#333" stroke-width="3" fill="#444"/>' : "";
-    const bag = f.b === "case" ? '<rect x="22" y="32" width="10" height="9" rx="1" fill="#3a2814" stroke="#e8d9b8" stroke-width=".8"/>' : f.b === "brolly" ? '<path d="M28 18v34a2 2 0 0 1-4 0" stroke="#e8d9b8" stroke-width="2.4" fill="none"/>' : "";
-    const svg = '<svg viewBox="0 0 32 64" aria-hidden="true"><circle cx="16" cy="12" r="5" fill="#d9c3a5"/>' + hat + '<path d="M9 19h14l3 28H6z" fill="' + COATS[f.c] + '"/><path d="M11 47v14M21 47v14" stroke="#1b1b1b" stroke-width="3"/>' + bag + "</svg>";
-    // painted figures: one oil-painted body per coat colour, with a painted hat and bag layered on
-    const COATN = ["crimson", "navy", "grey", "mustard"], HATN = { trilby: "trilby", cap: "flat cap" }, BAGN = { "case": "briefcase", brolly: "umbrella" };
-    const art = '<span class="pf"><img class="pf-body" src="img/faces/coat' + f.c + '.webp" alt="">' + (f.h !== "none" ? '<img class="pf-hat pf-' + f.h + '" src="img/faces/' + f.h + '.webp" alt="">' : "") + (f.b !== "none" ? '<img class="pf-bag pf-' + f.b + '" src="img/faces/' + f.b + '.webp" alt="">' : "") + "</span>";
-    const desc = COATN[f.c] + " coat" + (HATN[f.h] ? ", " + HATN[f.h] : ", no hat") + (BAGN[f.b] ? ", " + BAGN[f.b] : "");
-    const st = 'style="left:' + f.x + '%"';
-    if (window.__FACES_SVG__ !== true) return tap ? '<button class="fig" data-fig="' + i + '" ' + st + ' aria-label="Person ' + (i + 1) + ": " + desc + '">' + art + "</button>" : '<span class="fig" ' + st + ' role="img" aria-label="' + desc + '">' + art + "</span>";
-    return tap ? '<button class="fig" data-fig="' + i + '" ' + st + ' aria-label="Person ' + (i + 1) + '">' + svg + "</button>" : '<span class="fig" ' + st + ">" + svg + "</span>";
+  // ---------- Day 4: faces at the window ----------
+  // Round 7 (Wayne: "hats, bags, umbrellas are all misaligned and it looks amateur"): every person is one finished painting,
+  // hat on the head and bag or umbrella in the hand, painted in front of the same caf\u00e9 door by the same fixed camera.
+  // Nothing is layered on at run time. The traits each portrait was painted with are written here, and a test checks them.
+  const COATS = ["crimson", "navy", "grey", "mustard"], HATS = ["none", "trilby", "cap"], BAGS = ["none", "case", "brolly"];
+  // face: what tells a person apart when two people dress alike. twin: the cast member wearing exactly the same outfit
+  // (painted from that portrait with only the person changed); twins only ever meet in Hard round 2.
+  const CAST = [
+    { id: "p01", c: 0, h: "cap", b: "none", face: "black man, thirties, clean-shaven", twin: "p23" },
+    { id: "p02", c: 0, h: "none", b: "case", face: "woman, black bob" },
+    { id: "p03", c: 0, h: "trilby", b: "brolly", face: "older man, white moustache" },
+    { id: "p04", c: 0, h: "trilby", b: "case", face: "man, greying beard" },
+    { id: "p05", c: 1, h: "cap", b: "case", face: "older man, short grey beard", twin: "p19" },
+    { id: "p06", c: 1, h: "cap", b: "brolly", face: "young man, red hair" },
+    { id: "p07", c: 1, h: "cap", b: "none", face: "older man, clean-shaven" },
+    { id: "p08", c: 1, h: "none", b: "brolly", face: "woman, grey hair in a bun", twin: "p22" },
+    { id: "p09", c: 1, h: "none", b: "case", face: "black man, short beard" },
+    { id: "p10", c: 1, h: "none", b: "none", face: "young woman, blonde ponytail" },
+    { id: "p11", c: 2, h: "cap", b: "none", face: "man, stubble" },
+    { id: "p12", c: 2, h: "none", b: "none", face: "man, glasses, grey hair" },
+    { id: "p13", c: 2, h: "trilby", b: "brolly", face: "East Asian man, clean-shaven", twin: "p20" },
+    { id: "p14", c: 2, h: "trilby", b: "none", face: "older man, white beard" },
+    { id: "p15", c: 3, h: "cap", b: "none", face: "man, dark beard" },
+    { id: "p16", c: 3, h: "none", b: "case", face: "woman, auburn hair", twin: "p21" },
+    { id: "p17", c: 3, h: "trilby", b: "brolly", face: "black man, grey goatee" },
+    { id: "p18", c: 3, h: "trilby", b: "case", face: "young man, thin moustache", twin: "p24" },
+    { id: "p19", c: 1, h: "cap", b: "case", face: "young man, clean-shaven", twin: "p05" },
+    { id: "p20", c: 2, h: "trilby", b: "brolly", face: "big man, bushy ginger beard", twin: "p13" },
+    { id: "p21", c: 3, h: "none", b: "case", face: "bald older man, glasses", twin: "p16" },
+    { id: "p22", c: 1, h: "none", b: "brolly", face: "young black woman, short curly hair", twin: "p08" },
+    { id: "p23", c: 0, h: "cap", b: "none", face: "older man, full white beard", twin: "p01" },
+    { id: "p24", c: 3, h: "trilby", b: "case", face: "heavy-set man, full grey beard", twin: "p18" }
+  ];
+  const BYID = {}; CAST.forEach(function (f) { BYID[f.id] = f; });
+  const MAIN = CAST.filter(function (f) { return +f.id.slice(1) <= 18; }); // one person per outfit
+  function traitsOf(f) { return { coat: COATS[f.c], hat: { none: "no hat", trilby: "trilby", cap: "flat cap" }[f.h], bag: { none: "no bag", "case": "briefcase", brolly: "umbrella" }[f.b] }; }
+  function fig(f, i, tap, faces) {
+    const T = traitsOf(f), desc = T.coat + " coat, " + T.hat + (f.b === "none" ? "" : ", " + T.bag) + (faces ? "; " + f.face : "");
+    const art = '<img class="cast-img" src="img/faces/cast/' + f.id + '.webp" alt="" draggable="false">';
+    return tap ? '<button class="fig cast" data-fig="' + i + '" data-cast="' + f.id + '" aria-label="Person ' + (i + 1) + ": " + desc + '">' + art + "</button>"
+      : '<span class="fig cast" data-cast="' + f.id + '" role="img" aria-label="Person ' + (i + 1) + ": " + desc + '">' + art + "</span>";
   }
-  // Round 6 (Wayne: "should it be better?"): exactly one person is in both photos. Every figure's traits are written down
-  // (coat colour, hat, bag), nobody repeats inside a photo, and no other person in photo 1 matches anyone in photo 2, so the
-  // answer never depends on squinting. On Easy every photo-2 decoy differs from the target in two traits, not one.
+  // Rules (round 6, kept): exactly one person is in both photos (the same cast id), nobody else in photo 1 is dressed like
+  // anyone in photo 2, and no two people in a photo are dressed alike, except the planned outfit twin in Hard round 2.
+  // Round 7 ramp (Wayne: harder): how close the photo-2 decoys come to the person you're looking for, as outfit traits
+  // they differ in (0 = same clothes, different face).
+  const RAMP = { easy: [[2, 3], [2, 3]], standard: [[1, 2], [1, 2, "near"]], hard: [[1, 2, "near"], [0, 1, "twin"]] };
   const TRAITS = ["c", "h", "b"];
   function diffs(a, b) { return TRAITS.filter(function (k) { return a[k] !== b[k]; }).length; }
-  function traitsOf(f) { return { coat: ["crimson", "navy", "grey", "mustard"][f.c], hat: { none: "no hat", trilby: "trilby", cap: "flat cap" }[f.h], bag: { none: "no bag", "case": "briefcase", brolly: "umbrella" }[f.b] }; }
-  function spotRound(rnd, diff) {
-    const r = function (n) { return Math.floor(rnd() * n); }, t = { c: r(4), h: HATS[r(3)], b: BAGS[r(3)] }, need = diff === "easy" ? 2 : 1;
-    const any = function () { return { c: r(4), h: HATS[r(3)], b: BAGS[r(3)] }; };
-    const clash = function (f, list) { return list.some(function (g) { return diffs(f, g) === 0; }); };
-    const A1 = [Object.assign({}, t)], B = [Object.assign({}, t)];
-    // photo 2 first: decoys look like the target but differ in a clearly drawn trait
-    for (let n = 0; B.length < 3 && n < 400; n++) { const f = any(); if (diffs(f, t) >= need && diffs(f, t) <= need + 1 && !clash(f, B)) B.push(f); }
-    // photo 1: decoys are anyone who is not the target and not anyone in photo 2
-    for (let n = 0; A1.length < 3 && n < 400; n++) { const f = any(); if (!clash(f, A1) && !clash(f, B)) A1.push(f); }
+  function spotRound(rnd, diff, round) {
+    const r = function (n) { return Math.floor(rnd() * n); };
     const shuffle = function (L) { for (let k = L.length - 1; k > 0; k--) { const j = r(k + 1), x = L[k]; L[k] = L[j]; L[j] = x; } return L; };
-    shuffle(A1); shuffle(B);
-    const xs = [3, 36, 69]; // three people per photo, drawn large (round 6: "zoomed in or fewer figures?")
-    A1.forEach(function (f, i) { f.x = xs[i]; f.traits = traitsOf(f); }); B.forEach(function (f, i) { f.x = xs[i]; f.traits = traitsOf(f); });
-    return { a: A1, b: B, ans: B.findIndex(function (f) { return diffs(f, t) === 0; }), target: traitsOf(t) };
+    const shape = (RAMP[diff] || RAMP.standard)[round ? 1 : 0], lo = shape[0], hi = shape[1], kind = shape[2] || "";
+    let t, B;
+    if (kind === "twin") {
+      const pairs = shuffle(MAIN.filter(function (f) { return f.twin; })), base = pairs[0];
+      t = r(2) ? base : BYID[base.twin];
+      const other = shuffle(MAIN.filter(function (f) { return diffs(f, t) === 1; }))[0];
+      B = [t, BYID[t.twin], other];
+    } else {
+      const pool = shuffle(MAIN.slice()); t = pool[0];
+      const near = pool.filter(function (f) { return diffs(f, t) === lo; }), wide = pool.filter(function (f) { const d = diffs(f, t); return f !== t && d >= lo && d <= hi; });
+      const first = kind === "near" ? near[0] : wide[0];
+      B = [t, first].concat(wide.filter(function (f) { return f !== first; }).slice(0, 1));
+    }
+    const dressedLike = function (f, L) { return L.some(function (g) { return diffs(f, g) === 0; }); };
+    const others = shuffle(MAIN.slice()).filter(function (f) { return B.indexOf(f) < 0 && !dressedLike(f, B); });
+    const A1 = [t]; for (let k = 0; k < others.length && A1.length < 3; k++) if (!dressedLike(others[k], A1)) A1.push(others[k]);
+    const pack = function (L) { return shuffle(L.slice()).map(function (f) { return { id: f.id, c: f.c, h: f.h, b: f.b, face: f.face, traits: traitsOf(f) }; }); };
+    const a = pack(A1), b = pack(B);
+    return { a: a, b: b, ans: b.findIndex(function (f) { return f.id === t.id; }), target: traitsOf(t), id: t.id, face: t.face, twin: kind === "twin", kind: kind || "plain" };
   }
   // round 6: tap Zoom (or pinch) on a photo to see it full screen; Close (or Esc, or a tap on the dark) returns. The puzzle
   // has no timer, so nothing needs pausing; choosing still happens in the normal view.
@@ -117,7 +154,7 @@
     const z = document.createElement("div"); z.id = "phzoom"; z.className = "phzoom mini"; z.setAttribute("role", "dialog"); z.setAttribute("aria-modal", "true"); z.setAttribute("aria-label", "Photo " + n + ", full screen");
     const c = src.cloneNode(true); c.classList.remove("tap"); c.classList.add("zoomed");
     c.querySelectorAll("button").forEach(function (b) { if (b.classList.contains("ph-zoom")) b.remove(); else { const sp = document.createElement("span"); sp.className = b.className; sp.setAttribute("style", b.getAttribute("style") || ""); sp.innerHTML = b.innerHTML; b.replaceWith(sp); } });
-    z.innerHTML = '<button class="btn primary phz-close" id="phzclose">Close \u2715</button>'; z.insertBefore(c, z.firstChild);
+    z.innerHTML = (src.classList.contains("strip") ? '<p class="phz-hint">Swipe sideways to see all three people.</p>' : "") + '<button class="btn primary phz-close" id="phzclose">Close \u2715</button>'; z.insertBefore(c, z.firstChild);
     document.body.appendChild(z); window.__ZOOM__ = n;
     const close = function () { z.remove(); window.__ZOOM__ = 0; document.removeEventListener("keydown", esc); const b = document.querySelector('[data-zoom="' + n + '"]'); if (b) b.focus({ preventScroll: true }); };
     const esc = function (e) { if (e.key === "Escape") close(); };
@@ -135,11 +172,11 @@
   function spot() {
     const A = window.AH; let round = 0, hits = 0;
     const draw = function () {
-      const R = spotRound(A.rnd, A.S().diff); window.__FACES__ = R;
+      const R = spotRound(A.rnd, A.S().diff, round); window.__FACES__ = R;
       shell("faces", "Hands-on \u00b7 round " + (round + 1) + " of 2",
-        '<p class="mini-p">The caf\u00e9 watch photographed the front door twice. <b>Exactly one person is in both.</b> Tap them in photo 2: same coat, same hat (or none), same bag (or none).</p>' +
-        '<div class="photo" data-ph="1"><img src="img/h-fleet.jpg" alt="Lambeth, Monday 08:40"><small>1 \u00b7 Mon 08:40</small><button class="ph-zoom" data-zoom="1" aria-label="Zoom photo 1">\u2922 Zoom</button>' + R.a.map(function (f, i) { return fig(f, i, false); }).join("") + "</div>" +
-        '<div class="photo tap" data-ph="2"><img src="img/h-london.jpg" alt="Lambeth, Thursday 18:15"><small>2 \u00b7 Thu 18:15 \u00b7 tap one</small><button class="ph-zoom" data-zoom="2" aria-label="Zoom photo 2">\u2922 Zoom</button>' + R.b.map(function (f, i) { return fig(f, i, true); }).join("") + "</div>" + '<div id="figout" aria-live="polite"></div>', "Who is in both photos? Tap them in photo 2.");
+        '<p class="mini-p">The caf\u00e9 watch photographs everyone at the front door. <b>Exactly one person is in both photos.</b> Tap them in photo 2: same coat, same hat (or none), same bag (or none).' + (R.twin ? ' <b>Look at the face too:</b> two people in photo 2 are dressed alike, and only one of them is the same person.' : '') + '</p>' +
+        '<div class="photo strip" data-ph="1" role="group" aria-label="Photo 1, the caf\u00e9 door, Monday 08:40"><div class="ph-head"><small>1 \u00b7 Mon 08:40</small><button class="ph-zoom" data-zoom="1" aria-label="Zoom photo 1">\u2922 Zoom</button></div>' + R.a.map(function (f, i) { return fig(f, i, false, R.twin); }).join("") + "</div>" +
+        '<div class="photo strip tap" data-ph="2" role="group" aria-label="Photo 2, the caf\u00e9 door, Thursday 18:15"><div class="ph-head"><small>2 \u00b7 Thu 18:15</small><button class="ph-zoom" data-zoom="2" aria-label="Zoom photo 2">\u2922 Zoom</button></div>' + R.b.map(function (f, i) { return fig(f, i, true, R.twin); }).join("") + "</div>" + '<div id="figout" aria-live="polite"></div>', "Who is in both photos? Tap them in photo 2.");
       wireZoom();
       document.querySelectorAll("[data-fig]").forEach(function (b) {
         b.onclick = function () {
@@ -149,12 +186,12 @@
           document.querySelectorAll("[data-fig]").forEach(function (x) { x.disabled = true; });
           // round 6: a plain-words result and a button, instead of moving on after 1.1 seconds
           const T = R.target, last = round + 1 >= 2, out = document.getElementById("figout");
-          out.innerHTML = '<p class="mini-p ' + (ok ? "ok" : "warn") + '"><b>' + (ok ? "Right." : "Not them.") + "</b> The person in both photos: " + T.coat + " coat, " + T.hat + ", " + T.bag + ".</p>" +
+          out.innerHTML = '<p class="mini-p ' + (ok ? "ok" : "warn") + '"><b>' + (ok ? "Right." : "Not them.") + "</b> The person in both photos: " + T.coat + " coat, " + T.hat + ", " + T.bag + (R.twin ? ", " + R.face : "") + ".</p>" +
             '<button class="btn primary" id="fignext">' + (last ? "See how it went" : "Next pair of photos") + "</button>";
           A.$("fignext").onclick = function () {
             if (++round < 2) return draw();
             const res = hits === 2 ? "win" : hits ? "mixed" : "loss";
-            done("faces", res, "Spotted " + hits + " of 2", { win: "Same man, both days. He buys a pint for someone on the staff every Friday. <b>One more name cleared for the leak file.</b>", mixed: "One right, one wrong. Enough to clear one name, not enough to follow him.", loss: "Wrong faces. The watcher walks off along the Embankment." }[res]);
+            done("faces", res, "Spotted " + hits + " of 2", { win: "Same person, both days: a regular who drinks with someone on the staff every Friday. <b>One more name cleared for the leak file.</b>", mixed: "One right, one wrong. Enough to clear one name, not enough to follow him.", loss: "Wrong faces. The watcher walks off along the Embankment." }[res]);
           };
           try { out.scrollIntoView({ block: "end", behavior: FEEL.reduce ? "auto" : "smooth" }); } catch (e) { out.scrollIntoView(false); }
         };
@@ -204,5 +241,5 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () { addCases(window.AH_DATA); });
-  window.MINI = { spotRound: spotRound, zoomOpen: zoomOpen, inject: inject, open: function (id) { ({ proof: cipher, faces: spot, lie: lie })[id](); }, HEAD: HEAD };
+  window.MINI = { spotRound: spotRound, CAST: CAST, traitsOf: traitsOf, zoomOpen: zoomOpen, inject: inject, open: function (id) { ({ proof: cipher, faces: spot, lie: lie })[id](); }, HEAD: HEAD };
 })();

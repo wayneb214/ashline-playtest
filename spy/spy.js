@@ -144,7 +144,7 @@
   // round 5: what low Service does, in the game's own numbers: under 30 officers refuse bold plans; every plan's chance moves
   // 1 point per 4 Service from 50 (oddsFor: (svc - 50) / 4), so at 0 it is 12 or 13 points lower. Service alone never ends the game.
   const SVC_WARN = [30, 10];
-  const SVC_FACTS = "Under 30, officers refuse bold plans until they\u2019re rested. Every plan\u2019s chance it works also moves with Service: at 0 it is about 12% lower than at 50. Service on its own can\u2019t get you sacked or end the game; successes and a rested team bring it back.";
+  const SVC_FACTS = "Under 30, officers refuse bold plans until they\u2019re rested. Every plan\u2019s chance it works also moves with Service: the lower it is, the less likely every plan is to work. Service on its own can\u2019t get you sacked or end the game; successes and a rested team bring it back.";
   const SVC_ALERT = function (x, v) { return "Service has just dropped under " + x + " (now " + v + "). " + SVC_FACTS; };
   const SACK_ALERT = function (t) { return "No.10 trust has just dropped under " + SACK_LOW + " (now " + t + "). " + sackRule(); };
   function barText() {
@@ -1587,7 +1587,7 @@
   function lowWarn() {
     const m = S.meters || {};
     if (m.capital != null && m.capital <= 25) return "No.10 trust is low (" + m.capital + "/100). Wins win it back.";
-    if (m.service != null && m.service <= 25) return "Service is low (" + m.service + "/100). Under 30, officers refuse bold plans; at 0, every plan is about 12% less likely to work. Safer plans and the right officer protect it.";
+    if (m.service != null && m.service <= 25) return "Service is low (" + m.service + "/100). Under 30, officers refuse bold plans, and the lower it goes, the less likely every plan is to work. Safer plans and the right officer protect it.";
     return "";
   }
   // tonight's front page, on the summary itself: every story is one of your choices
