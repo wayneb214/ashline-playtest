@@ -101,14 +101,14 @@
     courier: { who: "The courier", img: "courier", rounds: ["He sits with the unsealed bag on the table between you.", "You ask who packed the bag.", "You ask where the others are going.", "His embassy will ring in ten minutes."],
       gives: ["\u201cA tall man paid me in Bath. Cash. Very tall. Didn\u2019t give a name.\u201d", "\u201cThey have a ferry tonight. Three berths. Harwich.\u201d He writes the booking reference on your file. <b>The Ferry booking goes up on the evidence board.</b> Pin it to the tall man to unlock a quiet intercept at Harwich."], clue: "ticket", art: "v-airport",
       head: { win: "Man held at London airport \u2018helping police\u2019", mixed: "Airport passenger questioned and released", loss: "Varenian protest over airport \u2018harassment\u2019" } },
-    mole2: { who: null, img: null, rounds: ["They sit very straight in the windowless room on the fourth floor.", "You ask who they rang last night.", "You ask what they gave the Grey House.", "Their lawyer is on the stairs."],
+    mole2: { who: null, img: null, rounds: ["They sit very straight in the windowless room on the fourth floor.", "You ask who they rang last night.", "You ask what they gave the Grey House.", "Their solicitor is on the stairs."],
       gives: ["\u201cI never met them. I only ever rang a number.\u201d", "They write the number down. Ash has it traced in minutes: the team leader\u2019s phone."], clue: "phone", art: null,
-      head: { win: "Albion House insider \u2018co-operating\u2019, say sources", mixed: "Lawyer arrives at Albion House for detained officer", loss: "Detained officer \u2018says nothing\u2019 as hunt goes on" } }
+      head: { win: "Albion House insider \u2018co-operating\u2019, say sources", mixed: "Solicitor arrives at Albion House for detained officer", loss: "Detained officer \u2018says nothing\u2019 as hunt goes on" } }
   };
   const RETORT = { friendly: "Your kindness gets a thin smile. \u201cTea won\u2019t help you.\u201d", hard: "Shouting gets nothing but folded arms. \u201cI want my embassy.\u201d", bluff: "\u201cYour file is empty. I can see it from here.\u201d" };
 
   const RETORT2 = { friendly: "\u201cStill no. And the tea is cold.\u201d", hard: "\u201cShout all you like. My embassy is on its way.\u201d", bluff: "\u201cYou keep saying you know. So tell me, then.\u201d" };
-  const RETORT2M = { friendly: "\u201cDon\u2019t be kind to me, C. It makes it worse.\u201d", hard: "\u201cI\u2019ve said it. A lawyer. Now.\u201d", bluff: "\u201cIf you had it, I\u2019d be in a cell already.\u201d" };
+  const RETORT2M = { friendly: "\u201cDon\u2019t be kind to me, C. It makes it worse.\u201d", hard: "\u201cI\u2019ve said it. A solicitor. Now.\u201d", bluff: "\u201cIf you had it, I\u2019d be in a cell already.\u201d" };
   // how the subject looks across the table: calm to start, nervous once they give, angry when pushed the wrong way
   const MOODW = { calm: "Calm", nervous: "Nervous", angry: "Angry" };
   function mood(st) { if (!st.last) return "calm"; if (st.last.ok) return "nervous"; return st.last.tone === "hard" || st.resist >= 2 ? "angry" : "calm"; }
@@ -145,7 +145,7 @@
     else {
       // a different reply each time you try the same thing, and the subject hardens
       const v2 = again && window.VOICE && VOICE.lines[vk + tone + "2"];
-      const t = v2 ? (id === "mole2" ? RETORT2M : RETORT2)[tone] : id === "mole2" && tone === "hard" ? "Shouting gets nothing but folded arms. \u201cI want a lawyer.\u201d" : RETORT[tone];
+      const t = v2 ? (id === "mole2" ? RETORT2M : RETORT2)[tone] : id === "mole2" && tone === "hard" ? "Shouting gets nothing but folded arms. \u201cI want a solicitor.\u201d" : RETORT[tone];
       st.lines.push({ c: "no", t: t }); if (window.VOICE) VOICE.play(v2 ? vk + tone + "2" : vk + tone); st.resist++; st.last = { ok: false, tone: tone }; window.FEEL.buzz("tap");
     }
     st.round++; A.save("briefing");
@@ -161,7 +161,7 @@
     const found = st.got >= 1 ? reveal([sub.clue]) : [];
     const ch = A.apply(res === "win" ? { secrecy: 6, trust: 4 } : res === "mixed" ? { secrecy: -2 } : { secrecy: -6, capital: -4 });
     const kind = { proud: "proud", scared: "frightened", clever: "clever" }[st.temper];
-    const body = (res === "loss" ? (id === "courier" ? "Nothing. He walks out with his embassy\u2019s driver." : "Nothing. The lawyer arrives and the door closes.") : res === "mixed" ? "Something, not everything." : "Everything we needed.") +
+    const body = (res === "loss" ? (id === "courier" ? "Nothing. He walks out with his embassy\u2019s driver." : "Nothing. The solicitor arrives and the door closes.") : res === "mixed" ? "Something, not everything." : "Everything we needed.") +
       " The subject was <b>" + kind + "</b>: " + { proud: "Friendly worked", scared: "Hard worked", clever: "a Bluff worked" }[st.temper] + ". " + clueNote(found);
     const img = sub.art && res !== "loss" ? sub.art : "v-" + res;
     A.finishCase(id, res, null, "Interview \u00b7 " + st.got + " of 2 answers", sub.head[res], ch, { win: "TALKED", mixed: "PARTIAL", loss: "SILENT" }[res], body,

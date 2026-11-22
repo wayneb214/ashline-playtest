@@ -71,8 +71,8 @@
     return o;
   }
   function chips(id, k, a) {
-    let h = keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(a.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "";
-    if (id === "york") { const lr = (S().minis || {}).lie; if (lr) h += lr === "loss" ? '<span class="chip risk-high">Believed the wrong watcher \u22126%</span>' : '<span class="chip risk-low">The right watcher +' + (lr === "win" ? 8 : 3) + "%</span>"; }
+    let h = keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this</span>' : surp(a.risk) ? '<span class="chip risk-low">Catches him off balance</span>' : "";
+    if (id === "york") { const lr = (S().minis || {}).lie; if (lr) h += lr === "loss" ? '<span class="chip risk-high">Believed the wrong watcher</span>' : '<span class="chip risk-low">' + (lr === "win" ? "The right watcher" : "Half the right story") + "</span>"; }
     return h;
   }
   function letterText(n) {
@@ -98,7 +98,7 @@
     if (window.SFX) SFX.tele();
     A.render('<div class="kletter card" id="kletter"><div class="kl-top"><img class="portrait" src="' + pic("kesk") + '" alt="Colonel Kesk"><div><div class="kl-from">From the desk of</div><div class="kl-name">' + KESK + '</div><div class="kl-role">Director \u00b7 the Grey House</div></div></div>' +
       '<div class="kl-body"><p>My dear C,</p><p>' + esc(L.body) + "</p>" + (n === 1 ? window.DESK.inkHTML("kesk") : "") + '<p class="kl-sig">K.</p></div>' +
-      (L.st ? '<div class="chips"><span class="chip kesk">Kesk now counters ' + STYLE[L.st] + " plans \u00b7 \u2212" + keskHit() + "% on them today \u00b7 any other plan +" + SURPRISE + "%</span></div>" : "") +
+      (L.st ? '<div class="chips"><span class="chip kesk">Kesk now counters ' + STYLE[L.st] + " plans today \u00b7 any other plan catches him off balance</span></div>" : "") +
       '<p class="kl-note">Hand-delivered to the front desk. No fingerprints. The paper smells of ' + (n === 1 ? "pine, and faintly of lemons." : "pine.") + "</p></div>" + (n === 1 ? window.DESK.lampHTML("kesk") : "") + '<button class="btn primary" id="go">Into the burn bag</button>', n === 1 ? "Some ink only shows when the paper is warm." : "Your most-used style is the one Kesk will be ready for.");
     if (n === 1) window.DESK.ink($("kletter"), "kesk");
     $("go").onclick = function () { FEEL.tearThen($("kletter"), then || A.briefing); };
@@ -320,7 +320,7 @@
           const locked = a.pm && s.meters.capital < a.pm;
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(a.t) + '</div><p style="margin:0">' + esc(a.d) + '</p><div class="chips">' +
             (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust ' + a.pm + " (now " + s.meters.capital + "/100)</span>" :
-              '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence +10%</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(a.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
+              '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this</span>' : surp(a.risk) ? '<span class="chip risk-low">Catches him off balance</span>' : "")) + "</div></button>";
         }).join("") +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: up to +10% at the border.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
@@ -377,22 +377,22 @@
       if (st.car) {
         const free = s.roster.filter(function (k) { return !s.used[k]; });
         body = '<div class="kicker" style="margin:6px 0">Who drives?</div><div class="agents">' + free.map(function (k) {
-          return A.agentCard(k, banned(k) ? '<div class="fit bad">Won\u2019t drive for you after Wednesday</div>' : '<div class="fit">' + (driverMod(k) >= 0 ? "+" : "") + driverMod(k) + "% at every stage" + (f.call && f.call.choice === "stand" && f.call.k === k ? " \u00b7 owes you" : "") + "</div>", sel === k, banned(k), "data-d");
+          return A.agentCard(k, banned(k) ? '<div class="fit bad">Won\u2019t drive for you after Wednesday</div>' : '<div class="fit">' + (driverMod(k) ? A.effTx(driverMod(k), "at every stage") : "No help or harm at the stages") + (f.call && f.call.choice === "stand" && f.call.k === k ? " \u00b7 owes you" : "") + "</div>", sel === k, banned(k), "data-d");
         }).join("") + (free.some(function (k) { return !banned(k); }) ? "" : '<button class="card appr' + (sel === "ash" ? " sel" : "") + '" data-d="ash"><div class="t">Ash drives</div><p style="margin:0">Nobody else is free to drive. Ash hasn\u2019t driven abroad since 1998.</p></button>') + "</div>" +
           '<div class="kicker" style="margin:6px 0">What car?</div>' +
           '<button class="card appr' + (sel2 === "hire" ? " sel" : "") + '" data-car="hire"><div class="t">A hired estate car, false plates</div><p style="margin:0">Roomy boot. Nobody\u2019s problem if it\u2019s searched.</p></button>' +
-          '<button class="card appr' + (sel2 === "dip" ? " sel" : "") + (s.meters.capital < 45 ? " locked" : "") + '" data-car="dip"' + (s.meters.capital < 45 ? " disabled" : "") + '><div class="t">' + (s.meters.capital < 45 ? "\ud83d\udd12 " : "") + 'A diplomatic car</div><p style="margin:0">Guards hate searching them. Needs No.10\u2019s blessing.</p><div class="chips">' + (s.meters.capital < 45 ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 45 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip pmchip">No.10 signed off</span><span class="chip risk-low">+8% at every stage</span>') + "</div></button>";
+          '<button class="card appr' + (sel2 === "dip" ? " sel" : "") + (s.meters.capital < 45 ? " locked" : "") + '" data-car="dip"' + (s.meters.capital < 45 ? " disabled" : "") + '><div class="t">' + (s.meters.capital < 45 ? "\ud83d\udd12 " : "") + 'A diplomatic car</div><p style="margin:0">Guards hate searching them. Needs No.10\u2019s blessing.</p><div class="chips">' + (s.meters.capital < 45 ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 45 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip pmchip">No.10 signed off</span><span class="chip risk-low">Helps at every stage</span>') + "</div></button>";
       } else {
         body = st.opts.map(function (o, i) {
           if (o.swap && f.exit !== "win") return "";
           const locked = o.swap && !swapOK();
           return '<button class="card appr' + (sel === i ? " sel" : "") + (locked ? " locked" : "") + '" data-i="' + i + '"' + (locked ? " disabled" : "") + '><div class="t">' + (locked ? "\ud83d\udd12 " : "") + esc(o.t) + '</div><p style="margin:0">' + esc(o.d) + '</p><div class="chips">' +
-            (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 50 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip odds">' + odds(o, st) + '% chance</span><span class="chip risk-' + o.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[o.risk] + "</span>" + (o.hrs ? '<span class="chip time">\u23f1 +1h</span>' : "") + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this \u00b7 \u2212' + keskHit() + "%</span>" : surp(o.risk) ? '<span class="chip risk-low">Off balance +' + SURPRISE + "%</span>" : "")) + "</div></button>";
+            (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust 50 (now ' + s.meters.capital + "/100)</span>" : '<span class="chip odds">' + odds(o, st) + '% chance</span><span class="chip risk-' + o.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[o.risk] + "</span>" + (o.hrs ? '<span class="chip time">\u23f1 +1h</span>' : "") + (keskMod(o.risk) ? '<span class="chip kesk">Kesk expects this</span>' : surp(o.risk) ? '<span class="chip risk-low">Catches him off balance</span>' : "")) + "</div></button>";
         }).join("");
       }
       const ready = st.car ? sel && sel2 : sel != null;
       A.render('<div class="step x4">' + STAGES.map(function (z, j) { return '<i class="' + (j <= X.stage ? "on" : "") + (X.picks[j] === "fail" ? " bad" : "") + '"></i>'; }).join("") + '</div><div class="card dossier exfil">' + '<div class="chead"><img src="' + pic(st.img) + '" alt=""></div>' + A.LH + '<span class="stamp corner">' + (X.alarms ? X.alarms + " ALARM" + (X.alarms > 1 ? "S" : "") : "QUIET") + '</span><div class="kicker">The Green Coat \u00b7 stage ' + (X.stage + 1) + " of 4 \u00b7 " + A.hh(s.hour) + '</div><h2 style="margin-top:8px;padding-right:110px">' + st.title + "</h2><p>" + st.tx + "</p>" +
-        (helps.length ? '<div class="chips helps">' + helps.map(function (h) { return '<span class="chip ' + (h[1] > 0 ? "risk-low" : "risk-high") + '">' + esc(h[0]) + " " + (h[1] > 0 ? "+" : "\u2212") + Math.abs(h[1]) + "%</span>"; }).join("") + "</div>" : "") + "</div>" + body +
+        (helps.length ? '<div class="chips helps">' + helps.map(function (h) { return '<span class="chip ' + (h[1] > 0 ? "risk-low" : "risk-high") + '">' + esc(h[0]) + " \u00b7 " + A.effTx(h[1]).toLowerCase() + "</span>"; }).join("") + "</div>" : "") + "</div>" + body +
         '<div class="sticky-go"><button class="btn primary" id="go"' + (ready ? "" : " disabled") + ">" + (ready ? (st.car ? "Drive" : "Go") : "Decide") + "</button></div>" + (X.stage === 0 ? '<button class="btn ghost" id="back">Not yet</button>' : ""), "Two alarms and she doesn\u2019t make it.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
       document.querySelectorAll("[data-d]").forEach(function (b) { const k = b.getAttribute("data-d"); if (!banned(k)) b.onclick = function () { if (sel2) { sel = k; $("go").onclick(); } else draw(k, sel2); }; });

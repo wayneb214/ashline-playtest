@@ -36,7 +36,7 @@
     const A = window.AH; if (window.FUN) FUN.event("mini", { id: "lie", res: res });
     if (window.SFX && SFX.stamp) SFX.stamp(); if (window.VOICE) VOICE.play("mini_lie_" + res);
     A.render('<div data-screen="york-half"><div class="card outcome ' + res + '"><span class="stamp thud">' + STAMP[res] + '</span><div class="kicker">The York address \u00b7 part one of two</div><h2>Two stories from York</h2><p>' + body + '</p>' +
-      '<div class="chips"><span class="chip ' + (res === "loss" ? "risk-high" : "risk-low") + '">' + { win: "+8% at the York house", mixed: "+3% at the York house", loss: "\u22126% at the York house" }[res] + "</span></div></div>" +
+      '<div class="chips"><span class="chip ' + (res === "loss" ? "risk-high" : "risk-low") + '">' + { win: "Helps at the York house", mixed: "Helps a little at the York house", loss: "Hurts at the York house" }[res] + "</span></div></div>" +
       '<button class="btn primary" id="go">Part two: who goes to the house?</button></div>', "Now pick who goes to the York house.");
     A.$("go").onclick = function () { A.openCase("york"); };
   }
@@ -175,8 +175,8 @@
       const R = spotRound(A.rnd, A.S().diff, round); window.__FACES__ = R;
       shell("faces", "Hands-on \u00b7 round " + (round + 1) + " of 2",
         '<p class="mini-p">The caf\u00e9 watch photographs everyone at the front door. <b>Exactly one person is in both photos.</b> Tap them in photo 2: same coat, same hat (or none), same bag (or none).' + (R.twin ? ' <b>Look at the face too:</b> two people in photo 2 are dressed alike, and only one of them is the same person.' : '') + '</p>' +
-        '<div class="photo strip" data-ph="1" role="group" aria-label="Photo 1, the caf\u00e9 door, Monday 08:40"><div class="ph-head"><small>1 \u00b7 Mon 08:40</small><button class="ph-zoom" data-zoom="1" aria-label="Zoom photo 1">\u2922 Zoom</button></div>' + R.a.map(function (f, i) { return fig(f, i, false, R.twin); }).join("") + "</div>" +
-        '<div class="photo strip tap" data-ph="2" role="group" aria-label="Photo 2, the caf\u00e9 door, Thursday 18:15"><div class="ph-head"><small>2 \u00b7 Thu 18:15</small><button class="ph-zoom" data-zoom="2" aria-label="Zoom photo 2">\u2922 Zoom</button></div>' + R.b.map(function (f, i) { return fig(f, i, true, R.twin); }).join("") + "</div>" + '<div id="figout" aria-live="polite"></div>', "Who is in both photos? Tap them in photo 2.");
+        '<div class="photo strip" data-ph="1" role="group" aria-label="Photo 1, the caf\u00e9 door, last Friday 18:15"><div class="ph-head"><small>1 \u00b7 Last Fri 18:15</small><button class="ph-zoom" data-zoom="1" aria-label="Zoom photo 1">\u2922 Zoom</button></div>' + R.a.map(function (f, i) { return fig(f, i, false, R.twin); }).join("") + "</div>" +
+        '<div class="photo strip tap" data-ph="2" role="group" aria-label="Photo 2, the caf\u00e9 door, Monday 08:40"><div class="ph-head"><small>2 \u00b7 Mon 08:40</small><button class="ph-zoom" data-zoom="2" aria-label="Zoom photo 2">\u2922 Zoom</button></div>' + R.b.map(function (f, i) { return fig(f, i, true, R.twin); }).join("") + "</div>" + '<div id="figout" aria-live="polite"></div>', "Who is in both photos? Tap them in photo 2.");
       wireZoom();
       document.querySelectorAll("[data-fig]").forEach(function (b) {
         b.onclick = function () {

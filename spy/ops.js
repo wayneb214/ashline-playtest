@@ -311,7 +311,7 @@
   function controls(id, k, a) {
     if (a && !cur.touched) cur.verb = best(id, a);
     return '<h3 class="question">How exactly?</h3><div class="verbs">' + Object.keys(VERBS).map(function (v) { return '<button class="verb' + (cur.verb === v ? " sel" : "") + '" data-verb="' + v + '"><b>' + VERBS[v].t + "</b><small>" + VERBS[v].d + "</small></button>"; }).join("") + "</div>" +
-      '<label class="pace"><span>Careful</span><input type="range" id="pace" min="0" max="2" step="1" value="' + cur.pace + '" aria-label="Pace: careful to fast"><span>Fast</span></label><p class="pacenote">' + PACE[cur.pace].t + ": " + (PACE[cur.pace].odds ? (PACE[cur.pace].odds > 0 ? "+" : "") + PACE[cur.pace].odds + "% odds, " : "") + (PACE[cur.pace].hours ? (PACE[cur.pace].hours > 0 ? "+1h" : "\u22121h") : "no change") + "</p>";
+      '<label class="pace"><span>Careful</span><input type="range" id="pace" min="0" max="2" step="1" value="' + cur.pace + '" aria-label="Pace: careful to fast"><span>Fast</span></label><p class="pacenote">' + PACE[cur.pace].t + ": " + (PACE[cur.pace].odds ? (PACE[cur.pace].odds > 0 ? "better odds, " : "worse odds, ") : "") + (PACE[cur.pace].hours ? (PACE[cur.pace].hours > 0 ? "+1h" : "\u22121h") : "no change") + "</p>";
   }
   function bind(draw) {
     document.querySelectorAll("[data-verb]").forEach(function (b) { b.onclick = function () { cur.verb = b.getAttribute("data-verb"); cur.touched = true; if (window.SFX && SFX.type) SFX.type(); draw(); }; });

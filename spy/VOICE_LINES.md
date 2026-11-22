@@ -273,15 +273,15 @@ All made with Chatterbox performing our own invented Kokoro reference voices; ev
 | `int_courier_bluff` | The courier | Your file is empty. I can see it from here. |
 | `int_mole2_macrae_give0` | Fiona Macrae (Linnet) | I never met them. I only ever rang a number. |
 | `int_mole2_macrae_friendly` | Fiona Macrae (Linnet) | Tea won’t help you. |
-| `int_mole2_macrae_hard` | Fiona Macrae (Linnet) | I want a lawyer. |
+| `int_mole2_macrae_hard` | Fiona Macrae (Linnet) | I want a solicitor. |
 | `int_mole2_macrae_bluff` | Fiona Macrae (Linnet) | Your file is empty. I can see it from here. |
 | `int_mole2_pryce_give0` | Gareth Pryce (Wren) | I never met them. I only ever rang a number. |
 | `int_mole2_pryce_friendly` | Gareth Pryce (Wren) | Tea won’t help you. |
-| `int_mole2_pryce_hard` | Gareth Pryce (Wren) | I want a lawyer. |
+| `int_mole2_pryce_hard` | Gareth Pryce (Wren) | I want a solicitor. |
 | `int_mole2_pryce_bluff` | Gareth Pryce (Wren) | Your file is empty. I can see it from here. |
 | `int_mole2_hartley_give0` | Tom Hartley (Harrier) | I never met them. I only ever rang a number. |
 | `int_mole2_hartley_friendly` | Tom Hartley (Harrier) | Tea won’t help you. |
-| `int_mole2_hartley_hard` | Tom Hartley (Harrier) | I want a lawyer. |
+| `int_mole2_hartley_hard` | Tom Hartley (Harrier) | I want a solicitor. |
 | `int_mole2_hartley_bluff` | Tom Hartley (Harrier) | Your file is empty. I can see it from here. |
 | `crunch_good` | Ash | Right call. People before paper. |
 | `crunch_bad` | Ash | The papers will keep. I hope the other one does. |

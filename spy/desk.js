@@ -168,7 +168,7 @@
     const a = A();
     call({ id: "kesk", line: "OPEN LINE \u00b7 INTERNATIONAL \u00b7 NUMBER WITHHELD", img: "kesk", ring: "A foreign exchange. No name.", who: "Colonel Anselm Kesk", say: "Do it",
       text: "Good evening, C. Is it raining in London? It is snowing here. <b>I will be at the border myself tonight.</b> Bring a warm coat. Green, perhaps. Are you looking forward to it?",
-      opts: [{ k: "talk", t: "Keep him talking. Trace the line.", chips: '<span class="chip risk-low">+8% at the barrier if traced</span><span class="chip risk-high">Ash\u2019s team up all night</span>' },
+      opts: [{ k: "talk", t: "Keep him talking. Trace the line.", chips: '<span class="chip risk-low">Helps at the barrier if traced</span><span class="chip risk-high">Ash\u2019s team up all night</span>' },
         { k: "hang", t: "Put the phone down.", chips: '<span class="chip risk-low">+4 Secrecy</span>' }],
       def: "hang", hint: "Kesk learns how you play.", replySecs: 16,
       answer: function (c, t) {
@@ -231,11 +231,11 @@
   const ASKS = {
     // Batch P: the Flash from Bath (who he is, what was used) is said before the choice, not on tonight's report after it
     bath: { q: "Our man is down. The ambulance is two minutes out.", voice: "ask_bath_now", preTag: "23:47 \u00b7 BATH", pre: function () { return [S().defector ? "flash_d1_def" : "flash_d1_nodef"]; }, def: "away", secs: 9,
-      opts: [{ k: "doctor", t: "Send our doctor in with it", d: "\u22126 Secrecy \u00b7 Vass may talk: +10% on the ferry tomorrow" }, { k: "away", t: "Stay out of sight", d: "+4 Secrecy" }],
+      opts: [{ k: "doctor", t: "Send our doctor in with it", d: "\u22126 Secrecy \u00b7 Vass may talk: helps a lot on the ferry tomorrow" }, { k: "away", t: "Stay out of sight", d: "+4 Secrecy" }],
       res: { doctor: "Our doctor rides in the back. Vass grips her hand.", away: "Our people melt into the rain." } },
     // the ask matches how Harwich went: the same two choices (+10% in York, or +4 Secrecy), worded for what is in front of you
     ferry: function (r) {
-      const York = "\u22124 No.10 trust \u00b7 +10% in York on Friday", Sec = "+4 Secrecy";
+      const York = "\u22124 No.10 trust \u00b7 helps a lot in York on Friday", Sec = "+4 Secrecy";
       if (r === "win") return { q: "Two held at the gangway. The woman in green wasn\u2019t aboard.", voice: "ask_ferry_win", def: "watch", secs: 9,
         opts: [{ k: "follow", t: "Search the ferry before it sails", d: York }, { k: "watch", t: "Let it sail, watch who meets it at the other end", d: Sec }],
         res: { follow: "Officers go cabin by cabin. A York address turns up on a manifest.", watch: "It sails on time. Our people wait at the other end." },
@@ -250,7 +250,7 @@
         why: "Day 2 \u00b7 A fast launch chased the ferry: +10% in York." };
     },
     border: { q: "The guard is waving cars through fast. Ash on the radio: \u201cYour call.\u201d", voice: "ask_border", def: "hold", secs: 7,
-      opts: [{ k: "drive", t: "Wave us through. Drive on.", d: "+14% with the dog \u00b7 \u22128% at the barrier" }, { k: "hold", t: "Hold it. Let the queue settle.", d: "+6% at the barrier" }],
+      opts: [{ k: "drive", t: "Wave us through. Drive on.", d: "Helps a lot with the dog \u00b7 hurts at the barrier" }, { k: "hold", t: "Hold it. Let the queue settle.", d: "Helps at the barrier" }],
       res: { drive: "Second gear. Don\u2019t look at the dog.", hold: "Engine off. Breathe." } }
   };
   // the ferry ask depends on how Harwich went; once answered it remembers that, so Day 3 reads the same words
