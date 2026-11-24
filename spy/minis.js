@@ -9,7 +9,9 @@
     4: { faces: { kind: "mini", title: "Faces at the window", where: "Lambeth, London", place: "London", home: true, due: 17, pen: { secrecy: -5 },
       head: { win: "Lambeth caf\u00e9 regular \u2018helping police\u2019", mixed: "Photographer seen outside government building", loss: "Albion House visitor \u2018never identified\u2019" } } },
     5: { proof: { kind: "mini", title: "Proof of life", where: "A postcard from Kessgrad", place: "Varenia", home: true, due: 19, pen: { safety: -5 },
-      head: { win: "Varenia: detained Briton \u2018in good health\u2019", mixed: "Family of held Briton receive postcard", loss: "No word from Briton held in Kessgrad" } } }
+      head: { win: "Varenia: detained Briton \u2018in good health\u2019", mixed: "Family of held Briton receive postcard", loss: "No word from Briton held in Kessgrad" },
+      // hotfix 1: once the dawn swap has freed them, the paper re-dates these lines (it goes to press after the swap)
+      headFreed: { win: "Postcard from Kessgrad proved Briton alive before release", mixed: "Family of freed Briton had received a postcard", loss: "Family had no word before Briton\u2019s release" } } }
   };
   // where each puzzle sits in the day's order (index)
   const AT = { 4: ["faces", 2], 5: ["proof", 2] };

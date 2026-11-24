@@ -47,7 +47,8 @@
       approaches: [ap("Lunch with the editor", "Old friends, a long lunch, and a promise of the full story in thirty years.", 8, "low", 0, { capital: 6, trust: 4 }, { capital: -2 }, { capital: -8 }),
         ap("A formal request from the Cabinet Office", "Polite, official, and copied to his solicitors.", 6, "med", 1, { capital: 8 }, { trust: -4 }, { capital: -10, trust: -6 }),
         ap("Feed him a bigger story", "A juicy rumour about a minister\u2019s dog. True, mostly.", 0, "high", 2, { capital: 4, secrecy: 6 }, { trust: -6 }, { trust: -10, capital: -8 })],
-      head: { win: "Bugle: \u2018no comment\u2019 on Varenia rumours", mixed: "\u2018Briton held in Kessgrad\u2019, claims rival paper", loss: "BRITISH SPY HELD IN KESSGRAD, Bugle reveals" } },
+      head: { win: "Bugle: \u2018no comment\u2019 on Varenia rumours", mixed: "\u2018Briton held in Kessgrad\u2019, claims rival paper", loss: "BRITISH SPY HELD IN KESSGRAD, Bugle reveals" },
+      headFreed: { mixed: "Rival paper ran \u2018Briton held\u2019 story hours before release", loss: "Bugle named held Briton hours before release" } }, // hotfix 1: the paper goes to press after the dawn swap
     swap: { kind: "swap", title: "The bridge at dawn", where: "The Vell bridge, Varenian border", place: "Varenia", label: "To the bridge \u203a", due: 23, flash: true, pen: { safety: -12 },
       head: { win: "Quiet dawn on the Vell bridge", mixed: "Varenia releases one Briton \u2018as a gesture\u2019", loss: "Varenia: British \u2018spy\u2019 to stand trial" } }
   };
@@ -59,7 +60,7 @@
         ap("Follow his driver from the airport", "Fast, close, and he may notice.", 0, "high", 2, { secrecy: 10 }, { safety: -4 }, { safety: -10, secrecy: -8 })],
       head: { win: "Tractor salesman enjoys London stay", mixed: "Foreign visitor \u2018followed\u2019 from airport, says driver", loss: "Varenian businessman complains of \u2018harassment\u2019" } },
     chase: { kind: "chase", title: "Across London", where: "London", place: "London", home: true, due: 18, pen: { secrecy: -12 },
-      head: { win: "Varenian visitor \u2018missed his flight\u2019", mixed: "Rush-hour chaos on the river bus", loss: "Foreign diplomat \u2018slipped police net\u2019, say sources" } },
+      head: { win: "Varenian visitor\u2019s sightseeing cut short", mixed: "Rush-hour chaos on the river bus", loss: "Foreign diplomat \u2018slipped police net\u2019, say sources" } },
     showdown: { kind: "showdown", title: "Downing Street", where: "10 Downing Street", place: "London", home: true, label: "To No.10 \u203a", due: 23, flash: true, pen: { capital: -16 },
       head: { win: "Varenian diplomat leaves London \u2018at short notice\u2019", mixed: "No.10 \u2018aware\u2019 of Varenian visitor", loss: "Ministers \u2018not told\u2019 of spy in Westminster" } }
   };
@@ -552,9 +553,11 @@
     else { const e = END[ending()]; body = e.flash; }
     return '<div class="flash-card green" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:58 \u00b7 ' + where + '</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + (d === 6 ? '<br><br><b>Ending: ' + END[ending()].name + "</b>" : "") + "<br><br>\u2014 Ash</div></div>";
   }
+  // hotfix 1: the Day 4 subhead says what happened in Manchester, so it never sits above "walks out of Manchester talks"
+  function talks4() { return { mixed: "Manchester talks \u2018strained\u2019", loss: "Manchester talks collapse" }[S().done.manchester] || "Manchester trade talks \u2018cordial\u2019"; }
   function paperLead() {
     const s = S();
-    if (s.day === 4) return s.leakCaught ? { lead: "QUIET TUESDAY IN WHITEHALL", sub: "Manchester trade talks \u2018cordial\u2019 \u00b7 No news is good news \u00b7 Weather: rain" } : { lead: "\u2018EVERYONE KNOWS WHERE THE SPIES ARE\u2019", sub: "MP mocks security at secret building \u00b7 Manchester talks \u2018cordial\u2019 \u00b7 No.10 silent" };
+    if (s.day === 4) return s.leakCaught ? { lead: "QUIET TUESDAY IN WHITEHALL", sub: talks4() + " \u00b7 No news is good news \u00b7 Weather: rain" } : { lead: "\u2018EVERYONE KNOWS WHERE THE SPIES ARE\u2019", sub: "MP mocks security at secret building \u00b7 " + talks4() + " \u00b7 No.10 silent" };
     if (s.day === 5) return { win: { lead: "BRITON FREED AT DAWN", sub: "Released on Varenian border \u00b7 FO: \u2018humanitarian gesture\u2019 \u00b7 No questions taken" }, mixed: { lead: "BRITON FREED, BUT AT WHAT PRICE?", sub: "Release on Varenian border \u00b7 Rumours of a deal \u00b7 Kessgrad \u2018satisfied\u2019" }, loss: { lead: "BRITON TO STAND TRIAL IN KESSGRAD", sub: "Varenia names \u2018spy\u2019 \u00b7 Downing Street no comment \u00b7 Family \u2018devastated\u2019" } }[s.done.swap || "loss"];
     const e = END[ending()]; return { lead: e.lead, sub: e.sub };
   }

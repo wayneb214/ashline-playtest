@@ -161,6 +161,7 @@
     el.classList.add("on");
     clearTimeout(subT); subT = setTimeout(function () { el.classList.remove("on"); }, total);
   }
+  let seqGen = 0; // hotfix 1: bumped by hush/stop to end a running seq
   let queue = [], playingId = null, gap = null; // gap: the breath between two queued lines (still busy)
   const queued = function (id) { return queue.some(function (q) { return q[0] === id; }); };
   const speaking = function () { return !!(cur && cur.src && cur.src !== HUSH && !cur.paused && !cur.ended && !cur.muted && !cur._held); };
@@ -216,16 +217,17 @@
       }, 250);
     },
     // several lines back to back (Kesk's letter follows whichever paragraphs are on screen)
-    seq: function (ids) { const self = this; let i = 0; const next = function () { if (i >= ids.length) return; const id = ids[i++]; self.now(id); self.after(id, function () { setTimeout(next, 250); }); }; setTimeout(next, 60); },
+    // hotfix 1: hush or stop cancels the rest of a sequence, so a queued line never starts on the next screen
+    seq: function (ids) { const self = this, gen = seqGen; let i = 0; const next = function () { if (gen !== seqGen || i >= ids.length) return; const id = ids[i++]; self.now(id); self.after(id, function () { setTimeout(next, 250); }); }; setTimeout(next, 60); },
     // a line that belongs to a screen you can redraw (choosing on the screen): said once per visit to the game
     once: function (id) { this._said = this._said || {}; if (this._said[id]) return; this._said[id] = 1; this.play(id); },
-    hush: function () { queue = []; clearTimeout(gap); gap = null; blocked = null; if (cur) cur.pause(); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
+    hush: function () { seqGen++; queue = []; clearTimeout(gap); gap = null; blocked = null; if (cur) cur.pause(); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
     busy: function () { return speaking() || queue.length > 0 || !!gap; },
     // QA round 1 (N4): fade the caption off without stopping the voice (a desk line finishing as the live op opens)
     uncap: function () { capT.forEach(clearTimeout); capT = []; clearTimeout(subT); const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); },
     // app backgrounded or a call came in: hold the line where it is, carry on from there when we're back
     hold: function () { if (cur && !cur.paused && !cur.ended) { cur._held = true; cur.pause(); return true; } return false; },
     unhold: function () { if (cur && cur._held) { cur._held = false; const p = cur.play(); if (p && p.catch) p.catch(function () {}); } },
-    stop: function () { queue = []; clearTimeout(gap); gap = null; if (cur) { cur.pause(); cur.muted = false; } const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }
+    stop: function () { seqGen++; queue = []; clearTimeout(gap); gap = null; if (cur) { cur.pause(); cur.muted = false; } const el = document.getElementById("subtitle"); if (el) el.classList.remove("on"); }
   };
 })();

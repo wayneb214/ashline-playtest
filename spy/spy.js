@@ -607,7 +607,7 @@
     const L = window.VOICE ? VOICE.lines.pm_sacked_last : null, txt = L ? L.text : "C, it\u2019s Eleanor Hale. I warned you. I can\u2019t defend you any longer. I need your letter on my desk tonight.";
     render('<div data-screen="sackcall" data-music="tense"></div><div class="card dossier sackcall"><img class="vignette" src="' + pic("pm-worried") + '" alt="Eleanor Hale, the Prime Minister, on the phone"><div class="kicker">No.10 switchboard \u00b7 midnight</div><h2>The Prime Minister, one last time</h2>' +
       '<p class="quote"><b>Eleanor Hale:</b> \u201c' + esc(txt) + '\u201d</p></div><div class="sticky-go"><button class="btn primary" id="sackdown">Put the phone down</button></div>', "Hale wants your letter tonight.");
-    setTimeout(function () { if (window.VOICE && $("sackdown")) VOICE.play("pm_sacked_last"); }, (FAST || window.__SPY_FAST__) ? 0 : 500);
+    setTimeout(function () { if (window.VOICE && $("sackdown")) VOICE.seq(["pm_sacked_last", "bulletin_sacked"]); }, (FAST || window.__SPY_FAST__) ? 0 : 500); // hotfix 1: the bulletin follows her line here, not over the sacked paper
     $("sackdown").onclick = function () { if (window.VOICE) VOICE.stop(); S.sackCall = true; save("sacked"); sackPaper(); };
   }
   function sackPaper() {
@@ -619,7 +619,6 @@
       '<div class="also"><b>Also inside:</b> ' + alsoInside("SPY CHIEF OUT AFTER DAYS IN POST", [], S.day).map(esc).join(" \u00b7 ") + "</div></div>" +
       '<div class="sticky-go"><button class="btn primary" id="sackepi">\u25b6 Epilogue \u00b7 ' + esc((window.REPLAY ? REPLAY.NAMES : {}).sacked || "Out after days") + '</button>' + (window.REPLAY ? REPLAY.endButtonHTML() : "") + '<button class="btn ghost" id="again">New game</button></div>',
       "The Prime Minister wanted your letter. You were sacked.");
-    setTimeout(function () { if (window.VOICE && $("paper")) VOICE.play("bulletin_sacked"); }, 700);
     $("sackepi").onclick = function () { if (window.VOICE) VOICE.stop(); if (window.ENDINGS) ENDINGS.play("sacked", true, function () { ENDINGS.pull("sacked", sackPaper); }); }; // round 5: then the replay screen
     if (window.REPLAY && REPLAY.bindEnd) REPLAY.bindEnd();
     $("again").onclick = function () { store.del(SAVE); difficulty(); }; // anyone at a day's end has played: the picker first
@@ -1504,7 +1503,7 @@
     if ($("daynext")) $("daynext").onclick = function () { no10Night(function () { const nx = DAYK[S.day + 1]; FEEL.tearThen($("flash"), function () { restore(loadJSON(nx)); save("briefing"); window.AH4.briefingIntro(); }); }); };
     // the bulletin played over the front page; the report gets Ash's verdict on the day (subtitled)
     // Ash reads the report aloud, short version, while the full text shows: the grade, then her FLASH telegram
-    setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; VOICE.seq(S.flashSaid === S.day ? [reportLine(grade)] : [reportLine(grade), bulletinLine()]); } }, 900);
+    setTimeout(function () { if (window.VOICE && $("flash") && S.readOut !== S.day) { S.readOut = S.day; const radio = S.radioSaid !== S.day ? [bulletinId()] : []; S.radioSaid = S.day; VOICE.seq(radio.concat(S.flashSaid === S.day ? [reportLine(grade)] : [reportLine(grade), bulletinLine()])); } }, 900);
   }
   // Batch O: each finished game's ending, newest first (kept to 10; the title shows the last 3). Once per game.
   const ENDS = "albion-game-endings"; // not "albion-endings": the epilogue collection (endings.js, replay.js) owns that key
@@ -1604,7 +1603,12 @@
   function paperData() {
     // round 8 (N3 interim): the paper only prints what a newspaper could know: today's public stories, no officer names, plans or game terms.
     // The private case list stays in the internal report.
-    const calls = S.log.filter(function (l) { return l.head; }).map(function (l) { return { t: l.head, res: l.res }; });
+    // hotfix 1: "In brief" is written at the end of the day, after the climax, so it never contradicts the lead. Each case's
+    // headline was fixed when that case closed, earlier in the day: the climax case (flash) is the lead itself, so its
+    // own line is left out, and a line about the captive still being held is re-dated once the dawn swap has freed them.
+    const C = CASES(), freed = S.day === 5 && (S.done.swap === "win" || S.done.swap === "mixed");
+    const calls = S.log.filter(function (l) { return l.head && !(C[l.id] || {}).flash; }).map(function (l) {
+      const hf = (C[l.id] || {}).headFreed, t = freed && hf && l.res in hf ? hf[l.res] : l.head; return t ? { t: t, res: l.res } : null; }).filter(Boolean);
     if (S.call && S.day === 1) calls.push({ t: S.call.choice === "deny" ? "No.10 \u2018reassured\u2019 after spy chief names officer" : "Spy chief defies Downing Street over leak", res: S.call.choice === "deny" ? "loss" : "win" });
     const d = { calls: calls, mole: moleText(), caught: moleCaught(), day: S.day };
     if (S.day >= 2) { const p = S.day >= 4 ? window.AH4.paperLead() : S.day === 3 ? window.AH3.paperLead() : window.AH2.paperLead(); d.lead = p.lead; d.sub = p.sub; }
@@ -1642,8 +1646,9 @@
   function paper(opts) {
     opts = opts || {};
     const d = paperData();
-    chrome(true); save("summary");
-    setTimeout(function () { if (window.VOICE) VOICE.play(bulletinId()); }, 700);
+    chrome(true); save("summary"); if (window.VOICE && VOICE.hush) VOICE.hush(); // nothing from the report's read-out carries on over the paper
+    // hotfix 1 (Wayne): the radio bulletin no longer plays over the front page, where its caption covered the bottom of the
+    // paper. It waits until the paper is put down and opens the report's read-out (summary), once per day.
     render('<div class="frontpage" id="paper"><div class="mast">The London Evening Bugle</div><div class="dateline"><span>' + paperEd(d.day)[0] + '</span><span>' + paperEd(d.day)[1] + "</span><span>Price 2p \u00b7 fiction</span></div>" +
       '<h1 class="lead">' + esc(d.lead) + '</h1><p class="subd">' + esc(d.sub) + "</p>" +
       '<div class="molebanner ' + (d.caught ? "caught" : "free") + '">' + esc(d.mole) + "</div>" +
@@ -1724,5 +1729,5 @@
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
   else title(); // the opening film now plays when you take the chair, not at launch
-  window.__SPY__ = { state: function () { return S; }, fresh: function () { fresh(); title(); }, paperDataURL: function () { return drawPaper().toDataURL("image/png"); } };
+  window.__SPY__ = { state: function () { return S; }, fresh: function () { fresh(); title(); }, paperDataURL: function () { return drawPaper().toDataURL("image/png"); }, paperData: function () { return paperData(); } }; // hotfix 1: paperData for the In brief sweep
 })();
