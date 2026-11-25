@@ -85,6 +85,8 @@ The phone calls and Kesk letters change with the player’s earlier choices; the
 | kesk_d4_letter | Colonel Kesk | My dear C. Such a handsome building. I have always wanted to see where you work. Now I have. Someone of yours was kind enough to show me. K. |
 | call_pm_d4 | Eleanor Hale | C, there's a Varenian trade delegation in Manchester, and the Chancellor wants that deal. Whatever you're doing near them, be careful. |
 | bulletin_day4 | Thamesmouth Wireless News | Thamesmouth Wireless News. A Varenian trade delegation has cut short its visit to Manchester. Officials describe the talks as cordial. |
+| bulletin_day4_mixed | Thamesmouth Wireless News | Thamesmouth Wireless News. A Varenian trade delegation has cut short its visit to Manchester. Officials describe the talks as strained. |
+| bulletin_day4_lose | Thamesmouth Wireless News | Thamesmouth Wireless News. The Varenian trade talks in Manchester have collapsed. Officials in London have made no comment. |
 | ash_d5_open | Ash | They've taken one of ours, Chief. At the airport in Kessgrad, this morning. |
 | kesk_d5_call | Colonel Kesk | Good morning, C. I have your friend. You have mine. Let us meet on the bridge at dawn, like civilised men. |
 | call_pm_d5 | Eleanor Hale | C. I want our officer home, and I want it quiet. No headlines, no heroics. Can you do that? |

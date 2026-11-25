@@ -39,11 +39,11 @@
   }
   function follows() {
     const f = flags(), out = [];
-    out.push(f.clerk ? { g: 1, t: "Day 1 \u00b7 You saved the Vienna clerk. She knows the woman in green\u2019s handwriting: +15% in Bath." } : { g: 0, t: "Day 1 \u00b7 The Vienna clerk was left behind. Nobody can read the note\u2019s hand: \u221210% in Bath." });
-    if (f.call) out.push(f.call.choice === "deny" ? { g: 0, t: "Day 1 \u00b7 You denied " + A.first(f.call.k) + " to the House. They haven\u2019t forgotten: loyalty \u22121, and they won\u2019t drive tonight." } : { g: 1, t: "Day 1 \u00b7 You stood by " + A.first(f.call.k) + ". They\u2019d drive through a wall for you: +10% if they drive tonight." });
-    out.push(f.caught ? { g: 1, t: "Day 1 \u00b7 The mole is in a cell, and talking: +10% at the border tonight." } : { g: 0, t: "Day 1 \u00b7 The mole is still inside. Kesk knows our faces: the watchers start a step closer, and \u221210% at the border." });
+    out.push(f.clerk ? { g: 1, t: "Day 1 \u00b7 You saved the Vienna clerk. She knows the woman in green\u2019s handwriting: helps a lot in Bath." } : { g: 0, t: "Day 1 \u00b7 The Vienna clerk was left behind. Nobody can read the note\u2019s hand: hurts a lot in Bath." });
+    if (f.call) out.push(f.call.choice === "deny" ? { g: 0, t: "Day 1 \u00b7 You denied " + A.first(f.call.k) + " to the House. They haven\u2019t forgotten: loyalty \u22121, and they won\u2019t drive tonight." } : { g: 1, t: "Day 1 \u00b7 You stood by " + A.first(f.call.k) + ". They\u2019d drive through a wall for you: helps a lot if they drive tonight." });
+    out.push(f.caught ? { g: 1, t: "Day 1 \u00b7 The mole is in a cell, and talking: helps a lot at the border tonight." } : { g: 0, t: "Day 1 \u00b7 The mole is still inside. Kesk knows our faces: the watchers start a step closer, and it hurts a lot at the border." });
     if (f.exit === "win") out.push({ g: 1, t: "Day 2 \u00b7 We hold the tall man. Kesk wants him back: a swap at the border is possible, if No.10 signs off (trust 50)." });
-    else if (f.exit === "mixed") out.push({ g: 1, t: "Day 2 \u00b7 We hold the driver. He\u2019s told us the border routine: +5% at the checkpoint." });
+    else if (f.exit === "mixed") out.push({ g: 1, t: "Day 2 \u00b7 We hold the driver. He\u2019s told us the border routine: helps at the checkpoint." });
     else if (f.exit) out.push({ g: 0, t: "Day 2 \u00b7 The Bath team got home. They know our faces: the watchers start a step closer." });
     return out.concat(window.DESK.follows());
   }
@@ -196,7 +196,7 @@
     return { text: A.benchLine(), worried: false };
   }
   function afterCase(id, res) {
-    if (id === "york") return res === "loss" ? "Kesk\u2019s people were there first. We\u2019ll run SPARE KEY from memory (\u221215% on the signal)." : "In the airing cupboard, SPARE KEY, untouched. <b>The signal is a man with a green shopping bag.</b>";
+    if (id === "york") return res === "loss" ? "Kesk\u2019s people were there first. We\u2019ll run SPARE KEY from memory (hurts a lot on the signal)." : "In the airing cupboard, SPARE KEY, untouched. <b>The signal is a man with a green shopping bag.</b>";
     return "";
   }
 
@@ -301,8 +301,8 @@
     if (S().done.tail) return; // panel 6 B1: one result
     const res = heat <= 1 ? "win" : heat <= 3 ? "mixed" : "loss";
     const ch = A.apply({ win: { secrecy: 8, safety: 4 }, mixed: { secrecy: -4 }, loss: { secrecy: -12, safety: -6 } }[res]);
-    const body = skipped ? "You take the long way: two buses, a cathedral and a department store\u2019s back stairs. SPARE KEY reaches Pimlico clean. <b>Clean streets help tonight: +10% at the border.</b>"
-      : { win: "Heat " + heat + ". Nobody follows you into Pimlico. <b>Clean streets help tonight: +10% at the border.</b>", mixed: "Heat " + heat + ". You lose most of them, but not all. Kesk will know something moved today.", loss: "Heat " + heat + ". They follow you to the door. <b>Kesk knows SPARE KEY is running: \u221215% at the border.</b>" }[res];
+    const body = skipped ? "You take the long way: two buses, a cathedral and a department store\u2019s back stairs. SPARE KEY reaches Pimlico clean. <b>Clean streets help a lot at the border tonight.</b>"
+      : { win: "Heat " + heat + ". Nobody follows you into Pimlico. <b>Clean streets help a lot at the border tonight.</b>", mixed: "Heat " + heat + ". You lose most of them, but not all. Kesk will know something moved today.", loss: "Heat " + heat + ". They follow you to the door. <b>Kesk knows SPARE KEY is running: that hurts a lot at the border.</b>" }[res];
     A.finishCase("tail", res, null, skipped ? "The long way round" : "On foot, heat " + heat, D.SITS3.tail.head[res], ch, { win: "CLEAN", mixed: "SEEN", loss: "FOLLOWED" }[res], body, '<div class="kbwrap"><img class="vignette" src="' + pic("tail-street") + '" alt="" style="object-position:center 40%"></div>', "The street game feeds the exfiltration.");
   }
 
@@ -322,14 +322,14 @@
             (locked ? '<span class="chip risk-high">No.10 won\u2019t sign off \u00b7 needs No.10 trust ' + a.pm + " (now " + s.meters.capital + "/100)</span>" :
               '<span class="chip odds">' + podOdds(a) + '% chance</span><span class="chip risk-' + a.risk + '">' + { low: "Careful", med: "Measured", high: "Bold" }[a.risk] + '</span><span class="chip time">\u23f1 ' + a.hrs + "h</span>" + (a.pm ? '<span class="chip pmchip">No.10 signed off</span>' : "") + (a.risk === "med" && s.meters.capital >= 60 ? '<span class="chip risk-low">No.10 lends the licence</span>' : "") + (keskMod(a.risk) ? '<span class="chip kesk">Kesk expects this</span>' : surp(a.risk) ? '<span class="chip risk-low">Catches him off balance</span>' : "")) + "</div></button>";
         }).join("") +
-        '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: up to +10% at the border.");
+        '<div class="sticky-go"><button class="btn primary" id="go"' + (sel == null ? " disabled" : "") + ">" + (sel == null ? "Choose how" : "Go \u2014 " + esc(POD[sel].t)) + '</button></div><button class="btn ghost" id="back">Back to the brief</button>', "A pod on the line lets us hear Kesk hunting tonight: it can help a lot at the border.");
       document.querySelectorAll("[data-i]").forEach(function (b) { b.onclick = function () { sel = +b.getAttribute("data-i"); $("go").onclick(); }; });
       $("go").onclick = function () {
         if (s.done.cable || sel == null) return; // panel 6 B1: one result
         const a = POD[sel], p = podOdds(a), res = roll(p);
         s.styles = s.styles || { low: 0, med: 0, high: 0 }; s.styles[a.risk]++;
         A.advance(a.hrs); const ch = A.apply(a[res]);
-        const body = { win: "The pod is on the line by dusk. <b>From ten tonight we\u2019ll hear the Grey House calling its border posts: +10% at the border.</b>", mixed: "The pod is on, but the signal is thin. We\u2019ll hear some of it: +5% at the border.", loss: "A Varenian trawler sat over the spot all afternoon. The pod never went on. We go tonight deaf." }[res];
+        const body = { win: "The pod is on the line by dusk. <b>From ten tonight we\u2019ll hear the Grey House calling its border posts: that helps a lot at the border.</b>", mixed: "The pod is on, but the signal is thin. We\u2019ll hear some of it: that helps at the border.", loss: "A Varenian trawler sat over the spot all afternoon. The pod never went on. We go tonight deaf." }[res];
         A.finishCase("cable", res, null, a.t, c.head[res], ch, { win: "TAPPED", mixed: "FAINT", loss: "ABORTED" }[res], body, '<div class="kbwrap"><img class="vignette" src="' + pic(res === "loss" ? "v-loss" : "v-cabletap") + '" alt=""></div>', "The pod feeds the exfiltration.");
       };
       $("back").onclick = A.briefing;
@@ -413,7 +413,7 @@
           barrier: ok ? "The barrier lifts. Pine forest, a lay-by, and the border behind you." : "A phone rings in the guard hut as you reach the barrier. <b>An alarm.</b>"
         }[st.key];
         const nextStage = function () { if (X.finished || X.stage >= STAGES.length) return; X.stage++; if (X.stage >= STAGES.length) return finish(); draw(null, null); };
-        A.meters(); A.render('<div class="card outcome ' + (ok ? "win" : "loss") + '"><span class="stamp thud">' + (ok ? "CLEAR" : "ALARM") + '</span><div class="kbwrap"><img class="vignette" src="' + pic(st.img) + '" alt=""></div><h2>' + st.title + "</h2><p>" + txt + '</p><p class="oddsline">' + p + "% odds \u00b7 " + X.alarms + " alarm" + (X.alarms === 1 ? "" : "s") + " \u00b7 " + A.hh(s.hour) + '</p></div><button class="btn primary" id="go">' + (X.stage + 1 >= STAGES.length ? "See what happened" : "Next") + "</button>", "Every stage counts.");
+        A.meters(); A.render('<div class="card outcome ' + (ok ? "win" : "loss") + '"><span class="stamp thud">' + (ok ? "CLEAR" : "ALARM") + '</span><div class="kbwrap"><img class="vignette" src="' + pic(st.img) + '" alt=""></div><h2>' + st.title + "</h2><p>" + txt + '</p><p class="oddsline">' + A.chanceTx(p) + " " + A.riskTag(A.riskLevel(p)) + " \u00b7 " + X.alarms + " alarm" + (X.alarms === 1 ? "" : "s") + " \u00b7 " + A.hh(s.hour) + '</p></div><button class="btn primary" id="go">' + (X.stage + 1 >= STAGES.length ? "See what happened" : "Next") + "</button>", "Every stage counts.");
         $("go").onclick = nextStage;
       };
     };

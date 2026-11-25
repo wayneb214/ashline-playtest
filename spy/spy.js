@@ -126,8 +126,21 @@
     run.tkNext = null; const w = run.offsetWidth; if (!w) return;
     run.style.animation = "none"; void run.offsetWidth; run.style.animation = ""; run.style.animationDuration = Math.max(12, w / TK_PX_S).toFixed(2) + "s";
   }
+  // hotfix 2: S.heads is frozen when each case closes. Once the dawn swap has freed the Briton, the ticker
+  // (and "Also inside") reprint the same re-dated lines the paper uses, and the morning "detained" line is brought up to date.
+  function liveHead(h) {
+    if (S.day === 5 && (S.done.swap === "win" || S.done.swap === "mixed")) {
+      if (h === "Briton \u2018detained\u2019 at Kessgrad airport") return "Briton released on Varenian border";
+      const C = CASES();
+      for (let i = 0; i < (S.log || []).length; i++) {
+        const l = S.log[i], hf = (C[l.id] || {}).headFreed;
+        if (l.head === h && hf && l.res in hf) return hf[l.res];
+      }
+    }
+    return h;
+  }
   function ticker() {
-    const run = $("tk-run"), html = S.heads.slice().reverse().concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join("");
+    const run = $("tk-run"), html = S.heads.slice().reverse().map(liveHead).concat([moodHead()]).map(function (h) { return "<b>\u25c6</b>" + esc(h); }).join("");
     if (!run.tkHooked) { run.tkHooked = true; run.addEventListener("animationiteration", function () { if (run.tkNext != null || run.tkW !== run.offsetWidth) { tkSet(run, run.tkNext != null ? run.tkNext : run.dataset.html); run.tkW = run.offsetWidth; } }); }
     if (html === (run.tkNext != null ? run.tkNext : run.dataset.html)) return;
     if (!run.dataset.html || !run.offsetWidth) { tkSet(run, html); run.tkW = run.offsetWidth; } else run.tkNext = html;
@@ -1264,7 +1277,7 @@
     // the evidence still first, then the write-up, read aloud by Ash after the officer's own line
     evidThen(id, res, head, function () {
       // panel 6 v11 (Wayne's AAR review): one order: what happened, your call, why, what changed, the officer, the paper
-      const timeTx = (cc ? "" : (S.diff === "hard" ? "Risk: " + riskTag(riskLevel(odds)) : odds + "% odds") + " \u00b7 ") + "took " + hrs + "h \u00b7 now " + hh(S.hour);
+      const timeTx = (cc ? "" : (S.diff === "hard" ? "Risk: " + riskTag(riskLevel(odds)) : chanceTx(odds) + " " + riskTag(riskLevel(odds))) + " \u00b7 ") + "took " + hrs + "h \u00b7 now " + hh(S.hour);
       const dt = score(S.meters.capital) - t0, dv = svc() - v0, offi = '<div class="deltas officer">' + od("Stress", st0, S.stress[k]) + od("Loyalty", lo0, S.loyal[k]) + (worked ? '<span class="down">Overworked</span>' : "") + "</div>";
       render('<div class="card outcome ' + res + (op.abort ? " pulled" : "") + '"><span class="stamp thud">' + (op.abort ? "PULLED OUT" : { win: "CLOSED", mixed: "PARTIAL", loss: "FAILED" }[res]) + "</span>" + vignette(id, res) + '<div class="ohead">' + face(k, res === "win" ? "happy" : res === "loss" ? "tense" : "") + "<h2>" + esc(s.title) + '</h2></div><p class="otime">' + timeTx.charAt(0).toUpperCase() + timeTx.slice(1) + "</p><p>" + esc(line) + (note ? " <strong>" + note + "</strong>" : "") + "</p>" +
         (cc ? callLine + (op.abort ? "" : because(id, k, a.t, ch, res)) + resultLine(dt, dv) + offi + mathsBox({ want: want, extra: extra, back: S.day >= 4 && res !== "loss" && !op.abort ? NO10_BACK[res] || 0 : 0, dt: dt, dv: dv, mor: svcMor() - mor0 }, cc, op, k) + (slip ? '<p class="slip">From the debrief: <em>' + esc(slip) + "</em></p>" : "")
@@ -1281,7 +1294,7 @@
       S.lastWhy = null; $("go").onclick = briefing;
       if (window.FUN) FUN.event("case", { id: id, k: k, res: res });
     });
-    if (S.status && S.status[k] && S.status[k] !== "burned") MENU.coach("status", "Officers can come back <b>Tired</b> (\u22128%) or <b>Wounded</b> (\u221215%). It shows on their file and fades after a night\u2019s rest.");
+    if (S.status && S.status[k] && S.status[k] !== "burned") MENU.coach("status", "Officers can come back <b>Tired</b> or <b>Wounded</b>, which makes their next plans less likely to work \u2014 Wounded, more so. It shows on their file and fades after a night\u2019s rest.");
   }
 
   // a non-officer case finishing (used by the mole accusation and Day 2 interrogations)
@@ -1592,7 +1605,7 @@
   }
   function alsoInside(lead, onPage, day) {
     const taken = [lead].concat(onPage), out = [];
-    S.heads.slice().reverse().forEach(function (h) {
+    S.heads.slice().reverse().map(liveHead).forEach(function (h) {
       if (out.length >= 3 || h.indexOf("Bath") >= 0 || PAPER_FILLER.indexOf(h) >= 0) return;
       if (taken.concat(out).some(function (t) { return t === h || sameStory(t, h); })) return;
       out.push(h);
@@ -1723,11 +1736,11 @@
 
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
-    render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
+    render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, liveHead: liveHead, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
     opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, choiceText: choiceText, lowWarn: lowWarn };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
   else title(); // the opening film now plays when you take the chair, not at launch
-  window.__SPY__ = { state: function () { return S; }, fresh: function () { fresh(); title(); }, paperDataURL: function () { return drawPaper().toDataURL("image/png"); }, paperData: function () { return paperData(); } }; // hotfix 1: paperData for the In brief sweep
+  window.__SPY__ = { state: function () { return S; }, fresh: function () { fresh(); title(); }, paperDataURL: function () { return drawPaper().toDataURL("image/png"); }, paperData: function () { return paperData(); }, liveHead: function (h) { return liveHead(h); } }; // hotfix 1: paperData for the In brief sweep
 })();

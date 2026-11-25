@@ -316,7 +316,7 @@
   function bind(draw) {
     document.querySelectorAll("[data-verb]").forEach(function (b) { b.onclick = function () { cur.verb = b.getAttribute("data-verb"); cur.touched = true; if (window.SFX && SFX.type) SFX.type(); draw(); }; });
     const r = document.getElementById("pace"); if (r) r.onchange = function () { cur.pace = +r.value; if (window.SFX && SFX.tick) SFX.tick(); draw(); };
-    MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan adds 5%. Slide towards <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
+    MENU.coach("verbs", "Pick <b>how</b> it\u2019s done. A verb that fits the plan makes it a little more likely to work. Slide towards <b>Careful</b> for better odds but more hours, or <b>Fast</b> to save time.");
   }
   window.OPS = { settlePending: settlePending, resumeLive: resumeLive, terms: terms, WORDS: WORDS, wfill: wfill, MAPS: MAPS, run: run, placeAt: placeAt, ARR: ARR, NEAR: NEAR, LINES: LINES, parts: parts, controls: controls, bind: bind, reset: reset, hours: hours };
 })();

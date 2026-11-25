@@ -291,7 +291,7 @@
           const n = sel === "ash" ? "Ash" : A.AG(sel).code || A.first(sel);
           X.notes.push(n + (ok ? " kept him" : " lost him") + " at " + leg.t.replace(/^The /, "the "));
           if (window.VOICE && sel !== "ash") VOICE.play("op_" + sel + "_" + (ok ? "eyes" : "lost"));
-          A.render('<div class="card outcome ' + (ok ? "win" : "loss") + '"><span class="stamp thud">' + (ok ? "IN SIGHT" : "LOST HIM") + '</span><div class="kbwrap"><img class="vignette" src="' + pic(leg.img) + '" alt=""></div><h2>' + leg.t + "</h2><p>" + (ok ? n + " stays twenty yards behind the grey coat and never once looks at it." : n + " loses the grey coat in the crowd. Ash finds him again on a camera, two minutes later. <b>Two minutes we didn\u2019t have.</b>") + '</p><p class="oddsline">' + p + "% odds \u00b7 " + A.hh(s.hour) + '</p></div><button class="btn primary" id="go">Next leg</button>', "Every leg counts.");
+          A.render('<div class="card outcome ' + (ok ? "win" : "loss") + '"><span class="stamp thud">' + (ok ? "IN SIGHT" : "LOST HIM") + '</span><div class="kbwrap"><img class="vignette" src="' + pic(leg.img) + '" alt=""></div><h2>' + leg.t + "</h2><p>" + (ok ? n + " stays twenty yards behind the grey coat and never once looks at it." : n + " loses the grey coat in the crowd. Ash finds him again on a camera, two minutes later. <b>Two minutes we didn\u2019t have.</b>") + '</p><p class="oddsline">' + A.chanceTx(p) + " " + A.riskTag(A.riskLevel(p)) + " \u00b7 " + A.hh(s.hour) + '</p></div><button class="btn primary" id="go">Next leg</button>', "Every leg counts.");
           $("go").onclick = function () { X.leg++; step(); };
         };
       };
@@ -375,7 +375,7 @@
   function showdownClue() {
     const f = fav();
     if (!f) return "Kesk has tried to read you all week, Chief, and can\u2019t. Good. Your trust with No.10 and how the chase went count most now.";
-    return "Kesk has studied how you work, Chief. His file says you play it <b>" + STYLEW[f] + "</b>, and he is ready for that. Whatever he expects, don\u2019t give it to him: anything else catches him off balance (+" + SURPRISE + "%). Your trust with No.10 and the chase count too.";
+    return "Kesk has studied how you work, Chief. His file says you play it <b>" + STYLEW[f] + "</b>, and he is ready for that. Whatever he expects, don\u2019t give it to him: anything else catches him off balance. Your trust with No.10 and the chase count too.";
   }
   // panel 6 v12 (Wayne): was "the choice he expects will be the hardest", untrue when Kesk expects Careful (Careful and Bold tie)
   function interceptClue() {
@@ -490,7 +490,7 @@
     if (s.day === 4 && (id === "watch" || id === "manchester")) return res === "loss" ? "No clue from this one." : "<b>One more name cleared for the leak file.</b>";
     if (id === "recon") return res === "loss" ? "We go to the bridge blind." : "Three cars on the far bank, not one. <b>Good to know.</b>";
     if (id === "press") return res === "loss" ? "The name is in tomorrow\u2019s Bugle. Kesk will raise his price." : "The Bugle holds the story.";
-    if (id === "find") return res === "loss" ? "We\u2019ll have to pick him up cold." : "A hotel in Bloomsbury, room 412. <b>+8% on the chase.</b>";
+    if (id === "find") return res === "loss" ? "We\u2019ll have to pick him up cold." : "A hotel in Bloomsbury, room 412. <b>It helps on the chase.</b>";
     return "";
   }
   function open(id) { const k = cases(S().day)[id].kind; if (k === "leak") return leakCase(); if (k === "swap") return swap(); if (k === "chase") return chase(); if (k === "showdown") return showdown(); }
@@ -561,7 +561,7 @@
     if (s.day === 5) return { win: { lead: "BRITON FREED AT DAWN", sub: "Released on Varenian border \u00b7 FO: \u2018humanitarian gesture\u2019 \u00b7 No questions taken" }, mixed: { lead: "BRITON FREED, BUT AT WHAT PRICE?", sub: "Release on Varenian border \u00b7 Rumours of a deal \u00b7 Kessgrad \u2018satisfied\u2019" }, loss: { lead: "BRITON TO STAND TRIAL IN KESSGRAD", sub: "Varenia names \u2018spy\u2019 \u00b7 Downing Street no comment \u00b7 Family \u2018devastated\u2019" } }[s.done.swap || "loss"];
     const e = END[ending()]; return { lead: e.lead, sub: e.sub };
   }
-  function bulletinId() { const s = S(); if (s.day === 4) return "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
+  function bulletinId() { const s = S(); if (s.day === 4) return { mixed: "bulletin_day4_mixed", loss: "bulletin_day4_lose" }[s.done.manchester] || "bulletin_day4"; if (s.day === 5) return s.done.swap === "loss" || !s.done.swap ? "bulletin_day5_lose" : "bulletin_day5_win"; return "bulletin_a2_" + ending(); }
   function banner() { const s = S(); if (s.day === 4) return { t: s.leakCaught ? "Leak found and closed" : "Leak still open", ok: !!s.leakCaught }; if (s.day === 5) return { t: s.done.swap === "loss" ? "Officer still held in Kessgrad" : "Officer home from Kessgrad", ok: s.done.swap !== "loss" }; const e = ending(); return { t: "Ending: " + END[e].name, ok: e === "knight" || e === "quiet" }; }
 
   window.AH4 = { keskLetter: keskLetter, SD_OPTS: SD_OPTS, sdOdds: sdOdds, BRIEF: BRIEF, haleCall: haleCall, SD_BASE: SD_BASE, SURPRISE: SURPRISE, surprise: surprise, knightGap: knightGap, KNIGHT: KNIGHT, endingInputs: endingInputs, endingParts: endingParts, showdownClue: showdownClue, interceptClue: interceptClue, ending: ending, cases: cases, ORDER: ORDER, NAMEOF: NAMEOF, DAYWORD: DAYWORD, prep: prep, record: record, interrupt: interrupt, briefingIntro: briefingIntro, followStrip: followStrip, line: line, afterCase: afterCase, open: open, oddsMod: oddsMod,

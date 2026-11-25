@@ -31,6 +31,9 @@
     kesk_d4_letter: { who: "Colonel Kesk", sub: true, text: "My dear C. Such a handsome building. I have always wanted to see where you work. Now I have. Someone of yours was kind enough to show me. K." },
     call_pm_d4: { who: "Eleanor Hale", sub: true, text: "C, there's a Varenian trade delegation in Manchester, and the Chancellor wants that deal. Whatever you're doing near them, be careful." },
     bulletin_day4: { who: B, sub: true, text: B + ". " + "A Varenian trade delegation has cut short its visit to Manchester. Officials describe the talks as cordial." },
+    // hotfix 2: the Day 4 bulletin follows how Manchester went, as the paper's subhead does
+    bulletin_day4_mixed: { who: B, sub: true, nosrc: true, text: B + ". " + "A Varenian trade delegation has cut short its visit to Manchester. Officials describe the talks as strained." },
+    bulletin_day4_lose: { who: B, sub: true, nosrc: true, text: B + ". " + "The Varenian trade talks in Manchester have collapsed. Officials in London have made no comment." },
     ash_d5_open: { who: "Ash", sub: true, text: "They've taken one of ours, Chief. At the airport in Kessgrad, this morning." },
     kesk_d5_call: { who: "Colonel Kesk", sub: true, text: "Good morning, C. I have your friend. You have mine. Let us meet on the bridge at dawn, like civilised men." },
     call_pm_d5: { who: "Eleanor Hale", sub: true, text: "C. I want our officer home, and I want it quiet. No headlines, no heroics. Can you do that?" },
@@ -91,7 +94,7 @@
     op_sam_pos_code: { who: "Swift", text: "Swift here. Parked up, engine running." },
     pm_sacked_last: { who: "Eleanor Hale", text: "C, it\u2019s Eleanor Hale. I warned you. I can\u2019t defend you any longer. I need your letter on my desk tonight." } };
   Object.keys(P6).forEach(function (k) { L[k] = P6[k]; });
-  Object.keys(L).forEach(function (k) { L[k].src = L[k].src || "audio/voice/" + k + ".mp3"; });
+  Object.keys(L).forEach(function (k) { if (L[k].nosrc) return; L[k].src = L[k].src || "audio/voice/" + k + ".mp3"; }); // nosrc: caption only until a clip is recorded
   // Clip lengths (seconds) come from voicelen.js, so cutscenes can stretch to a line. Measuring them here meant
   // opening hundreds of audio elements at start-up, which on iPhone crowded out the opening film's voices.
   const LEN = Object.assign({}, window.VOICE_LEN || {});

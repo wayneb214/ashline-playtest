@@ -174,9 +174,9 @@
       answer: function (c, t) {
         C().kesk = c; const ch = c === "hang" ? a.apply({ secrecy: 4 }) : {};
         if (!t && window.VOICE) VOICE.play("react_kesk_" + c); // Batch Q: Kesk answers out loud
-        after(c === "talk" ? "TRACED" : "CLICK", c === "talk" ? "win" : "mixed", "Colonel Kesk", late(t) + (c === "talk" ? "\u201cCoal is very dear this winter, C.\u201d Four minutes on the weather and the price of coal. Ash slides a note across: <b>a guard hut, a mile behind the barrier.</b> +8% at the barrier." : "\u201cSo soon? Goodnight, C.\u201d You put the phone down. It rings again, once, and stops."), ch);
+        after(c === "talk" ? "TRACED" : "CLICK", c === "talk" ? "win" : "mixed", "Colonel Kesk", late(t) + (c === "talk" ? "\u201cCoal is very dear this winter, C.\u201d Four minutes on the weather and the price of coal. Ash slides a note across: <b>a guard hut, a mile behind the barrier.</b> It helps at the barrier." : "\u201cSo soon? Goodnight, C.\u201d You put the phone down. It rings again, once, and stops."), ch);
       },
-      miss: function () { C().kesk = "missed"; after("MISSED", "loss", "An international call", "Nobody answered. The switchboard says the caller laughed. <b>He knows we\u2019re rattled:</b> \u22126% at the barrier.", {}); } });
+      miss: function () { C().kesk = "missed"; after("MISSED", "loss", "An international call", "Nobody answered. The switchboard says the caller laughed. <b>He knows we\u2019re rattled:</b> that hurts at the barrier.", {}); } });
   }
 
   // ---------- hidden ink ----------
@@ -239,15 +239,15 @@
       if (r === "win") return { q: "Two held at the gangway. The woman in green wasn\u2019t aboard.", voice: "ask_ferry_win", def: "watch", secs: 9,
         opts: [{ k: "follow", t: "Search the ferry before it sails", d: York }, { k: "watch", t: "Let it sail, watch who meets it at the other end", d: Sec }],
         res: { follow: "Officers go cabin by cabin. A York address turns up on a manifest.", watch: "It sails on time. Our people wait at the other end." },
-        why: "Day 2 \u00b7 You searched the ferry before it sailed: +10% in York." };
+        why: "Day 2 \u00b7 You searched the ferry before it sailed: helps a lot in York." };
       if (r === "mixed") return { q: "Two still aboard; the ferry is turning for the harbour mouth.", voice: "ask_ferry_mixed", def: "watch", secs: 9,
         opts: [{ k: "follow", t: "Put a boat on its tail", d: York }, { k: "watch", t: "Let it go, watch the port", d: Sec }],
         res: { follow: "A grey launch slips out behind it, lights off.", watch: "Binoculars on the quay. Patience." },
-        why: "Day 2 \u00b7 A boat followed the ferry: +10% in York." };
+        why: "Day 2 \u00b7 A boat followed the ferry: helps a lot in York." };
       return { q: "The ferry has cleared the harbour wall.", voice: "ask_ferry_loss", def: "watch", secs: 9,
         opts: [{ k: "follow", t: "Send a fast launch after it", d: York }, { k: "watch", t: "Let it go, watch the port", d: Sec }],
         res: { follow: "A fast launch bounces out past the wall, lights off.", watch: "Binoculars on the quay. Patience." },
-        why: "Day 2 \u00b7 A fast launch chased the ferry: +10% in York." };
+        why: "Day 2 \u00b7 A fast launch chased the ferry: helps a lot in York." };
     },
     border: { q: "The guard is waving cars through fast. Ash on the radio: \u201cYour call.\u201d", voice: "ask_border", def: "hold", secs: 7,
       opts: [{ k: "drive", t: "Wave us through. Drive on.", d: "Helps a lot with the dog \u00b7 hurts at the barrier" }, { k: "hold", t: "Hold it. Let the queue settle.", d: "Helps at the barrier" }],
