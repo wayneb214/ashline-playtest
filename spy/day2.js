@@ -180,12 +180,14 @@
     const mole = caught ? "Upstairs, the mole has asked to see you. Alone. <b>\u201cThere is a fourth name,\u201d</b> they say." : "<b>And somebody inside Albion House rang that ferry office at ten past eleven.</b>";
     return '<div class="flash-card ferry" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:52 \u00b7 HARWICH</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + "<br><br>" + mole + "<br><br>\u2014 Ash</div></div>";
   }
+  // batch 2: three leads, two subheads each (A.vary keeps one for the game), and the picture for the page
   function paperLead() {
-    return {
-      win: { lead: "TWO HELD AT HARWICH IN BATH POISON HUNT", sub: "Late-night swoop at ferry port \u00b7 Third suspect \u2018still in Britain\u2019 \u00b7 No.10 praises \u2018quiet professionals\u2019" },
-      mixed: { lead: "ONE HELD AS BATH SUSPECTS FLEE ON FERRY", sub: "Driver detained on the A12 \u00b7 Two \u2018believed abroad\u2019 \u00b7 Questions for Whitehall" },
-      loss: { lead: "BATH SUSPECTS SLIP OUT OF BRITAIN", sub: "Night ferry left Harwich on time \u00b7 Questions for Whitehall \u00b7 Varenian embassy \u2018has nothing to add\u2019" }
+    const p = {
+      win: { lead: "TWO HELD AT HARWICH IN BATH POISON HUNT", subs: ["Late-night swoop at ferry port \u00b7 Third suspect \u2018still in Britain\u2019 \u00b7 No.10 praises \u2018quiet professionals\u2019", "Police board the night ferry \u00b7 Two led away in the rain \u00b7 Essex Constabulary \u2018proud\u2019"], pic: "h-harwich", alt: "Harwich quay at night in the rain, cranes and a ferry, police cars on the dock" },
+      mixed: { lead: "ONE HELD AS BATH SUSPECTS FLEE ON FERRY", subs: ["Driver detained on the A12 \u00b7 Two \u2018believed abroad\u2019 \u00b7 Home Office \u2018disappointed\u2019", "Roadblock catches a hired car \u00b7 Ferry sails with two aboard \u00b7 MPs ask how"], pic: "out-exit", alt: "Passengers boarding a lit ferry at night from a wet covered walkway" },
+      loss: { lead: "BATH SUSPECTS SLIP OUT OF BRITAIN", subs: ["Night ferry left Harwich on time \u00b7 MPs want answers \u00b7 Varenian embassy \u2018has nothing to add\u2019", "Three walk aboard as police wait at the wrong gate \u00b7 Home Secretary \u2018furious\u2019"], pic: "out-exit", alt: "Passengers boarding a lit ferry at night from a wet covered walkway" }
     }[exitRes()];
+    return { lead: p.lead, sub: A.vary(p.subs), pic: p.pic, alt: p.alt };
   }
 
   window.AH2 = { boardThen: function (ret) { board.ret = ret; board(); }, briefingIntro: briefingIntro, line: line, titleOf: titleOf, boardButton: boardButton, bindBoardButton: bindBoardButton, open: open, afterCase: afterCase, flash: flash, paperLead: paperLead };

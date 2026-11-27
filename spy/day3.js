@@ -448,13 +448,15 @@
     }[e];
     return '<div class="flash-card green" id="flash"><div class="bar"><span class="stamp">FLASH \u00b7 MOST IMMEDIATE</span><span class="time">23:58 \u00b7 ' + (e === "win" || e === "mixed" ? "THE BORDER" : "LONDON") + '</span></div><div class="tele"><span class="hdr">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 ' + body + "<br><br>\u2014 Ash</div></div>";
   }
+  // batch 2: four leads, two subheads each (A.vary keeps one for the game), and the picture for the page
   function paperLead() {
-    return {
-      win: { lead: "QUIET NIGHT ON THE BORDER, AND A WOMAN IN GREEN", sub: "Varenia \u2018not aware\u2019 of any defection \u00b7 Grey House chief \u2018furious\u2019 \u00b7 No.10 silent" },
-      mixed: { lead: "BRITON HELD AT VARENIAN BORDER", sub: "Embassy \u2018seeking consular access\u2019 \u00b7 Rumours of a defector \u00b7 Questions for Whitehall" },
-      loss: { lead: "VARENIA PARADES \u2018BRITISH SPY RING\u2019 ON TV", sub: "Woman in green coat named as \u2018traitor\u2019 \u00b7 Albion House silent \u00b7 No.10 \u2018monitoring\u2019" },
-      traded: { lead: "ARCHER COMES HOME", sub: "Lorry driver freed after six weeks \u00b7 PM praises \u2018quiet diplomacy\u2019 \u00b7 Varenia \u2018satisfied\u2019" }
+    const p = {
+      win: { lead: "QUIET NIGHT ON THE BORDER, AND A WOMAN IN GREEN", subs: ["Varenia \u2018not aware\u2019 of any defection \u00b7 Grey House chief \u2018furious\u2019 \u00b7 No.10 silent", "Border post reports \u2018nothing unusual\u2019 \u00b7 Kessgrad radio plays marches all night \u00b7 Whitehall shrugs"], pic: "h-border", alt: "A lonely border post at night in fog, a guard with a dog and a waiting car" },
+      mixed: { lead: "BRITON HELD AT VARENIAN BORDER", subs: ["Embassy \u2018seeking consular access\u2019 \u00b7 Rumours of a defector \u00b7 MPs ask questions", "Car stopped at the barrier in snow \u00b7 Driver \u2018a tourist\u2019, says the FO \u00b7 Kessgrad says otherwise"], pic: "out-exfil", alt: "A car stopped at a snowy border barrier at night beside a guard hut" },
+      loss: { lead: "VARENIA PARADES \u2018BRITISH SPY RING\u2019 ON TV", subs: ["Woman in green coat named as \u2018traitor\u2019 \u00b7 Albion House silent \u00b7 No.10 \u2018monitoring\u2019", "Kessgrad state television shows \u2018confessions\u2019 \u00b7 FO: \u2018a grotesque piece of theatre\u2019"], pic: "v-border", alt: "A border barrier in fog, a guard and his dog beside a stopped car" },
+      traded: { lead: "ARCHER COMES HOME", subs: ["Lorry driver freed after six weeks \u00b7 PM praises \u2018quiet diplomacy\u2019 \u00b7 Varenia \u2018satisfied\u2019", "Tearful welcome at the airport \u00b7 \u2018I just want a cup of tea\u2019 \u00b7 No deal, says No.10"], pic: "v-airport", alt: "Men in raincoats greeting each other in an airport arrivals hall at dusk" }
     }[ending()];
+    return { lead: p.lead, sub: A.vary(p.subs), pic: p.pic, alt: p.alt };
   }
 
   window.AH3 = { tailLimit: tailLimit, readMs: readMs, TAIL_PACE: TAIL_PACE, letter: letter, dealCall: dealCall, surp: surp, SURPRISE: SURPRISE, tgTrack: tgTrack, ending: ending, briefingIntro: briefingIntro, line: line, open: open, afterCase: afterCase, oddsMod: oddsMod, chips: chips, interrupt: interrupt, followStrip: followStrip, prep: prep, flash: flash, paperLead: paperLead, lastHead: lastHead, fav: fav };

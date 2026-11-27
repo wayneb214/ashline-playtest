@@ -1706,3 +1706,88 @@ body:has([data-screen="op"].asking) #subtitle { display: none; }
 .mini .photo.strip > .ph-head .ph-zoom { position: static; margin: 0; white-space: nowrap; flex: 0 0 auto; }
 .phzoom .photo.strip.zoomed > .ph-head { position: absolute; left: 6px; top: 6px; z-index: 2; padding: 0; }
 .phzoom .photo.strip.zoomed > .ph-head small { background: rgba(0,0,0,.72); padding: 4px 6px; border-radius: 3px; }
+
+/* ---------- Batch 2 (round 8): the end of the day, redesigned ----------
+   The front page is the public consequence on one screen: a picture, one lead, one secondary result, two short stories and
+   the poll. Ash's report is one dossier sheet: Hale's reply in her own hand, the medal, today's files, what it cost, Ash's
+   note, then the FLASH and one button. On the first look the sheet plays in (.play); reduced motion shows it all at once. */
+.frontpage.fp2 { padding: 12px 14px 10px; margin: 6px 0 10px; transform: rotate(-.3deg); }
+.fp2 .mast { font-size: clamp(1.3rem, 6.4vw, 1.75rem); white-space: nowrap; border-bottom-width: 3px; padding-bottom: 4px; }
+.fp2 .dateline { flex-wrap: nowrap; gap: 6px; padding: 3px 0; }
+.fp2 .fpic { margin: 6px 0 4px; height: clamp(130px, 21vh, 230px); overflow: hidden; border: 1px solid #1c1a16; background: #2a241b; }
+.fp2 .fpic img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(.35) contrast(1.05); }
+.fp2 .lead { font-size: 1.5rem; line-height: 1.04; margin: 4px 0 4px; }
+.fp2 .subd { font-size: 1rem; line-height: 1.3; margin: 0 0 8px; padding-bottom: 6px; }
+.fp2 .second, .frontpage.sacked .second { font: 700 0.875rem/1.3 var(--type); letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #efe6d2; padding: 6px 8px; margin: 0 0 8px; background: #7a1f1f; }
+.fp2 .second.ok { background: #1f3a2a; }
+.fp2 .also, .frontpage.sacked .also { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #1c1a16; margin-top: 0; padding-top: 6px; }
+.fp2 .also p, .frontpage.sacked .also p { margin: 0; padding: 0 8px; font: 700 0.9375rem/1.25 var(--serif); color: #1c1a16; }
+.fp2 .also p + p, .frontpage.sacked .also p + p { border-left: 1px solid rgba(28,26,22,.6); }
+.fp2 .also p:first-child, .frontpage.sacked .also p:first-child { padding-left: 0; }
+.fp2 .poll, .frontpage.sacked .poll { margin-top: 8px; padding-top: 5px; border-top: 3px double #1c1a16; font: 0.875rem/1.3 var(--serif); font-variant: small-caps; letter-spacing: .04em; color: #3b352b; text-align: center; }
+.fpbtns { display: flex; gap: 8px; margin: 2px 0 6px; transition: opacity .5s ease; }
+.fpbtns .btn { flex: 1 1 0; min-height: 48px; margin: 0; }
+.fpbtns .btn.primary { flex-grow: 1.5; }
+.fpbtns.wait, .eodbtns.wait { opacity: 0; pointer-events: none; }
+.eodbtns { transition: opacity .5s ease; }
+.eodbtns .btn { min-height: 48px; }
+
+.eod { text-align: left; }
+.eod .pmnote { margin: 4px 0 10px; padding: 8px 4px 2px; border-bottom: 1px dashed rgba(42,36,27,.3); }
+.eod .pmline, .eod .pmsig { font-family: "Bradley Hand", "Segoe Print", "Snell Roundhand", var(--serif); font-style: italic; color: #8a1c18; }
+.eod .pmline { font-size: 1.375rem; line-height: 1.3; margin: 0; }
+.eod .pmsig { font-size: 1.125rem; text-align: right; margin: 2px 6px 4px 0; }
+.eod .verdict { display: flex; gap: 12px; align-items: center; margin: 4px 0 8px; }
+.eod .verdict .medal { margin: 0; padding: 0; border: 0; background: none; flex: 0 0 74px; }
+.eod .verdict .medal.none .disc { background: #ddd2b8; color: #4a4030; font-size: 0.875rem; text-align: center; line-height: 1.1; box-shadow: inset 0 0 0 2px rgba(74,64,48,.35); }
+.eod .verdict p { margin: 0; color: var(--paper-ink); font-size: 1rem; line-height: 1.35; }
+.eod .verdict .grade { display: inline-grid; width: 38px; height: 38px; margin: 0 0 0 4px; font-size: 1.375rem; vertical-align: middle; box-shadow: none; }
+.eod .verdict .gradelbl { display: inline; margin: 0; opacity: 1; }
+.eod .verdict .endname { font-weight: 700; }
+.eod .eodh { font: 700 0.875rem var(--type); letter-spacing: .08em; text-transform: uppercase; color: var(--oxblood); border-bottom: 1px solid rgba(122,31,31,.35); margin: 14px 0 4px; padding-bottom: 4px; }
+.eod .files { list-style: none; margin: 0; padding: 0; }
+.eod .files li { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px dashed rgba(42,36,27,.28); }
+.eod .files li:last-child { border-bottom: 0; }
+.eod .files .portrait { width: 40px; height: 40px; border-width: 2px; }
+.eod .files .portrait.dash { display: grid; place-items: center; font-size: 1.125rem; color: #4a4030; }
+.eod .files .fw b { display: block; font-size: 1rem; line-height: 1.2; color: var(--paper-ink); }
+.eod .files .why { display: block; font-size: 0.9375rem; line-height: 1.3; color: #4a4030; }
+.eod .files .ftag { display: block; font: normal 0.875rem var(--type); color: #523c10; }
+.eod .fstamp { font: 700 0.875rem var(--type); letter-spacing: .04em; padding: 2px 5px; border: 2px solid currentColor; border-radius: 3px; transform: rotate(-5deg); }
+.eod .fstamp:empty { border: 0; padding: 0; }
+.eod .fstamp.win { color: #1f4a2a; } .eod .fstamp.mixed { color: #523c10; } .eod .fstamp.loss { color: #7e1712; }
+.eod .cost { display: grid; gap: 8px; }
+.eod .gauge .glbl { display: flex; align-items: baseline; gap: 8px; font-size: 0.9375rem; color: var(--paper-ink); }
+.eod .gauge .glbl b { font: 700 1rem var(--type); } .eod .gauge .glbl small { font-size: 0.875rem; font-weight: 400; }
+.eod .gauge .glbl em { margin-left: auto; font: normal 0.875rem var(--type); }
+.eod .gauge em.up { color: #173a20; } .eod .gauge em.down { color: #6e130f; } .eod .gauge em.same { color: #3f3626; }
+.eod .gbar { height: 8px; margin-top: 3px; border-radius: 4px; background: rgba(42,36,27,.16); overflow: hidden; }
+.eod .gbar i { display: block; height: 100%; width: var(--to); border-radius: 4px; background: linear-gradient(90deg, #8a6d2c, #c9a24a); }
+.eod .team { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px 8px; }
+.eod .team li { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; }
+.eod .team .portrait { width: 40px; height: 40px; border-width: 2px; flex: 0 0 40px; }
+.eod .team b { display: block; font-size: 0.9375rem; color: var(--paper-ink); }
+.eod .team small { display: block; font-size: 0.875rem; color: #4a4030; line-height: 1.25; }
+.eod .ashnote { margin: 12px 0 6px; padding: 6px 0 6px 10px; border-left: 3px solid var(--brass-lo); font-size: 0.9375rem; line-height: 1.4; color: var(--paper-ink); }
+.eod .gradehow { margin: 6px 0 0; }
+.eod.letter .lettertx { font-size: 1rem; line-height: 1.45; color: var(--paper-ink); margin: 6px 0; }
+.eod.letter .lettertx.sig { text-align: right; font-style: italic; margin-top: 12px; }
+.eodlast .flash-card { margin-top: 12px; min-height: 0; justify-content: flex-start; }
+.eodlast .flash-card .bar { position: static; margin: 14px 14px 96px; flex-wrap: wrap; gap: 6px; } /* a band of Ash's painting above the telegram */
+.eodlast .flash-card.had { padding-top: 0; }
+.eodlast .flash-card .bar .stamp { white-space: nowrap; }
+/* the first look: the files stamp one by one, the gauges tick, the FLASH lands last */
+.eod.play .files li { animation: eodstamp .4s cubic-bezier(.2,.8,.3,1.2) both; animation-delay: calc(1.1s + var(--i) * .25s); }
+.eod.play .gbar i { animation: eodfill 1s ease-out both; animation-delay: var(--tf); }
+.eodlast.play { animation: eodland .7s var(--ease) both; animation-delay: var(--tl); }
+@keyframes eodstamp { from { opacity: 0; transform: scale(1.25) rotate(-2deg); } to { opacity: 1; transform: none; } }
+@keyframes eodfill { from { width: var(--from); } to { width: var(--to); } }
+@keyframes eodland { from { opacity: 0; transform: translateY(18px) rotate(-1.5deg); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .eod.play .files li, .eod.play .gbar i, .eodlast.play { animation: none; } .fpbtns, .eodbtns { transition: none; } }
+@media (max-width: 340px) { .fp2 .lead { font-size: 1.4375rem; } }
+
+/* batch 2: the report's stamps hold 4.5:1 over the paper grain and the rain rings */
+.card.dossier.eod > .rptstamp .stamp { color: #8a1c18; }
+.eodlast .flash-card .bar .stamp { color: #8a1c18; background: #efe6d2; }
+.eod .medal.bronze .disc { background: radial-gradient(circle at 35% 30%, #8a5530, #663a1b 55%, #40220b); color: #fff3e6; }
+.eodlast .flash-card .tele b { color: #8a1c18; }
