@@ -1541,16 +1541,22 @@
     const c = CASES()[id] || {};
     return (S.day === 2 && window.AH2 && AH2.titleOf ? AH2.titleOf(id) : c.title) || "a file";
   }
+  // Hale always names a missed file in quotes, so a title that is already a sentence still reads as English
+  function quoteFile(t) { return "\u2018" + String(t || "a file") + "\u2019"; }
+  function missStop(t) { return /[!?]$/.test(String(t || "")) ? "" : "."; }
+  function missCopy(names, allMissed) {
+    if (!names.length) return "";
+    const q = quoteFile(names[0]);
+    if (names.length === 1) return "You left " + q + " on the desk, C. That file still had hours on the clock.";
+    if (allMissed) return "You closed nothing. Every file sat on the desk until midnight. Even " + q + missStop(names[0]);
+    return "You left " + names.length + " files on the desk, including " + q + missStop(names[0]) + " I needed those closed.";
+  }
   function missedLogs() {
     return (S.log || []).filter(function (l) { return l.appr === "Left on the desk" || /^Expired/.test(l.appr || ""); });
   }
   function missLine() {
     const missed = missedLogs();
-    if (!missed.length) return "";
-    const names = missed.map(function (l) { return caseTitle(l.id); });
-    if (missed.length === 1) return "You left " + names[0] + " on the desk, C. That file still had hours on the clock.";
-    if (missed.length === (S.log || []).length) return "You closed nothing. Every file sat on the desk until midnight, including " + names[0] + ".";
-    return "You left " + missed.length + " files on the desk, including " + names[0] + ". I needed those closed.";
+    return missCopy(missed.map(function (l) { return caseTitle(l.id); }), missed.length === (S.log || []).length);
   }
   function settleDay() {
     if (S.ended) return;
@@ -1934,7 +1940,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, liveHead: liveHead, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, fileWhy: fileWhy, pmLine: pmLine, craftNote: craftNote, eodPaper: eodPaper, eodNewGame: eodNewGame, vary: vary, PM_LINES: PM_LINES, GRADE_AT: GRADE_AT, accuseResolve: accuseResolve, recIdx: recIdx, remaining: remaining, lowWarn: lowWarn, missDelta: missDelta, applyMiss: applyMiss, dayText: dayText, confirmEndDay: confirmEndDay, missedLogs: missedLogs, missLine: missLine, settleDay: settleDay };
+    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, fileWhy: fileWhy, pmLine: pmLine, craftNote: craftNote, eodPaper: eodPaper, eodNewGame: eodNewGame, vary: vary, PM_LINES: PM_LINES, GRADE_AT: GRADE_AT, accuseResolve: accuseResolve, recIdx: recIdx, remaining: remaining, lowWarn: lowWarn, missDelta: missDelta, applyMiss: applyMiss, dayText: dayText, confirmEndDay: confirmEndDay, missedLogs: missedLogs, missLine: missLine, missCopy: missCopy, quoteFile: quoteFile, caseTitle: caseTitle, settleDay: settleDay };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
