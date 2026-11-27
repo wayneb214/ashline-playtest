@@ -302,7 +302,7 @@
     chrome(false);
     const saved = loadJSON(SAVE), day2 = loadJSON(DAY2);
     render(LOOK.living() + '<div class="title"><div>' + D.EMBLEM + '<h1>Albion House</h1><div class="sub">Spymaster \u00b7 London</div><div class="flagband" aria-hidden="true"></div></div>' +
-      '<div><p class="tag">London. Rain on the river, Big Ben striking eight. Six days, one spymaster, and a lot of problems before midnight.</p>' +
+      '<div><p class="tag">London. Rain on the river, the office clock striking eight. Six days, one spymaster, and a lot of problems before midnight.</p>' +
       (saved ? '<button class="btn primary" id="continue">Continue \u00b7 Day ' + (saved.S.day || 1) + " \u00b7 " + hh(saved.S.hour) + (saved.S.ended ? " \u00b7 day over" : "") + "</button>" : "") +
       '<button class="btn ' + (saved ? "ghost" : "primary") + '" id="go">' + (saved ? "New game" : "Take the chair") + "</button>" +
       (window.FUN ? '<button class="btn primary" id="tach">\u2605 Achievements' + (FUN.count ? " \u00b7 " + FUN.count() + " of " + FUN.total : "") + "</button>" : "") +
@@ -1112,6 +1112,8 @@
   // (same people as ops.js W.pron: Ada she/her, Hollis he/his; anyone else, e.g. Sam, by name)
   const PRO = { macrae: ["she", "her", "her"], pryce: ["he", "him", "his"], hartley: ["he", "him", "his"], ada: ["she", "her", "her"], hollis: ["he", "him", "his"] };
   function pro(k, i) { const n = first(k); return (PRO[k] || [n, n, n + "\u2019s"])[i]; }
+  // independent possessive for a named officer: his, hers, or Sam's (never "their" for one person)
+  function poss(k) { const p = (PRO[k] || [])[2]; return p === "her" ? "hers" : p || (first(k) + "\u2019s"); }
   // panel 6 v14 (Wayne): the live-op result card says each thing once. One headline line for the call ("Hold worked. Odds 55% → 71%.
   // Gareth safe."; on Hard the risk dots), the BECAUSE reasons, one result line with the real top-bar totals, the officer chips,
   // and a "Show the maths" disclosure with the breakdown. The old "Your call" box, sums box and top-bar box are gone.
@@ -1546,8 +1548,8 @@
     if (/^Expired/.test(l.appr || "")) return "Nobody started it in time, so it closed.";
     if (l.id === "chase" && S.chase) return "Everyone on the streets: the watchers scored " + S.chase.score + " of 9.";
     if (l.k && s.kind !== "accuse" && l.fit !== undefined) {
-      const n = first(l.k);
-      return l.fit && l.rec ? n + ", the right officer, on their own plan." : l.fit ? n + " was right for it, on your plan, not theirs." : l.rec ? n + " ran their own plan, but wasn\u2019t the best fit." : n + ": not the best fit, and not their plan.";
+      const n = first(l.k), adj = pro(l.k, 2), ind = poss(l.k);
+      return l.fit && l.rec ? n + ", the right officer, on " + adj + " own plan." : l.fit ? n + " was right for it, on your plan, not " + ind + "." : l.rec ? n + " ran " + adj + " own plan, but wasn\u2019t the best fit." : n + ": not the best fit, and not " + adj + " plan.";
     }
     const a = String(l.appr || "").replace(/\.$/, ""); return a ? a.charAt(0).toUpperCase() + a.slice(1) + "." : "";
   }

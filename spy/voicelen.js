@@ -4,3 +4,5 @@ window.VOICE_LEN = {"ash_a2_lines":6.11,"ash_accuse":8.31,"ash_board_car":4.75,"
 Object.assign(window.VOICE_LEN, {"bulletin_sacked":10.66,"call_pm_sack_warn":7.76,"epi_sacked_1":5.98,"epi_sacked_2":6.87});
 // panel 6 (additions only): the recruits' code-name radio lines and Hale's last call before the sacked front page
 Object.assign(window.VOICE_LEN, {"op_ada_pos_code":4.36,"op_hollis_pos_code":3.84,"op_sam_pos_code":2.8,"pm_sacked_last":6.74});
+// round 8 fixes: Day 4 Manchester strained / collapsed bulletins
+Object.assign(window.VOICE_LEN, {"bulletin_day4_mixed":9.43,"bulletin_day4_lose":8.02});
