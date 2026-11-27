@@ -21,8 +21,10 @@ button { font: inherit; color: inherit; }
 
 /* HUD: brass gauges on green leather */
 .hud { position: sticky; top: 0; z-index: 5; display: flex; gap: 12px; align-items: center; padding: calc(var(--safe-t) + 8px) 12px 8px; background: linear-gradient(180deg, #213d31, #172c23); border-bottom: 2px solid var(--brass-lo); box-shadow: 0 1px 0 rgba(232,200,116,.25) inset, 0 8px 20px rgba(0,0,0,.5); }
-.clock { display: flex; flex-direction: column; align-items: center; font-family: var(--type); font-size: 1.125rem; color: var(--brass-hi); line-height: 1; min-width: 58px; padding: 6px 4px; border: 1px solid var(--brass-lo); border-radius: 6px; background: rgba(0,0,0,.25); }
-.clock small { font-size: 0.875rem; color: var(--fog); letter-spacing: .06em; text-transform: uppercase; margin-top: 4px; }
+.clock { display: flex; flex-direction: column; align-items: center; font-family: var(--type); font-size: 1.125rem; color: var(--brass-hi); line-height: 1; min-width: 58px; padding: 6px 2px; border: 1px solid var(--brass-lo); border-radius: 6px; background: rgba(0,0,0,.25); flex: 0 0 auto; }
+.clock small, .clock #daylabel { font-size: 0.875rem; color: var(--fog); letter-spacing: 0; text-transform: uppercase; margin-top: 4px; white-space: nowrap; }
+.clock #clockurg { font-size: 0.875rem; letter-spacing: 0; text-transform: uppercase; margin-top: 3px; line-height: 1.2; white-space: nowrap; }
+.sheet #endday-msg { font-size: 1.0625rem; line-height: 1.4; }
 .meters { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
 .meter { font-family: var(--type); font-size: 0.875rem; color: var(--paper-2); letter-spacing: .04em; text-transform: uppercase; }
 .meter .row { display: flex; justify-content: space-between; }
@@ -200,6 +202,8 @@ p strong { color: inherit; }
 .clock.warn small { color: var(--brass-hi); }
 .clock.late { border-color: var(--oxblood-hi); }
 .clock.late small { color: #e58b80; animation: tickpulse 2s ease-in-out infinite; }
+.clock.warn #clockurg { color: var(--brass-hi); }
+.clock.late #clockurg { color: #e58b80; animation: tickpulse 2s ease-in-out infinite; }
 @keyframes tickpulse { 50% { opacity: .45; } }
 .sit .dl.soon { color: #8a5d12; }
 .sit .dl.over { color: var(--stamp); font-weight: 700; }
@@ -1543,7 +1547,8 @@ ul.risklist { margin: 4px 0 6px; padding-left: 1.3em; list-style: none; } ul.ris
 .meters { grid-template-columns: minmax(0, 1.24fr) minmax(0, 1fr); min-width: 0; } /* "No.10 trust" is the longer label */
 .meter { min-width: 0; }
 @media (max-width: 400px) {
-  .hud { gap: 6px; }
+  .hud { gap: 6px; padding-left: calc(env(safe-area-inset-left, 0px) + 8px); padding-right: calc(env(safe-area-inset-right, 0px) + 8px); }
+  .clock { min-width: 0; padding: 5px 2px; }
   .meters { column-gap: 6px; }
   .meter { letter-spacing: -0.01em; }
   .meter .mgauge { width: 18px; margin-right: 3px; }
@@ -1664,7 +1669,7 @@ body:has([data-screen="op"].asking) #subtitle { display: none; }
 [data-screen="op"] .opwait { opacity: 1; color: #4a3f31; } /* was 3:1-4.1:1 at .8 opacity */
 .redline { color: #3d2c12; } /* "Source:" on the manila file, was 2.2-4.1:1 */
 .casefile.manila .cfstamp { opacity: 1; color: #8a1712; border-color: #8a1712; } /* SECRET, was 3.2-3.6:1 */
-.clock.late small { color: #ffb8ad; } /* Late/Overdue: 4.5:1+ on the teal bar even mid-pulse */
+.clock.late small, .clock.late #clockurg { color: #ffb8ad; } /* Late/Overdue: 4.5:1+ on the teal bar even mid-pulse */
 .casefile.manila .cfstamp { color: #74120e; border-color: #74120e; }
 .stamp { opacity: 1; } /* stamps were .82-.85 opacity, 3.3-3.9:1 on paper */
 .card .stamp.corner, .stamp.corner { color: #8f1c16; border-color: #8f1c16; }

@@ -78,8 +78,19 @@
     $("clock").textContent = hh(S.hour); LOOK.night(S.hour);
     const open = remaining().map(function (id) { return dueOf(id) - S.hour; });
     const soon = open.length ? Math.min.apply(null, open) : 99, box = $("clock").parentNode;
-    box.classList.toggle("warn", soon <= 2 && soon >= 0); box.classList.toggle("late", soon < 0 || S.hour >= 21);
-    box.querySelector("small").textContent = soon < 0 ? "Overdue" : soon <= 2 ? soon + "h left" : S.hour >= 21 ? "Late" : "Day " + S.day;
+    const ended = !!S.ended, urgent = !ended && (soon < 0 || soon <= 2 || S.hour >= 21);
+    box.classList.toggle("warn", !ended && soon <= 2 && soon >= 0); box.classList.toggle("late", !ended && (soon < 0 || S.hour >= 21));
+    const lab = box.querySelector("#daylabel") || box.querySelector("small");
+    if (lab) lab.textContent = dayText();
+    let urg = $("clockurg");
+    if (!urg) { urg = document.createElement("span"); urg.id = "clockurg"; box.appendChild(urg); }
+    if (urgent) { urg.hidden = false; urg.textContent = soon < 0 ? "Overdue" : soon <= 2 ? soon + "h left" : "Late"; }
+    else { urg.hidden = true; urg.textContent = ""; }
+  }
+  // Day N of 6 always stays visible in the clock (urgency is a separate line, and never replaces the day)
+  function dayText() {
+    const w = ($("hud") && $("hud").clientWidth) || window.innerWidth || 390;
+    return w <= 480 ? ("Day " + S.day + "/6") : ("Day " + S.day + " of 6");
   }
   // panel 6 item 12: on Days 1-5, while No.10 trust is under 10 or a night under 10 has been counted, the top bar says how
   // many nights in a row it has been, out of how many mean the sack (Easy 3, otherwise 2)
@@ -494,7 +505,7 @@
   function expire() {
     const gone = [];
     remaining().forEach(function (id) {
-      if (late(id) >= EXPIRE) { S.done[id] = "loss"; apply(PENALTY[id] || CASES()[id].pen); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Expired at " + hh(dueOf(id) + EXPIRE) }); gone.push(id); }
+      if (late(id) >= EXPIRE) { S.done[id] = "loss"; applyMiss(id); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Expired at " + hh(dueOf(id) + EXPIRE) }); gone.push(id); }
     });
     return gone;
   }
@@ -546,7 +557,7 @@
     MENU.coach("desk", "Today\u2019s files are spread on your desk. Tap one to pick it up and read it, then <b>Start this case</b>. No.10 trust and the Service sit in the bar at the top.");
     if (window.FUN) FUN.promo();
     MENU.coach("menu", "Tap \u2630 any time to pause, change settings or return to the title. The game saves itself.");
-    $("endday").onclick = function () { S.hour = 24; summary(); };
+    $("endday").onclick = confirmEndDay;
     if (S.replayFirst) { S.replayFirst = false; save("briefing"); } // Batch O: tips come back from the second screen of a replay
   }
   // op-balance v2: each radio call leaves a mark on the story. Yesterday's calls come back in today's brief (a file note)
@@ -1492,19 +1503,76 @@
     return '<div class="flash-card' + (had ? " had" : "") + '" id="flash"><div class="bar"><span class="stamp">' + (had ? "FLASH \u00b7 RECEIVED 23:47" : "FLASH \u00b7 MOST IMMEDIATE") + '</span><span class="time">23:47 \u00b7 BATH</span></div><div class="tele">' +
       "<span class=\"hdr\">TO: C &nbsp;\u00b7&nbsp; FROM: ASHBY, ALBION HOUSE<br>HMG \u00b7 TOP SECRET \u00b7 UK EYES ONLY</span>C \u2014 Police in Bath report a man collapsed on a bench near the Circus. He is <b>Pieter Vass</b>, a former Grey House officer we resettled here under a new name in 2019. Alive, unconscious. The government laboratory has identified a Varenian compound code-named <b>PALE HOUR</b>. No.10 wants you at Downing Street by seven.<br><br>" + moleLine() + "<br><br>" + extra + "<br><br>\u2014 Ash</div></div>";
   }
-  function summary() {
-    const cineId = { 1: "bath", 2: "ferry", 3: "end3", 6: "end6" }[S.day];
-    if (!S.ended && cineId && CINE.maybe(cineId, summary)) return;
-    if (!S.ended) {
-      remaining().forEach(function (id) { S.done[id] = "loss"; apply(PENALTY[id] || CASES()[id].pen); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk", head: CASES()[id].head.loss }); });
-      S.hour = 24; S.ended = true; sackCount();
-      const lastH = S.day >= 4 ? window.AH4.lastHead() : S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019";
-      if (lastH && S.heads.indexOf(lastH) < 0) S.heads.push(lastH); // the night's headline, unless a case already printed it
-      if (window.SFX) { SFX.chime(12); setTimeout(function () { SFX.tele(); }, 1500); }
-      if (S.day === 1) { store.set(TIPS_DONE, "1"); store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: day2State() })); }
-      if (S.day === 2) store.set(DAY3, JSON.stringify({ v: 1, seed: seed, S: day3State() }));
-      if (S.day >= 3 && S.day < 6) store.set(DAYK[S.day + 1], JSON.stringify({ v: 1, seed: seed, S: actState(S.day + 1) }));
+  function confirmEndDay() {
+    const n = remaining().length;
+    if (!n) { S.hour = 24; summary(); return; }
+    const word = n === 1 ? "case" : "cases";
+    if (window.MENU && MENU.sheet) {
+      MENU.sheet("<h2>End the day?</h2><p id=\"endday-msg\">" + n + " " + word + " still unassigned. End the day anyway?</p>" +
+        '<button class="btn ghost" id="cf-no">Back</button><button class="btn danger" id="cf-yes">End day</button>');
+      $("cf-no").onclick = function () { MENU.close(); };
+      $("cf-yes").onclick = function () { MENU.close(); S.hour = 24; summary(); };
+      return;
     }
+    S.hour = 24; summary();
+  }
+  // a missed (untaken or expired) file: the leftover pen, folded so trust and Service both move on the top bar, with a floor so skipping is never the cheap way out
+  function missDelta(id) {
+    const raw = PENALTY[id] || (CASES()[id] && CASES()[id].pen) || {}, o = {};
+    const add = function (k, v) { if (v) o[k] = (o[k] || 0) + v; };
+    Object.keys(raw).forEach(function (m) {
+      const v = raw[m];
+      if (m === "capital" || m === "service" || m === "mood") add(m, v);
+      else if (m === "safety" || m === "secrecy") add("service", v);
+      else if (m === "trust") { add("mood", v); add("capital", v); }
+    });
+    if ((o.capital || 0) > -8) o.capital = -8;
+    if ((o.service || 0) > -12) o.service = -12;
+    Object.keys(o).forEach(function (k) { o[k] = Math.round(o[k]); if (!o[k]) delete o[k]; });
+    return o;
+  }
+  function applyMiss(id) {
+    const d = missDelta(id), mood = d.mood || 0;
+    delete d.mood;
+    apply(d);
+    if (mood) S.meters.mood = Math.max(0, Math.min(100, (S.meters.mood == null ? 55 : S.meters.mood) + mood));
+  }
+  function caseTitle(id) {
+    const c = CASES()[id] || {};
+    return (S.day === 2 && window.AH2 && AH2.titleOf ? AH2.titleOf(id) : c.title) || "a file";
+  }
+  function missedLogs() {
+    return (S.log || []).filter(function (l) { return l.appr === "Left on the desk" || /^Expired/.test(l.appr || ""); });
+  }
+  function missLine() {
+    const missed = missedLogs();
+    if (!missed.length) return "";
+    const names = missed.map(function (l) { return caseTitle(l.id); });
+    if (missed.length === 1) return "You left " + names[0] + " on the desk, C. That file still had hours on the clock.";
+    if (missed.length === (S.log || []).length) return "You closed nothing. Every file sat on the desk until midnight, including " + names[0] + ".";
+    return "You left " + missed.length + " files on the desk, including " + names[0] + ". I needed those closed.";
+  }
+  function settleDay() {
+    if (S.ended) return;
+    const left = remaining().slice(), allMissed = left.length && left.length === S.order.length;
+    left.forEach(function (id) { S.done[id] = "loss"; applyMiss(id); S.heads.push(CASES()[id].head.loss); S.log.push({ id: id, k: null, res: "loss", appr: "Left on the desk", head: CASES()[id].head.loss }); });
+    if (allMissed) apply({ capital: -5 }); // closing nothing costs a little more than a day of trying and failing
+    S.hour = 24; S.ended = true; sackCount();
+    const lastH = S.day >= 4 ? window.AH4.lastHead() : S.day === 3 ? window.AH3.lastHead() : S.day === 1 ? "Police seal off Bath street; man taken ill" : S.done.exit === "win" ? "Harwich ferry delayed by police operation" : "Ferry leaves Harwich on time despite \u2018security alert\u2019";
+    if (lastH && S.heads.indexOf(lastH) < 0) S.heads.push(lastH); // the night's headline, unless a case already printed it
+    if (S.day === 1) { store.set(TIPS_DONE, "1"); store.set(DAY2, JSON.stringify({ v: 1, seed: seed, S: day2State() })); }
+    if (S.day === 2) store.set(DAY3, JSON.stringify({ v: 1, seed: seed, S: day3State() }));
+    if (S.day >= 3 && S.day < 6) store.set(DAYK[S.day + 1], JSON.stringify({ v: 1, seed: seed, S: actState(S.day + 1) }));
+    S.endChime = true;
+    meters();
+  }
+  function summary() {
+    const first = !S.ended;
+    settleDay();
+    const cineId = { 1: "bath", 2: "ferry", 3: "end3", 6: "end6" }[S.day];
+    // only on the way into the night: a later look at the report (or a resume) must not start the cine again
+    if (first && !S.endCine && cineId && CINE.maybe(cineId, function () { S.endCine = true; summary(); })) { S.endCine = true; return; }
+    if (S.endChime) { S.endChime = false; if (window.SFX) { SFX.chime(12); setTimeout(function () { SFX.tele(); }, 1500); } }
     meters(); ticker(); save("summary");
     const grade = gradeOf();
     S.finished = grade;
@@ -1535,7 +1603,9 @@
   };
   // a different line each day of an act (and a different set from game to game)
   function pmLine(g) {
-    if (S.day === 6 && window.AH4 && AH4.ending) return end6Letter(AH4.ending());
+    const miss = missLine();
+    if (S.day === 6 && window.AH4 && AH4.ending) return miss ? end6Letter(AH4.ending()) + " " + miss : end6Letter(AH4.ending());
+    if (miss) return miss;
     const act = S.day <= 3 ? 1 : 2, i = (vkey() % 3 + Math.max(0, S.day - (act === 1 ? 1 : 4))) % 3;
     return PM_LINES[act][/[A-E]/.test(g) ? g : "C"][i];
   }
@@ -1864,7 +1934,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, liveHead: liveHead, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, fileWhy: fileWhy, pmLine: pmLine, craftNote: craftNote, eodPaper: eodPaper, eodNewGame: eodNewGame, vary: vary, PM_LINES: PM_LINES, GRADE_AT: GRADE_AT, accuseResolve: accuseResolve, recIdx: recIdx, remaining: remaining, lowWarn: lowWarn };
+    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, fileWhy: fileWhy, pmLine: pmLine, craftNote: craftNote, eodPaper: eodPaper, eodNewGame: eodNewGame, vary: vary, PM_LINES: PM_LINES, GRADE_AT: GRADE_AT, accuseResolve: accuseResolve, recIdx: recIdx, remaining: remaining, lowWarn: lowWarn, missDelta: missDelta, applyMiss: applyMiss, dayText: dayText, confirmEndDay: confirmEndDay, missedLogs: missedLogs, missLine: missLine, settleDay: settleDay };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();
