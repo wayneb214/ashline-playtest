@@ -886,6 +886,10 @@
     if (S.day >= 4) add("Kesk and the week so far", window.AH4.oddsMod(id, k, a));
     add("Earlier choices", window.DESK.oddsMod(id));
     add("Service", (svc() - 50) / 4);
+    // Difficulty review (Standard): Days 5-6 were a freebie for competent/expert play because
+    // Service and Act 2 wins snowball. A modest, visible late-week cut restores tension
+    // without touching Day 1 or Easy/Hard spacing.
+    if (S.diff === "standard" && S.day >= 5) add("The week tightens", -8);
     if (flyOn()) add("The team\u2019s flying", 5);
     if (window.OPS) OPS.parts(id, k, a, add);
     let o = base + P.reduce(function (t, p) { return t + p[1]; }, 0);
@@ -894,6 +898,7 @@
   }
   function traitsOf(k) { return window.FUN ? FUN.traits(k) : D.TRAITS[k] || []; }
   function oddsFor(id, k, a, kitId) { return oddsParts(id, k, a, kitId).odds; }
+  function weekTight() { return S.diff === "standard" && S.day >= 5 ? -8 : 0; }
   // the live-op call: what each answer costs and pays. One source for the buttons and for resolve().
   // The numbers live in opmodel.js, shared with the buttons (ops.js) and the balance sim (test/op-balance-sim.mjs).
   const OPM = window.OPMODEL, OPT = OPM.OPT, TRAP = OPM.TRAP;
@@ -1021,12 +1026,15 @@
     const s = CASES()[id];
     const free = S.roster.filter(function (k) { return !S.used[k]; }).sort(function (x, y) { return (AG(y).good.indexOf(id) >= 0) - (AG(x).good.indexOf(id) >= 0); }).slice(0, 3);
     const lt = late(id);
-    render('<div data-screen="officer-pick"><div class="casefile manila" id="dropzone"><span class="cftab">' + fileNo(id) + '</span><span class="cfstamp">SECRET</span>' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><p class="redline">Source: <span class="redact">\u2588\u2588\u2588\u2588\u2588\u2588</span> \u00b7 Ref <span class="redact">\u2588\u2588\u2588\u2588</span> \u00b7 Seen by C only</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") +
+    const showFit = S.day === 1 && !S.fitTip && S.tips && PREFS.get("tips") && !/[?&]nocoach=1/.test(location.search);
+    if (showFit) S.fitTip = true;
+    const fitTip = showFit ? '<div class="tip ashtip" id="fittip" data-tip="fit"><b>Ash</b><span>Who you send matters more than the plan. Read their file before you choose.</span><button type="button" class="tipx" data-tipx="fit" aria-label="Dismiss tip">Got it</button></div>' : "";
+    render('<div data-screen="officer-pick"><div class="casefile manila" id="dropzone"><span class="cftab">' + fileNo(id) + '</span><span class="cfstamp">SECRET</span>' + chead(id) + '<div class="casehead"><div class="kicker">' + esc(s.where) + " \u00b7 by " + hh(dueOf(id)) + (lt ? " \u00b7 " + lt + "h LATE" : "") + '</div><h2>' + esc(s.title) + '</h2><p class="brief">' + esc(s.brief) + (id === "sabotage" ? " <strong>You\u2019re defending: " + (S.belief === "split" ? "both sites" : S.belief) + ".</strong>" : "") + '</p><p class="redline">Source: <span class="redact">\u2588\u2588\u2588\u2588\u2588\u2588</span> \u00b7 Ref <span class="redact">\u2588\u2588\u2588\u2588</span> \u00b7 Seen by C only</p><div class="dropme">Drop a file here</div></div></div>' + lesson(id, "agent") + fitTip +
       dial(null) + '<h3 class="question">Who do you send?</h3><div class="otray">' + free.map(function (k) { return officerTile(k, id); }).join("") + '</div><button class="linkbtn" id="back">Back to the desk</button></div>',
       "Tap a file to read it. Tap Send, or drag the file onto the case, to send them.");
     dragSend(id, function (k) { approach(id, k); });
     $("back").onclick = briefing;
-    MENU.coach("traits", "Each officer has <b>three traits</b>. Tap a file to read it. Tap <b>Send</b>, or drag the file onto the case, to send them.");
+    if (!showFit) MENU.coach("traits", "Each officer has <b>three traits</b>. Tap a file to read it. Tap <b>Send</b>, or drag the file onto the case, to send them.");
   }
   // round 5: before you send anyone, the plan screen says which other files would close (run out of time) while this one runs
   // round 5: the lifted case file also lists any other file that closes in the next 4 hours if nobody starts it
@@ -1283,7 +1291,7 @@
     // the mole's slip: a small wrong detail in their debrief
     const slip = k === S.mole && S.accused !== S.mole && D.AGENTS[k] ? D.AGENTS[k].slip : "";
     if (cc) { S.echoes = (S.echoes || []).concat([{ day: S.day, id: id, k: k, c: cc, res: res, trap: !!op.trap, where: s.where, title: s.title, dt: ch.capital || 0 }]).slice(-24); }
-    S.heads.push(head); S.log.push({ opc: cc || undefined, id: id, k: k, res: res, appr: a.t + (kitId && D.KIT[kitId] ? " + " + D.KIT[kitId].name.toLowerCase() : ""), slip: !!slip, head: head, fit: fitK, rec: recK }); S.craft = (S.craft || []).concat([(fitK ? 0.7 : 0) + (recK ? 0.3 : 0)]);
+    S.heads.push(head); S.log.push({ opc: cc || undefined, id: id, k: k, res: res, appr: a.t + (kitId && D.KIT[kitId] ? " + " + D.KIT[kitId].name.toLowerCase() : ""), slip: !!slip, head: head, fit: fitK, rec: recK, fitMain: S.day === 1 && res === "loss" && !fitK || undefined }); S.craft = (S.craft || []).concat([(fitK ? 0.7 : 0) + (recK ? 0.3 : 0)]);
     const nm = first(k);
     let line = { win: nm + " pulled it off. Clean. Nobody will ever know.", mixed: nm + " got it done, but not cleanly. There will be questions.", loss: "It went wrong. " + nm + " is out \u2014 just \u2014 and badly shaken." }[res];
     if (op.trap && !op.abort) line = (res === "loss" ? "It was a trap. They were waiting. " : "It was a trap, and " + nm + " slipped it anyway. ") + line;
@@ -1625,6 +1633,7 @@
     if (l.id === "chase" && S.chase) return "Everyone on the streets: the watchers scored " + S.chase.score + " of 9.";
     if (l.k && s.kind !== "accuse" && l.fit !== undefined) {
       const n = first(l.k), adj = pro(l.k, 2), ind = poss(l.k);
+      if (l.fitMain) return n + " wasn\u2019t the right officer for it, and that is mainly why it failed.";
       return l.fit && l.rec ? n + ", the right officer, on " + adj + " own plan." : l.fit ? n + " was right for it, on your plan, not " + ind + "." : l.rec ? n + " ran " + adj + " own plan, but wasn\u2019t the best fit." : n + ": not the best fit, and not " + adj + " plan.";
     }
     const a = String(l.appr || "").replace(/\.$/, ""); return a ? a.charAt(0).toUpperCase() + a.slice(1) + "." : "";
@@ -1940,7 +1949,7 @@
   // shared with day2.js
   window.AH = { echoFate: echoFate, caseReadout: caseReadout, HEADS: HEADS, D: D, $: $, esc: esc, pic: pic, rnd: function () { return rnd(); }, S: function () { return S; }, hh: hh, LH: LH, dueOf: dueOf, late: late, AG: AG, first: first,
     render: render, ash: ash, tip: tip, face: face, condOf: condOf, meters: meters, ticker: ticker, liveHead: liveHead, save: save, advance: advance, apply: apply, deltas: deltas, headline: headline,
-    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, fileWhy: fileWhy, pmLine: pmLine, craftNote: craftNote, eodPaper: eodPaper, eodNewGame: eodNewGame, vary: vary, PM_LINES: PM_LINES, GRADE_AT: GRADE_AT, accuseResolve: accuseResolve, recIdx: recIdx, remaining: remaining, lowWarn: lowWarn, missDelta: missDelta, applyMiss: applyMiss, dayText: dayText, confirmEndDay: confirmEndDay, missedLogs: missedLogs, missLine: missLine, missCopy: missCopy, quoteFile: quoteFile, caseTitle: caseTitle, settleDay: settleDay };
+    opLoss: opLoss, opGain: opGain, RISK: RISK, riskLevel: riskLevel, riskDots: riskDots, riskTag: riskTag, effTx: effTx, chanceTx: chanceTx, caseDelta: caseDelta, shape: shape, phone: phone, briefing: briefing, accuse: accuse, agentCard: agentCard, morale: morale, loseOfficer: loseOfficer, summary: summary, diff: diff, clamp5: clamp5, CASES: CASES, store: store, pips: pips, finishCase: finishCase, benchLine: benchLine, moleCaught: moleCaught, moleText: moleText, freeAgents: freeAgents, chrome: chrome, dossier: dossier, officerFile: officerFile, caseFile: caseFile, lesson: lesson, svc: svc, score: score, scores: scores, relabel: relabel, svcShown: svcShown, driftOf: driftOf, markBar: markBar, barText: barText, readJ: readJ, endingsHTML: endingsHTML, pastGames: pastGames, playDay: playDay, pastGamesHTML: pastGamesHTML, title: title, daySelect: daySelect, canReplayDay: function () { return !!loadJSON(DAY2); }, muteBtn: muteBtn, resumeScreen: resume, restartDay: restartDay, resolve: resolve, openCase: openCase, caseImg: function (id) { return "img/h-" + (HEADS[id] || "york") + ".jpg"; }, oddsFor: oddsFor, weekTight: weekTight, opTerms: opTerms, trapFor: trapFor, officerFile: officerFile, sackCount: sackCount, echoesOf: echoesOf, echoFate: echoFate, echoCard: echoCard, echoChip: echoChip, storyLine: storyLine, callTally: callTally, sacked: sacked, sackRule: sackRule, no10Night: no10Night, SACK_LOW: SACK_LOW, OPM: OPM, fold: fold, oddsParts: oddsParts, statusName: statusName, gradeOf: gradeOf, gradeScore: gradeScore, boardScore: boardScore, lowerFirst: lowerFirst, fileNo: fileNo, outNow: outNow, returning: returning, coldOpen: coldOpen, diffAfterDay1: diffAfterDay1, gradeParts: gradeParts, fresh: function (p, t) { fresh(p, t); }, FAST: FAST, svcLow: svcLow, flyOn: flyOn, no10Took: no10Took, NO10_TAKE: NO10_TAKE, end6Letter: end6Letter, fileWhy: fileWhy, pmLine: pmLine, craftNote: craftNote, eodPaper: eodPaper, eodNewGame: eodNewGame, vary: vary, PM_LINES: PM_LINES, GRADE_AT: GRADE_AT, accuseResolve: accuseResolve, recIdx: recIdx, remaining: remaining, lowWarn: lowWarn, missDelta: missDelta, applyMiss: applyMiss, dayText: dayText, confirmEndDay: confirmEndDay, missedLogs: missedLogs, missLine: missLine, missCopy: missCopy, quoteFile: quoteFile, caseTitle: caseTitle, settleDay: settleDay };
 
   fresh();
   if (/[?&]trailer=1/.test(location.search)) CINE.trailer();

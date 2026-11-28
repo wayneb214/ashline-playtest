@@ -387,7 +387,7 @@
     { k: "quiet", t: "Have him put on the morning plane", d: "Quietly declared unwelcome. No arrest, no cameras. He goes home, and he knows we won.", risk: "low", mod: 10 },
     { k: "turn", t: "Offer him a deal: work for us", d: "The boldest thing you will ever say to a man. If he says yes, the Grey House is ours.", risk: "high", mod: -10 },
     { k: "public", t: "Arrest him on the steps of No.10", d: "Cameras, handcuffs, a show for the House. Hale gets her headline.", risk: "med", mod: 0, pm: 35 }]; // Batch P: was 40
-  function sdOdds(o) { const s = S(); return clampP(SD_BASE + o.mod + surprise(o.risk) + A.diff().odds + ({ win: 14, mixed: 4, loss: -12 }[s.done.chase] || 0) + (s.done.find === "win" ? 6 : 0) + (A.score(s.meters.capital) - 50) / 3 + keskMod(o.risk)); }
+  function sdOdds(o) { const s = S(); return clampP(SD_BASE + o.mod + surprise(o.risk) + A.diff().odds + (A.weekTight ? A.weekTight() : 0) + ({ win: 14, mixed: 4, loss: -12 }[s.done.chase] || 0) + (s.done.find === "win" ? 6 : 0) + (A.score(s.meters.capital) - 50) / 3 + keskMod(o.risk)); }
   function showdown() {
     const s = S(); let sel = null, fired = false;
     if (s.hour < 18) { A.advance(18 - s.hour); A.save("briefing"); A.meters(); }
